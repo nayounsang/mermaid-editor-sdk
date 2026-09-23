@@ -1,0 +1,29 @@
+.mve-root {
+  color: #202124;
+  display: grid;
+  font: 14px/1.45 system-ui, sans-serif;
+  gap: 0.75rem;
+  min-height: 12rem;
+}
+
+.mve-root *,
+.mve-root *::before,
+.mve-root *::after {
+  box-sizing: border-box;
+}
+
+.mve-source {
+  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  min-height: 8rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.mve-preview {
+  min-height: 3rem;
+  overflow: auto;
+}
+
+.mve-status[data-state='error'] {
+  color: #b42318;
+}
