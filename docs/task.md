@@ -179,10 +179,10 @@ flowchart TD
 - [x] 11 diagram capability 분류
 - [x] 12 source 보존 document model
 - [x] 13 runtime lifecycle API
-- [ ] 14 setValue 및 callback
-- [ ] 15 source 편집과 상태 UI
-- [ ] 16 공통 GUI shell
-- [ ] 17 Flowchart adapter
+- [x] 14 setValue 및 callback
+- [x] 15 source 편집과 상태 UI
+- [x] 16 공통 GUI shell
+- [x] 17 Flowchart adapter
 - [ ] 18 Sequence adapter
 - [ ] 19 Class adapter
 - [ ] 20 State adapter

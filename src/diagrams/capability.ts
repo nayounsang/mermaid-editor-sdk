@@ -45,7 +45,7 @@ export function classifyDiagram(detectedType: string | undefined): DiagramCapabi
     diagramType,
     parse: 'not-checked',
     preview: 'pending',
-    // No structural adapters are shipped before task 16; source editing stays available.
+    // A diagram remains source-only until its adapter is registered.
     editor: 'source-only',
   };
 }

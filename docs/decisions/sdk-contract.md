@@ -13,7 +13,7 @@ export type DiagramType =
 
 export type EditorSelection =
   | { kind: 'node'; diagramType: DiagramType; id: string }
-  | { kind: 'edge'; diagramType: DiagramType; source: string; target: string }
+  | { kind: 'edge'; diagramType: DiagramType; source: string; target: string; occurrence?: number }
   | { kind: 'subgraph'; diagramType: 'flowchart'; id: string; title?: string };
 
 export type EditorError = {
@@ -42,6 +42,8 @@ export function createMermaidVisualEditor(
 ```
 
 `onError`는 기준 Webview가 렌더 오류를 화면 상태로만 표시한 점을 보완하는 API 결정이다. 파싱 오류와 GUI 미지원 상태를 consumer callback에서 같은 오류로 취급하지 않도록 UI status에는 별도의 `unsupported` capability를 사용한다. `cause`는 외부 library 오류를 보존하되 public `message`는 사용자에게 보여줄 수 있는 문자열이다.
+
+Edge selection의 optional `occurrence`는 같은 방향의 source/target 쌍 안에서 0부터 시작하는 선언 순서로 parallel edge를 구별한다. source를 바꾸면 순서도 달라질 수 있으므로 영구 ID로 취급하지 않는다. 기존 host consumer는 이 필드 없이도 계속 동작한다.
 
 ## 수명 및 입력 규칙
 
