@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f2f5f2" />
+    <title>Mermaid Visual Editor · Playground</title>
+  </head>
+  <body>
+    <main class="playground-shell">
+      <header class="playground-header">
+        <a class="wordmark" href="/" aria-label="Mermaid Visual Editor playground home">
+          <span class="wordmark-mark" aria-hidden="true">M</span>
+          <span>Mermaid Visual Editor</span>
+        </a>
+        <span class="header-tag">LOCAL PLAYGROUND</span>
+      </header>
+
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">SDK development mode</p>
+        <h1 id="page-title">Edit the diagram. See the source stay yours.</h1>
+        <p class="intro-copy">Try the class tools, change Mermaid source directly, and watch both views update together.</p>
+      </section>
+
+      <section class="playground-card" aria-label="Mermaid editor playground">
+        <div class="playground-card-header">
+          <div>
+            <h2>Live editor</h2>
+            <p>Choose a sample or edit the Mermaid source.</p>
+          </div>
+          <div class="sample-switcher" role="group" aria-label="Choose a diagram sample">
+            <button type="button" class="sample-button is-active" data-sample="class">Class</button>
+            <button type="button" class="sample-button" data-sample="sequence">Sequence</button>
+            <button type="button" class="sample-button" data-sample="flowchart">Flowchart</button>
+          </div>
+        </div>
+
+        <div id="editor" class="editor-mount"></div>
+
+        <div class="playground-inspector" aria-live="polite">
+          <span class="inspector-label">Selection</span>
+          <code id="selection-value">Nothing selected</code>
+          <span class="inspector-divider" aria-hidden="true"></span>
+          <span class="inspector-label">Source size</span>
+          <code id="source-size">—</code>
+        </div>
+      </section>
+
+      <footer class="playground-footer">
+        <span>Changes stay in this browser session.</span>
+        <span>Run <code>npm run dev</code> to reopen this playground.</span>
+      </footer>
+      <div id="toast" class="playground-toast" role="status" aria-live="polite" hidden></div>
+    </main>
+    <script type="module" src="/src/dev.ts"></script>
+  </body>
+</html>

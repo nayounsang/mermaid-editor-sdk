@@ -26,6 +26,8 @@ const knownDiagramTypes: Record<string, DiagramType> = {
   'flowchart-v2': 'flowchart',
   sequence: 'sequence',
   class: 'class',
+  classDiagram: 'class',
+  'classDiagram-v2': 'class',
   stateDiagram: 'state',
   er: 'er',
   gantt: 'gantt',
