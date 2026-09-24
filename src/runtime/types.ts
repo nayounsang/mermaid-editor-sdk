@@ -2,7 +2,7 @@ import type { DiagramType } from '../diagrams/capability';
 
 export type EditorSelection =
   | { kind: 'node'; diagramType: DiagramType; id: string }
-  | { kind: 'edge'; diagramType: DiagramType; source: string; target: string }
+  | { kind: 'edge'; diagramType: DiagramType; source: string; target: string; occurrence?: number }
   | { kind: 'subgraph'; diagramType: 'flowchart'; id: string; title?: string };
 
 export interface EditorError {

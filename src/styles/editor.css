@@ -1,8 +1,6 @@
 .mve-root {
   color: #202124;
-  display: grid;
   font: 14px/1.45 system-ui, sans-serif;
-  gap: 0.75rem;
   min-height: 12rem;
 }
 
@@ -12,18 +10,166 @@
   box-sizing: border-box;
 }
 
+.mve-workspace {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 12rem;
+}
+
+.mve-gui,
+.mve-source-panel {
+  min-width: 0;
+}
+
+.mve-gui {
+  display: flex;
+  flex-direction: column;
+}
+
+.mve-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-block-end: 0.5rem;
+}
+
+.mve-toolbar[hidden] {
+  display: none;
+}
+
+.mve-preview {
+  flex: 1;
+  min-height: 12rem;
+  overflow: auto;
+}
+
+.mve-source-panel {
+  display: flex;
+}
+
 .mve-source {
+  flex: 1;
   font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
   min-height: 8rem;
   resize: vertical;
   width: 100%;
 }
 
-.mve-preview {
-  min-height: 3rem;
-  overflow: auto;
-}
-
 .mve-status[data-state='error'] {
   color: #b42318;
+}
+
+.mve-flowchart-palette,
+.mve-flowchart-selection,
+.mve-sequence-group-items {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.mve-sequence-group {
+  display: contents;
+}
+
+.mve-sequence-group-title {
+  color: #5f6368;
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.mve-flowchart-selection[hidden] {
+  display: none;
+}
+
+.mve-flowchart-field {
+  display: inline-flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  gap: 0.2rem;
+}
+
+.mve-flowchart-field input,
+.mve-flowchart-field select {
+  font: inherit;
+  max-width: 12rem;
+  min-width: 5rem;
+}
+
+.mve-flowchart-help {
+  color: #5f6368;
+  font-size: 0.75rem;
+}
+
+.mve-node-plus {
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease-out;
+}
+
+.mve-node-plus.mve-visible,
+.mve-node-plus:focus {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mve-node-plus circle {
+  fill: #16a34a;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.mve-node-plus text {
+  fill: #fff;
+  font: 14px/1 sans-serif;
+  pointer-events: none;
+}
+
+.mve-node-shape-menu {
+  display: none;
+}
+
+.mve-node-shape-menu.mve-open {
+  display: inline;
+}
+
+.mve-node-shape-choice {
+  cursor: pointer;
+}
+
+.mve-node-shape-choice rect {
+  fill: #fff;
+  stroke: #64748b;
+}
+
+.mve-node-shape-choice:hover rect,
+.mve-node-shape-choice:focus rect {
+  fill: #e2f3e8;
+  stroke: #16803c;
+}
+
+.mve-node-shape-choice text {
+  fill: #172b1b;
+  font: 10px/1 sans-serif;
+  pointer-events: none;
+}
+
+.mve-preview .mve-selected path,
+.mve-preview .mve-selected rect,
+.mve-preview .mve-selected polygon,
+.mve-preview .mve-selected circle {
+  stroke: #175fa5 !important;
+  stroke-width: 2.5px !important;
+}
+
+@media (max-width: 48rem) {
+  .mve-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
