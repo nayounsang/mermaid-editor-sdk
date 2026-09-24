@@ -10,7 +10,7 @@ export interface DiagramAdapterContext {
   readonly canvas: HTMLElement;
   readonly svg: SVGSVGElement;
   readonly sourceDocument: SourceDocument;
-  applySourceMutation(mutate: (source: SourceDocument) => string): void;
+  applySourceMutation(mutate: (source: SourceDocument) => string): boolean | void;
   setSelection(selection: EditorSelection | null): void;
 }
 

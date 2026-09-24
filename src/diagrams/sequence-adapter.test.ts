@@ -15,7 +15,7 @@ function makeContext(source: string): { context: DiagramAdapterContext; getSourc
     canvas,
     svg,
     sourceDocument: new SourceDocument(value, 'sequence'),
-    applySourceMutation(mutate) { value = mutate(new SourceDocument(value, 'sequence')); },
+    applySourceMutation(mutate) { value = mutate(new SourceDocument(value, 'sequence')); return true; },
     setSelection: vi.fn(),
   };
   return { context, getSource: () => value };

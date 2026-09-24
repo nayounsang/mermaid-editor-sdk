@@ -314,19 +314,21 @@ export function createMermaidVisualEditor(
       canvas: preview,
       svg,
       sourceDocument: new SourceDocument(sourceValue, diagramType),
-      applySourceMutation(mutate): void {
-        if (destroyed || !adapterIsActive || revision !== renderRevision) return;
+      applySourceMutation(mutate): boolean {
+        if (destroyed || !adapterIsActive || revision !== renderRevision) return false;
         try {
           if (typeof mutate !== 'function') throw new TypeError('Source mutation must be a function.');
           const nextSource = mutate(new SourceDocument(value, diagramType));
           if (typeof nextSource !== 'string') throw new TypeError('Source mutation must return a string.');
           commitValue(nextSource, true);
+          return true;
         } catch (cause) {
           notifyError(onError, {
             code: 'mutation',
             message: cause instanceof Error ? cause.message : 'Mermaid source mutation failed.',
             cause,
           });
+          return false;
         }
       },
       setSelection(selection): void {

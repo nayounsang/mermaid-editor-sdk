@@ -16,7 +16,7 @@ function makeContext(source: string, svgMarkup: string): { context: DiagramAdapt
     canvas,
     svg,
     sourceDocument: new SourceDocument(value, 'flowchart'),
-    applySourceMutation(mutate) { value = mutate(new SourceDocument(value, 'flowchart')); },
+    applySourceMutation(mutate) { value = mutate(new SourceDocument(value, 'flowchart')); return true; },
     setSelection(selection) { selected = selection; },
   };
   return { context, getSource: () => value, selection: () => selected };

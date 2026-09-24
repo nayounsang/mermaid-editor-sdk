@@ -184,7 +184,7 @@ flowchart TD
 - [x] 16 공통 GUI shell
 - [x] 17 Flowchart adapter
 - [x] 18 Sequence adapter
-- [ ] 19 Class adapter
+- [x] 19 Class adapter
 - [ ] 20 State adapter
 - [ ] 21 ER adapter
 - [ ] 22 Gantt adapter

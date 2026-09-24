@@ -293,10 +293,10 @@ describe('createMermaidVisualEditor', () => {
       expect(selection).toHaveBeenCalledOnce();
       expect(Object.isFrozen(selection.mock.calls[0]?.[0])).toBe(true);
 
-      adapterContext?.applySourceMutation((sourceDocument) => {
+      expect(adapterContext?.applySourceMutation((sourceDocument) => {
         const region = sourceDocument.findUniqueEditableStatement('A[old]');
         return sourceDocument.replaceStatement(region.start, region.end, 'A[new]');
-      });
+      })).toBe(true);
 
       expect(editor.getValue()).toBe('flowchart LR\nA[new]');
       expect(onChange).toHaveBeenCalledWith('flowchart LR\nA[new]');
@@ -305,7 +305,7 @@ describe('createMermaidVisualEditor', () => {
       expect(container.querySelector('.mve-toolbar')?.hasAttribute('hidden')).toBe(true);
 
       adapterContext?.setSelection({ kind: 'node', diagramType: 'flowchart', id: 'stale' });
-      adapterContext?.applySourceMutation(() => 'flowchart LR\nB[stale]');
+      expect(adapterContext?.applySourceMutation(() => 'flowchart LR\nB[stale]')).toBe(false);
       expect(editor.getValue()).toBe('flowchart LR\nA[new]');
       expect(selection).toHaveBeenLastCalledWith(null);
       expect(onChange).toHaveBeenCalledOnce();
