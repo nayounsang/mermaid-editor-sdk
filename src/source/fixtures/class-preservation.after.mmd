@@ -1,0 +1,15 @@
+---
+title: Keep this metadata
+---
+classDiagram
+namespace Domain {
+  class User {
+    <<entity>>
+    +id: ReadonlyMap<String, User>
+    -name: String
+    getName(): String
+  }
+  class Account
+}
+Admin "1" *-- "0..*" Account : owns
+%% User and Account IDs in this comment must remain unchanged

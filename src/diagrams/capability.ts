@@ -26,6 +26,8 @@ const knownDiagramTypes: Record<string, DiagramType> = {
   'flowchart-v2': 'flowchart',
   sequence: 'sequence',
   class: 'class',
+  classDiagram: 'class',
+  'classDiagram-v2': 'class',
   stateDiagram: 'state',
   er: 'er',
   gantt: 'gantt',
@@ -45,7 +47,7 @@ export function classifyDiagram(detectedType: string | undefined): DiagramCapabi
     diagramType,
     parse: 'not-checked',
     preview: 'pending',
-    // No structural adapters are shipped before task 16; source editing stays available.
+    // A diagram remains source-only until its adapter is registered.
     editor: 'source-only',
   };
 }
