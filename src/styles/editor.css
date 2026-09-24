@@ -184,6 +184,33 @@
   stroke-width: 2.5px !important;
 }
 
+.mve-preview .mve-connect-start rect,
+.mve-preview .mve-connect-start polygon,
+.mve-preview .mve-connect-start circle {
+  filter: drop-shadow(0 0 4px rgba(23, 95, 165, 0.55));
+  stroke: #175fa5 !important;
+  stroke-width: 3px !important;
+}
+
+.mve-preview g.classGroup,
+.mve-preview g.class,
+.mve-preview g.node {
+  cursor: pointer;
+}
+
+.mve-preview g.classGroup:focus,
+.mve-preview g.class:focus,
+.mve-preview g.node:focus {
+  outline: none;
+}
+
+.mve-preview g.classGroup:focus-visible rect,
+.mve-preview g.class:focus-visible rect,
+.mve-preview g.node:focus-visible rect {
+  stroke: #175fa5 !important;
+  stroke-width: 3px !important;
+}
+
 @media (max-width: 48rem) {
   .mve-workspace {
     grid-template-columns: minmax(0, 1fr);

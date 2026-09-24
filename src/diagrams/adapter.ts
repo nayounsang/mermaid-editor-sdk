@@ -10,7 +10,13 @@ export interface DiagramAdapterContext {
   readonly canvas: HTMLElement;
   readonly svg: SVGSVGElement;
   readonly sourceDocument: SourceDocument;
-  applySourceMutation(mutate: (source: SourceDocument) => string): boolean | void;
+  readonly initialSelection?: EditorSelection | null | undefined;
+  readonly focusInitialSelection?: boolean;
+  applySourceMutation(
+    mutate: (source: SourceDocument) => string,
+    selectionAfterMutation?: EditorSelection | null,
+    focusSelectionAfterMutation?: boolean,
+  ): boolean | void;
   setSelection(selection: EditorSelection | null): void;
 }
 
