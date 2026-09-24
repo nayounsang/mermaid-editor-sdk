@@ -9,7 +9,7 @@ README의 “supported”는 해당 타입을 편집기에서 표시하고 sourc
 | Diagram | Mermaid 렌더 | Palette / source 작업 | 구조 GUI 조작 | 판정 및 근거 |
 |---|---|---|---|---|
 | Flowchart / graph | 예 | 노드 shape, 연결선, subgraph를 palette에서 추가하고 source textarea를 직접 편집 | 노드·edge·subgraph를 더블클릭해 label/style/속성 편집, Delete, edge endpoint 재연결, node 간 drag 연결, flowchart node `+` 삽입 | 가장 넓은 구조 편집. `DIAGRAM_TYPES.flowchart`, `isGraphDiagram`, `attachDoubleClick`, edge/plus handlers. |
-| Sequence | 예 | actor, message, note, loop/alt/opt/par snippet 및 source 편집 | 일반 flowchart 계열 node/edge model에 연결되지 않음 | 렌더와 palette/source 편집. sequence 의미 구조를 직접 선택·변경하는 adapter는 없음. |
+| Sequence | 예 | participant/actor와 note/loop/alt/opt/par 항목은 click/drag로 source에 삽입. message 도구는 connector로 arm되지만 Sequence에는 연결 대상 graph handler가 없어 source에 삽입되지 않음. source 편집은 가능. | 의미 구조 선택·수정 및 message 연결 없음 | 렌더와 일부 palette/source 편집. 구조 adapter 없음. 기준 구현에서는 message 항목은 노출되지만 실제로 동작하지 않음. |
 | Class | 예 | class block와 관계 snippet 및 source 편집 | class node/member, relation type/direction, style 편집·삭제 및 연결 조작 | 그래프 shell에서 처리되는 구조 편집. class relation에는 자유 label이 없음을 UI가 반영. |
 | State | 예 | state, composite, transition, note snippet 및 source 편집 | state name/style, transition label 편집·삭제 및 연결 조작 | 그래프 shell에서 처리되는 구조 편집. |
 | ER | 예 | entity, 관계 snippet 및 source 편집 | entity/attribute, 관계 cardinality/label, style 편집·삭제 및 연결 조작 | 그래프 shell에서 처리되는 구조 편집. |
@@ -26,6 +26,7 @@ README는 12개 유형을 지원 목록으로 열거하고 palette 이용을 설
 ## 추가 경계
 
 - Mermaid가 새로 지원하는 syntax는 Mermaid 렌더러가 처리할 수 있어도 위 12개 adapter 중 하나가 없으면 구조 GUI 지원으로 판정하지 않는다.
+- 기준 구현의 Sequence 메시지 palette item 다섯 개는 `connector: true`다. `renderPalette()`는 이 항목을 클릭해도 connector를 arm할 뿐이고, canvas 연결 동작은 `isGraphDiagram()`에 포함된 flowchart/state/class/ER 계열만 처리한다. Sequence는 `isGraphDiagram()` 대상이 아니므로 해당 메시지 도구는 실제로 source를 추가하지 않는다. SDK Sequence adapter는 message button을 명시적인 source insertion으로 동작시켜 이 접근 가능한 편집 흐름의 누락을 보완한다.
 - 파싱이 실패하면 렌더 오류다. 파싱은 되지만 adapter가 없는 유형은 오류가 아니라 렌더 + 원문 편집 상태로 노출한다.
 - 기준 구현의 graph 편집은 SVG DOM 식별자와 줄 단위 정규식 source mutation을 사용한다. 이 표는 기능 존재 여부를 기록하며, source 보존 안전성을 보증하지 않는다. 해당 보증은 task 07의 fixture로 별도 확인한다.
 

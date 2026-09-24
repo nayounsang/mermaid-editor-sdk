@@ -62,12 +62,25 @@
 }
 
 .mve-flowchart-palette,
-.mve-flowchart-selection {
+.mve-flowchart-selection,
+.mve-sequence-group-items {
   align-items: end;
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
   width: 100%;
+}
+
+.mve-sequence-group {
+  display: contents;
+}
+
+.mve-sequence-group-title {
+  color: #5f6368;
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0;
 }
 
 .mve-flowchart-selection[hidden] {

@@ -166,16 +166,17 @@ describe('createMermaidVisualEditor', () => {
     editor.destroy();
   });
 
-  it('renders a known diagram and labels its source-only editing state', async () => {
+  it('renders a known diagram and mounts sequence editing tools', async () => {
     mermaidMock.render.mockResolvedValueOnce({ svg: '<svg data-rendered="yes"></svg>', diagramType: 'sequence' });
     const container = document.createElement('div');
     const editor = createMermaidVisualEditor(container, { value: 'sequenceDiagram\nA->>B: hello' });
-    await vi.waitFor(() => expect(mermaidMock.render).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(container.querySelector('.mve-sequence-item')).not.toBeNull());
 
     expect(container.querySelector('.mve-preview svg')?.getAttribute('data-rendered')).toBe('yes');
-    expect(container.querySelector<HTMLElement>('.mve-status')?.dataset.state).toBe('source-only');
-    expect(container.querySelector('.mve-status')?.textContent)
-      .toBe('sequence preview is ready. Visual editing is unavailable; source editing is available.');
+    expect(container.querySelector<HTMLElement>('.mve-status')?.dataset.state).toBe('ready');
+    expect(container.querySelector('.mve-status')?.textContent).toBe('sequence preview is ready.');
+    container.querySelector<HTMLButtonElement>('[aria-label="Add message (sync)"]')!.click();
+    expect(editor.getValue()).toBe('sequenceDiagram\nA->>B: hello\n    A->>B: message');
     editor.destroy();
   });
 

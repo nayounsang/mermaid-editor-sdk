@@ -183,7 +183,7 @@ flowchart TD
 - [x] 15 source 편집과 상태 UI
 - [x] 16 공통 GUI shell
 - [x] 17 Flowchart adapter
-- [ ] 18 Sequence adapter
+- [x] 18 Sequence adapter
 - [ ] 19 Class adapter
 - [ ] 20 State adapter
 - [ ] 21 ER adapter

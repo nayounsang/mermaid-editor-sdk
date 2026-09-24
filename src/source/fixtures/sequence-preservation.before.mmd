@@ -1,0 +1,12 @@
+sequenceDiagram
+    autonumber
+    participant A as Browser
+    participant B as API
+    %% A and B stay referenced in this comment
+    A->>+B: request
+    alt success
+        B-->>-A: response
+    else error
+        B-->>A: retry
+    end
+    Note over A,B: existing note
