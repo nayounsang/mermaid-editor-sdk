@@ -1,4 +1,6 @@
-# How to proceed tasks
+# AGENT.md
+
+## How to proceed tasks
 
 When you work with numbered tasks in the `docs/task.md`,
 
@@ -9,3 +11,7 @@ When you work with numbered tasks in the `docs/task.md`,
 
 Before you mark task is resolved, Analyze the differences between the original repository and the design document. Analyze whether this is an intentional difference or an omission, and if it is an omission, correct it.
 Report any intentional deviations to me for review. I will then direct the follow-up actions or instruct you to wrap up the matter.
+
+## Branch and Commit
+
+- DO NOT MAKE BRANCH. Work in main and commit.

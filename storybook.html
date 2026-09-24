@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f5f6" />
+    <title>Editor UI Storybook · Mermaid Visual Editor</title>
+  </head>
+  <body>
+    <main class="storybook-page">
+      <header class="storybook-heading">
+        <div>
+          <p class="storybook-eyebrow">Temporary visual reference</p>
+          <h1>Mermaid editor · reference layout</h1>
+          <p class="storybook-description">Static UI study based on Mermaid NG. Controls are illustrative and do not edit a diagram.</p>
+        </div>
+        <a href="https://nextgenpowertoys.github.io/mermaid-visual-editor/#screenshots" target="_blank" rel="noreferrer">Open reference ↗</a>
+      </header>
+
+      <div class="design-note" role="note">
+        <span class="note-dot"></span>
+        <span>REVIEW SCOPE</span>
+        <span class="scope-instruction">Review ONLY the editor content area below. Ignore the surrounding VS Code/workbench chrome in the reference screenshots.</span>
+        <button type="button" id="open-modal">Preview edit modal</button>
+      </div>
+
+      <section class="editor-frame" aria-label="Static Mermaid editor design preview">
+        <header class="editor-topbar">
+          <div class="product-title">
+            <span class="product-mark" aria-hidden="true">M</span>
+            <strong>Mermaid Visual Editor</strong>
+            <span class="interaction-hint">Drag to canvas · connect nodes · double-click to edit</span>
+          </div>
+          <div class="type-picker">
+            <span>Diagram</span>
+            <button type="button" aria-label="Selected diagram type">Flowchart <span class="chevron">⌄</span></button>
+            <a href="#docs">Docs ↗</a>
+          </div>
+        </header>
+
+        <div class="editor-body">
+          <aside class="palette-panel" aria-label="Diagram palette">
+            <div class="panel-heading">
+              <span>Palette</span>
+              <span class="subtle-label">drag onto canvas</span>
+            </div>
+            <div class="palette-scroll">
+              <section class="palette-group">
+                <h2>Nodes</h2>
+                <div class="palette-item"><span>Process box</span><code>[ ]</code></div>
+                <div class="palette-item"><span>Decision</span><code>{ }</code></div>
+                <div class="palette-item"><span>Rounded</span><code>( )</code></div>
+                <div class="palette-item"><span>Circle</span><code>(( ))</code></div>
+                <div class="palette-item"><span>Stadium</span><code>([ ])</code></div>
+                <div class="palette-item"><span>Subroutine</span><code>[[ ]]</code></div>
+                <div class="palette-item"><span>Database</span><code>[( )]</code></div>
+                <div class="palette-item"><span>Hexagon</span><code>{{ }}</code></div>
+              </section>
+              <section class="palette-group">
+                <h2>Edges</h2>
+                <div class="palette-item"><span>Arrow</span><code>──&gt;</code></div>
+                <div class="palette-item"><span>Labeled arrow</span><code>─&gt;|</code></div>
+                <div class="palette-item"><span>Dashed</span><code>╌╌&gt;</code></div>
+                <div class="palette-item"><span>Thick</span><code>━━&gt;</code></div>
+              </section>
+              <section class="palette-group">
+                <h2>Containers</h2>
+                <div class="palette-item"><span>Subgraph</span><code>{ }</code></div>
+              </section>
+            </div>
+          </aside>
+
+          <div class="work-area">
+            <section class="canvas-card" aria-label="Diagram canvas preview">
+              <div class="canvas-toolbar">
+                <span class="canvas-title">Canvas</span>
+                <div class="canvas-actions" aria-label="Canvas tools">
+                  <button type="button" aria-label="Undo">↶</button>
+                  <button type="button" aria-label="Redo">↷</button>
+                  <span class="tool-divider"></span>
+                  <button type="button" aria-label="Pan canvas">✋</button>
+                  <button type="button">−</button>
+                  <span class="zoom-value">73%</span>
+                  <button type="button">＋</button>
+                  <button type="button">Fit</button>
+                  <button type="button">Center</button>
+                  <span class="tool-divider"></span>
+                  <button type="button" class="primary-action">Save…</button>
+                  <button type="button">Reset</button>
+                  <button type="button">SVG</button>
+                  <button type="button">PNG</button>
+                </div>
+              </div>
+              <div class="diagram-canvas">
+                <svg class="flowchart-preview" viewBox="0 0 850 370" role="img" aria-label="Sample flowchart diagram">
+                  <defs>
+                    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                      <path d="M0 0 L8 4 L0 8 Z" fill="#242b33" />
+                    </marker>
+                  </defs>
+                  <path class="connector" d="M425 73 L425 121" marker-end="url(#arrowhead)" />
+                  <path class="connector" d="M374 175 C310 198 276 230 260 266" marker-end="url(#arrowhead)" />
+                  <path class="connector" d="M476 175 C540 198 574 230 590 266" marker-end="url(#arrowhead)" />
+                  <path class="connector" d="M305 287 C356 318 385 314 412 285" marker-end="url(#arrowhead)" />
+                  <rect class="diagram-node" x="371" y="30" width="108" height="44" rx="2" />
+                  <text x="425" y="57" text-anchor="middle">Start</text>
+                  <path class="diagram-decision" d="M425 119 L478 174 L425 229 L372 174 Z" />
+                  <text x="425" y="178" text-anchor="middle">Is it working?</text>
+                  <rect class="diagram-node" x="205" y="264" width="112" height="45" rx="2" />
+                  <text x="261" y="291" text-anchor="middle">Ship it</text>
+                  <rect class="diagram-node" x="534" y="264" width="112" height="45" rx="2" />
+                  <text x="590" y="291" text-anchor="middle">Debug</text>
+                  <text class="edge-label" x="309" y="219">Yes</text>
+                  <text class="edge-label" x="542" y="219">No</text>
+                  <circle class="hover-handle" cx="480" cy="174" r="13" />
+                  <text class="handle-plus" x="480" y="179" text-anchor="middle">+</text>
+                </svg>
+                <span class="drop-hint">Drop to add</span>
+              </div>
+            </section>
+
+            <section class="source-card" aria-label="Mermaid source preview">
+              <div class="source-heading"><span>Mermaid code</span><button type="button">Copy</button></div>
+              <pre><code>flowchart TD
+    A[Start] --&gt; B{Is it working?}
+    B --&gt;|Yes| C[Ship it]
+    B --&gt;|No| D[Debug]
+    D --&gt; B</code></pre>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <footer class="storybook-caption">
+        <span><strong>Visual reference only</strong> — this page is intentionally disconnected from the SDK runtime.</span>
+        <span>Reference target: Mermaid NG · editor surface</span>
+      </footer>
+
+      <div class="modal-scrim" id="modal-scrim" hidden>
+        <section class="edit-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+          <header class="modal-heading"><h2 id="modal-title">Edit entity</h2><button type="button" class="icon-close" aria-label="Close dialog" data-close>×</button></header>
+          <div class="modal-content">
+            <label class="field-block"><span>Name / label</span><input value="ENTITY" readonly /></label>
+            <div class="field-block">
+              <span>Attributes</span>
+              <div class="attribute-row"><input value="string" aria-label="Attribute type" readonly /><input value="field1" aria-label="Attribute name" readonly /><select aria-label="Attribute key"><option>—</option></select><button type="button" aria-label="Remove attribute">×</button></div>
+              <div class="attribute-row"><input value="int" aria-label="Attribute type" readonly /><input value="field2" aria-label="Attribute name" readonly /><select aria-label="Attribute key"><option>—</option></select><button type="button" aria-label="Remove attribute">×</button></div>
+              <button type="button" class="add-attribute">＋ Add attribute</button>
+            </div>
+            <label class="field-block"><span>Border line</span><select><option>Unchanged</option></select></label>
+            <label class="field-block"><span>Fill color</span><div class="color-row"><span class="color-swatch fill-swatch"></span><span>leave unchanged</span></div></label>
+            <label class="field-block"><span>Border color</span><div class="color-row"><span class="color-swatch border-swatch"></span><span>leave unchanged</span></div></label>
+          </div>
+          <footer class="modal-footer"><button type="button" class="danger-action">Delete entity</button><span class="modal-spacer"></span><button type="button" class="cancel-action" data-close>Cancel</button><button type="button" class="primary-action">Apply</button></footer>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="/src/storybook.ts"></script>
+  </body>
+</html>

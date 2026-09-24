@@ -51,7 +51,15 @@ const editor = createMermaidVisualEditor(document.querySelector<HTMLElement>('#e
     sourceSize.textContent = `${source.length.toLocaleString()} chars`;
   },
   onSelectionChange(selection) {
-    selectionValue.textContent = selection ? JSON.stringify(selection) : 'Nothing selected';
+    if (!selection) {
+      selectionValue.textContent = 'Nothing selected';
+    } else if (selection.kind === 'edge') {
+      selectionValue.textContent = `Relationship · ${selection.source} → ${selection.target}`;
+    } else if (selection.kind === 'subgraph') {
+      selectionValue.textContent = `Group · ${selection.title || selection.id}`;
+    } else {
+      selectionValue.textContent = `Node · ${selection.id}`;
+    }
   },
   onError(error) {
     toast.textContent = `${error.code}: ${error.message}`;

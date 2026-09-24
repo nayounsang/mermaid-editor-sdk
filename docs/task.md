@@ -17,7 +17,7 @@
 |---|---|
 | 01–05 | 각각 `docs/research/baseline-source.md`, `support-matrix.md`, `injected-options.md`, `host-bridge.md`, `provenance-license.md` |
 | 06–08 | 각각 `docs/decisions/sdk-contract.md`, `source-fidelity.md`, `build-architecture.md` |
-| 09–29, 31 | 코드 (카드에 테스트·fixture가 명시된 경우 함께 추가) |
+| 09–29, 31, 37 | 코드 (카드에 테스트·fixture가 명시된 경우 함께 추가) |
 | 30 | 코드. 기능을 구현하지 않기로 하면 `docs/decisions/export-api.md`에 결정 기록 |
 | 32 | `docs/validation/csp-browser.md` 및 필요한 재현 코드 |
 | 33 | `docs/consumer-guide.md` 및 실행 가능한 예제 코드 |
@@ -65,6 +65,7 @@
 | 34 | [배포 license audit](tasks/34-distribution-license-audit.md) | 05, 10, 33 | 실제 package 산출물의 코드/자산과 제3자 고지를 대조한다. |
 | 35 | [React wrapper 결정](tasks/35-react-wrapper-decision.md) | 13, 33 | core API와 consumer 수요를 확인한 뒤 wrapper 여부를 판단한다. |
 | 36 | [완료 조건 통합 검증](tasks/36-release-validation.md) | 17–34 | 설계 완료 조건 1–11을 fixture, browser, Extension, package 결과에 연결한다. |
+| 37 | [SDK editor UI Storybook](tasks/37-sdk-ui-storybook.md) | — | 사용자가 지정한 Mermaid NG를 바탕으로 SDK 편집 화면의 레이아웃·색·시각 위계를 확인할 정적 UI Storybook을 제공한다. |
 
 ## 병렬 및 조건부 흐름
 
@@ -154,6 +155,7 @@ flowchart TD
   T27 --> AA
   T28 --> AA
   R --> AA
+  AB[37 SDK editor UI Storybook]
 ```
 
 ### 조건 분기
@@ -202,3 +204,4 @@ flowchart TD
 - [ ] 34 배포 license audit
 - [ ] 35 React wrapper 결정
 - [ ] 36 완료 조건 통합 검증
+- [x] 37 SDK editor UI Storybook
