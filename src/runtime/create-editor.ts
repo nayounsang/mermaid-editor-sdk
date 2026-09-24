@@ -109,8 +109,6 @@ export function createMermaidVisualEditor(
   let renderRevision = 0;
   let renderTimer: ReturnType<typeof setTimeout> | undefined;
   let currentSelection: EditorSelection | null = null;
-  let selectionAfterRender: EditorSelection | null | undefined;
-  let focusSelectionAfterRender = false;
   let adapterCleanup: (() => void) | undefined;
   let adapterIsActive = false;
 
@@ -258,11 +256,7 @@ export function createMermaidVisualEditor(
       preview.innerHTML = result.svg;
       result.bindFunctions?.(preview);
       if (isAdapterDiagramType(capability.diagramType)) {
-        const initialSelection = selectionAfterRender;
-        const focusInitialSelection = focusSelectionAfterRender;
-        selectionAfterRender = undefined;
-        focusSelectionAfterRender = false;
-        const mounted = mountDiagramAdapter(capability.diagramType, currentValue, revision, initialSelection, focusInitialSelection);
+        const mounted = mountDiagramAdapter(capability.diagramType, currentValue, revision);
         if (destroyed || revision !== renderRevision) return;
         if (mounted) capability = { ...capability, editor: 'visual' };
       }
@@ -309,8 +303,6 @@ export function createMermaidVisualEditor(
     diagramType: AdapterDiagramType,
     sourceValue: string,
     revision: number,
-    initialSelection?: EditorSelection | null,
-    focusInitialSelection = false,
   ): boolean => {
     const adapter = getDiagramAdapter(diagramType);
     const svg = preview.querySelector('svg');
@@ -322,16 +314,12 @@ export function createMermaidVisualEditor(
       canvas: preview,
       svg,
       sourceDocument: new SourceDocument(sourceValue, diagramType),
-      initialSelection,
-      focusInitialSelection,
-      applySourceMutation(mutate, selectionAfterMutation, focusSelectionAfterMutation): boolean {
+      applySourceMutation(mutate): boolean {
         if (destroyed || !adapterIsActive || revision !== renderRevision) return false;
         try {
           if (typeof mutate !== 'function') throw new TypeError('Source mutation must be a function.');
           const nextSource = mutate(new SourceDocument(value, diagramType));
           if (typeof nextSource !== 'string') throw new TypeError('Source mutation must return a string.');
-          selectionAfterRender = nextSource === value ? undefined : selectionAfterMutation;
-          focusSelectionAfterRender = nextSource !== value && Boolean(focusSelectionAfterMutation);
           commitValue(nextSource, true);
           return true;
         } catch (cause) {
@@ -392,8 +380,6 @@ export function createMermaidVisualEditor(
 
   const handleInput = (): void => {
     if (destroyed) return;
-    selectionAfterRender = undefined;
-    focusSelectionAfterRender = false;
     commitValue(preserveLineEndingStyle(source.value, value), true);
   };
 
@@ -407,8 +393,6 @@ export function createMermaidVisualEditor(
     setValue(nextValue: string): void {
       if (destroyed) throw new DestroyedEditorError();
       if (typeof nextValue !== 'string') throw new TypeError('value must be a string.');
-      selectionAfterRender = undefined;
-      focusSelectionAfterRender = false;
       commitValue(nextValue, false);
     },
     destroy(): void {

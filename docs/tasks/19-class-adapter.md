@@ -12,7 +12,7 @@
 
 ## 산출물과 완료 조건
 
-Class diagram adapter가 class 추가·선택·이름 변경·삭제, member 편집, fill/stroke 설정, 관계 추가·선택·endpoint/operator 편집·삭제를 제공한다. 새 class는 생성 직후 선택하고 이름 입력에 포커스한다. class 이름을 두 번 클릭하면 이름 필드가 바로 활성화되며, 저장 후에도 선택을 유지한다. 연결 모드는 선택 시작점과 다음 동작을 캔버스에서 안내한다. `class-preservation` fixture는 namespace, annotation, generic/member 문법, 관계 multiplicity, comment를 둔 채 member와 관계만 수정한다. 안전한 statement 범위를 증명하지 못하는 구문은 mutation을 거부한다.
+Class diagram adapter가 class 추가·선택·이름 변경·삭제, member 편집, fill/stroke 설정, 관계 추가·선택·endpoint/operator 편집·삭제를 제공한다. `class-preservation` fixture는 namespace, annotation, generic/member 문법, 관계 multiplicity, comment를 둔 채 member와 관계만 수정한다. 안전한 statement 범위를 증명하지 못하는 구문은 mutation을 거부한다.
 
 ## 검증
 

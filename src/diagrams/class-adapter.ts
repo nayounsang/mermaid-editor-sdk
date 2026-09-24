@@ -40,15 +40,6 @@ function field(document: Document, labelText: string, value: string, change: (va
   input.value = value;
   input.setAttribute('aria-label', labelText);
   input.addEventListener('change', () => change(input.value));
-  input.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      input.blur();
-    } else if (event.key === 'Escape') {
-      input.value = value;
-      input.blur();
-    }
-  });
   label.append(caption, input);
   return label;
 }
@@ -118,26 +109,19 @@ export const classAdapter: DiagramAdapter = {
     selectionPanel.className = 'mve-class-selection';
     const help = document.createElement('span');
     help.className = 'mve-class-help';
-    help.textContent = 'Click a class to edit it. Double-click its name to rename. Choose a relationship, then connect two classes.';
+    help.textContent = 'Add a class or connect two classes. Double-click a class or relationship to edit it.';
     toolbar.replaceChildren(palette, selectionPanel, help);
 
     let selected: EditorSelection | null = null;
     let connecting = false;
     let connectionStart: string | undefined;
-    let connectionStartGroup: Element | undefined;
     let activeOperator: ClassRelationOperator = '-->';
     const ids = listClassIds(context.sourceDocument.source);
     const nodeGroups = [...svg.querySelectorAll<SVGGElement>('g.classGroup, g.class, g.node')];
     const nodeIds = new Map<Element, string>();
     for (const group of nodeGroups) {
       const id = nodeId(group, ids);
-      if (id) {
-        nodeIds.set(group, id);
-        group.setAttribute('tabindex', '0');
-        group.setAttribute('role', 'button');
-        group.setAttribute('aria-label', `Select class ${id}`);
-        group.setAttribute('aria-roledescription', 'class diagram node');
-      }
+      if (id) nodeIds.set(group, id);
     }
     const relationList = listClassRelations(context.sourceDocument.source);
     const relationGroups = [...svg.querySelectorAll<SVGElement>('.edgePaths path, g.edgePath path, path.relation, path.relationshipLine, path[id^="L"], path[id^="edge"]')];
@@ -150,13 +134,9 @@ export const classAdapter: DiagramAdapter = {
     const showError = (error: unknown): void => {
       help.textContent = error instanceof Error ? error.message : 'This class edit could not be applied safely.';
     };
-    const mutate = (
-      action: (source: string) => string,
-      selectionAfterMutation: EditorSelection | null = selected,
-      focusSelectionAfterMutation = false,
-    ): boolean => {
+    const mutate = (action: (source: string) => string): boolean => {
       try {
-        const applied = context.applySourceMutation((source) => action(source.source), selectionAfterMutation, focusSelectionAfterMutation);
+        const applied = context.applySourceMutation((source) => action(source.source));
         if (applied === false) {
           help.textContent = 'This class edit could not be applied.';
           return false;
@@ -175,7 +155,7 @@ export const classAdapter: DiagramAdapter = {
       if (!current) return;
       if (current.kind === 'node') {
         selectionPanel.append(field(document, 'Class ID', current.id,
-          (id) => mutate((source) => renameClassNode(source, current.id, id), { kind: 'node', diagramType: 'class', id })));
+          (id) => mutate((source) => renameClassNode(source, current.id, id))));
         let members: string[];
         try { members = listClassMembers(context.sourceDocument.source, current.id); }
         catch { members = []; }
@@ -189,24 +169,18 @@ export const classAdapter: DiagramAdapter = {
             (value) => mutate((source) => setClassStyle(source, current.id, property, value))));
         }
         selectionPanel.append(button(document, 'Delete class', 'Delete class', () => {
-          if (mutate((source) => deleteClassNode(source, current.id), null)) setSelected(null);
+          if (mutate((source) => deleteClassNode(source, current.id))) setSelected(null);
         }));
       } else if (current.kind === 'edge') {
         const relation = relationList.find((item) => item.source === current.source && item.target === current.target
           && item.occurrence === (current.occurrence ?? 0));
         if (!relation) return;
         selectionPanel.append(
-          field(document, 'From class', relation.source, (sourceId) => mutate(
-            (source) => setClassRelation(source, relation, { source: sourceId }),
-            { kind: 'edge', diagramType: 'class', source: sourceId, target: relation.target, occurrence: relation.occurrence },
-          )),
-          field(document, 'To class', relation.target, (targetId) => mutate(
-            (source) => setClassRelation(source, relation, { target: targetId }),
-            { kind: 'edge', diagramType: 'class', source: relation.source, target: targetId, occurrence: relation.occurrence },
-          )),
+          field(document, 'From class', relation.source, (sourceId) => mutate((source) => setClassRelation(source, relation, { source: sourceId }))),
+          field(document, 'To class', relation.target, (targetId) => mutate((source) => setClassRelation(source, relation, { target: targetId }))),
           operatorField(document, relation.operator, (operator) => mutate((source) => setClassRelation(source, relation, { operator }))),
           button(document, 'Delete relationship', 'Delete relationship', () => {
-            if (mutate((source) => deleteClassRelation(source, relation), null)) setSelected(null);
+            if (mutate((source) => deleteClassRelation(source, relation))) setSelected(null);
           }),
         );
       }
@@ -225,49 +199,28 @@ export const classAdapter: DiagramAdapter = {
       renderSelection();
     };
 
-    const addClass = (): void => {
-      const source = context.sourceDocument.source;
-      const existing = new Set(listClassIds(source));
-      const nextSource = addClassNode(source);
-      const newId = listClassIds(nextSource).find((id) => !existing.has(id));
-      mutate(() => nextSource, newId ? { kind: 'node', diagramType: 'class', id: newId } : undefined, Boolean(newId));
-    };
-    const connectButton = button(document, 'Connect classes', 'Connect two classes', () => {
+    const addClass = (): void => { mutate((source) => addClassNode(source)); };
+    const connectButton = button(document, connecting ? 'Cancel connection' : 'Connect classes', 'Connect two classes', () => {
       connecting = !connecting;
       connectionStart = undefined;
-      connectionStartGroup?.classList.remove('mve-connect-start');
-      connectionStartGroup = undefined;
       connectButton.textContent = connecting ? 'Cancel connection' : 'Connect classes';
-      connectButton.setAttribute('aria-pressed', String(connecting));
-      help.textContent = connecting ? 'Choose two classes: click a start class, then a target class.' : 'Click a class to edit it. Double-click its name to rename. Choose a relationship, then connect two classes.';
+      help.textContent = connecting ? 'Select two classes to add an association.' : 'Add a class or connect two classes. Double-click a class or relationship to edit it.';
     });
-    connectButton.setAttribute('aria-pressed', 'false');
     palette.append(button(document, '+ Class', 'Add class', addClass),
       paletteOperatorField(document, activeOperator, (operator) => { activeOperator = operator; }), connectButton);
 
-    const selectNode = (id: string, group: Element): void => {
+    const selectNode = (id: string): void => {
       if (connecting) {
         if (!connectionStart) {
           connectionStart = id;
-          connectionStartGroup = group;
-          group.classList.add('mve-connect-start');
-          connectButton.textContent = 'Choose target class…';
-          help.textContent = `Start class: ${id}. Now click the class to connect it to.`;
+          help.textContent = `Select the second class to connect to ${id}.`;
           return;
         }
         const from = connectionStart;
         connectionStart = undefined;
         connecting = false;
-        connectionStartGroup?.classList.remove('mve-connect-start');
-        connectionStartGroup = undefined;
         connectButton.textContent = 'Connect classes';
-        connectButton.setAttribute('aria-pressed', 'false');
-        const source = context.sourceDocument.source;
-        const nextSource = addClassRelation(source, from, id, activeOperator);
-        const matchingRelations = listClassRelations(nextSource).filter((relation) => relation.source === from && relation.target === id);
-        mutate(() => nextSource, {
-          kind: 'edge', diagramType: 'class', source: from, target: id, occurrence: matchingRelations.length - 1,
-        });
+        mutate((source) => addClassRelation(source, from, id, activeOperator));
         return;
       }
       setSelected({ kind: 'node', diagramType: 'class', id });
@@ -278,68 +231,23 @@ export const classAdapter: DiagramAdapter = {
       const group = event.target.closest('g.classGroup, g.class, g.node');
       if (group && svg.contains(group)) {
         const id = nodeIds.get(group);
-        if (id) { selectNode(id, group); return; }
+        if (id) { selectNode(id); return; }
       }
       const edge = event.target.closest('path.relation, path.relationshipLine, .edgePaths path, g.edgePath path, path[id^="L"], path[id^="edge"]');
       const relation = edge ? relationByElement.get(edge) : undefined;
       if (relation) setSelected({ kind: 'edge', diagramType: 'class', source: relation.source, target: relation.target, occurrence: relation.occurrence });
     };
     const doubleClick = (event: Event): void => {
-      if (!(event.target instanceof Element)) return;
-      const group = event.target.closest('g.classGroup, g.class, g.node');
-      if (group && svg.contains(group)) {
-        const id = nodeIds.get(group);
-        if (id) {
-          selectNode(id, group);
-          const input = selectionPanel.querySelector<HTMLInputElement>('[aria-label="Class ID"]');
-          input?.focus();
-          input?.select();
-          return;
-        }
-      }
       click(event);
-      if (selected?.kind === 'edge') {
-        const input = selectionPanel.querySelector<HTMLInputElement>('[aria-label="From class"]');
-        input?.focus();
-        input?.select();
-      }
-    };
-    const keydown = (event: KeyboardEvent): void => {
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      if (!(event.target instanceof Element)) return;
-      const group = event.target.closest('g.classGroup, g.class, g.node');
-      const id = group ? nodeIds.get(group) : undefined;
-      if (!group || !id || !svg.contains(group)) return;
-      event.preventDefault();
-      selectNode(id, group);
+      if (selected?.kind === 'node') renderSelection();
+      if (selected?.kind === 'edge') renderSelection();
     };
     svg.addEventListener('click', click);
     svg.addEventListener('dblclick', doubleClick);
-    svg.addEventListener('keydown', keydown);
-    const initial = context.initialSelection;
-    if (initial?.diagramType === 'class' && initial.kind === 'node'
-      && nodeGroups.some((group) => nodeIds.get(group) === initial.id)) {
-      setSelected(initial);
-      if (context.focusInitialSelection) {
-        const input = selectionPanel.querySelector<HTMLInputElement>('[aria-label="Class ID"]');
-        input?.focus();
-        input?.select();
-      }
-    } else if (initial?.diagramType === 'class' && initial.kind === 'edge'
-      && [...relationByElement.values()].some((relation) => relation.source === initial.source
-        && relation.target === initial.target && relation.occurrence === initial.occurrence)) {
-      setSelected(initial);
-      if (context.focusInitialSelection) {
-        const input = selectionPanel.querySelector<HTMLInputElement>('[aria-label="From class"]');
-        input?.focus();
-        input?.select();
-      }
-    }
 
     return () => {
       svg.removeEventListener('click', click);
       svg.removeEventListener('dblclick', doubleClick);
-      svg.removeEventListener('keydown', keydown);
       toolbar.replaceChildren();
     };
   },
