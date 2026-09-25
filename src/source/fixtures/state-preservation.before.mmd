@@ -1,0 +1,17 @@
+---
+title: State source preservation
+config:
+  theme: neutral
+---
+stateDiagram-v2
+%% Keep StateA mentioned in this comment.
+[*] --> StateA : begin
+state StateA {
+    [*] --> Inner : nested
+    Inner --> Done : finish
+}
+StateA --> StateB : first
+StateA --> StateB : second
+note right of StateB
+    Keep this note as opaque text.
+end note

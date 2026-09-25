@@ -45,6 +45,7 @@ describe('diagram capability classification', () => {
       ['flowchart LR', 'flowchart'],
       ['sequenceDiagram', 'sequence'],
       ['classDiagram', 'class'],
+      ['stateDiagram', 'state'],
       ['stateDiagram-v2', 'state'],
       ['erDiagram', 'er'],
       ['gantt', 'gantt'],

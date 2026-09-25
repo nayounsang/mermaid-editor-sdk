@@ -1,0 +1,17 @@
+---
+title: State source preservation
+config:
+  theme: neutral
+---
+stateDiagram-v2
+%% Keep StateA mentioned in this comment.
+[*] --> Renamed : begin
+state Renamed {
+    [*] --> Inner : nested
+    Inner --> Done : finish
+}
+Renamed --> StateB : first
+Renamed --> StateB : revised
+note right of StateB
+    Keep this note as opaque text.
+end note

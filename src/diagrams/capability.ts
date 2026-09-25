@@ -28,6 +28,7 @@ const knownDiagramTypes: Record<string, DiagramType> = {
   class: 'class',
   classDiagram: 'class',
   'classDiagram-v2': 'class',
+  state: 'state',
   stateDiagram: 'state',
   er: 'er',
   gantt: 'gantt',
