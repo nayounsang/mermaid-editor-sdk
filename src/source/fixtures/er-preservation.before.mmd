@@ -1,0 +1,16 @@
+---
+title: ER source preservation
+---
+%% Keep this comment and metadata in place.
+erDiagram
+    direction LR
+    CUSTOMER {
+        string id PK "primary key"
+        string code FK, UK "lookup value"
+    }
+    ORDER {
+        int id PK
+        string customer_id FK "Customer key"
+    }
+    CUSTOMER ||--o{ ORDER : places
+    CUSTOMER }|..|{ PRODUCT : supplies

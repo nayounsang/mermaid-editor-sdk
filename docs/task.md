@@ -188,7 +188,7 @@ flowchart TD
 - [x] 18 Sequence adapter
 - [x] 19 Class adapter
 - [x] 20 State adapter
-- [ ] 21 ER adapter
+- [x] 21 ER adapter
 - [ ] 22 Gantt adapter
 - [ ] 23 Pie adapter
 - [ ] 24 Journey adapter
