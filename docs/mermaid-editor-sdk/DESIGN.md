@@ -159,3 +159,7 @@ SVG 생성과 현재 선택의 export 데이터 생성은 SDK가 제공할 수 �
 - [package build 및 모듈 구조](../decisions/build-architecture.md)
 
 SDK 구현은 기존 HTML을 불투명 산출물로 내장하지 않는다. Framework 독립 TypeScript source와 version-pinned Mermaid dependency에서 ESM/CJS/IIFE 및 타입 선언을 생성한다. Actual browser CSP 요구와 package license는 각각 task 32와 34에서 생성물 기준으로 검증한다.
+
+## 12. 사용자 화면 와이어프레임
+
+화면 배치, palette 항목, 사용자 조작과 상태 피드백의 기준은 [Mermaid 편집기 UI/UX 와이어프레임](docs/ux-ui/UI-UX-WIREFRAME.md) 및 [다이어그램 팔레트 카탈로그](docs/ux-ui/UI-UX-WIREFRAME.md)를 따른다. 이 문서는 사용자가 보게 될 화면과 동작을 설명하며 SDK props/API, 내부 UI 구현, 파일 저장 방식을 정하지 않는다. SDK 한 인스턴스의 범위는 Mermaid 문자열 하나이며 multi-sheet와 여러 block 선택 UI는 포함하지 않는다.
