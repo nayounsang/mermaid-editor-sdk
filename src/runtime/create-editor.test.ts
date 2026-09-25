@@ -11,6 +11,7 @@ vi.mock('mermaid', () => ({ default: mermaidMock }));
 import { createMermaidVisualEditor } from './create-editor';
 import { createMermaidVisualEditor as createFromPublicEntry } from '../index';
 import { registerDiagramAdapter, type DiagramAdapterContext } from '../diagrams/adapter';
+import { templates } from './diagram-catalog';
 
 describe('createMermaidVisualEditor', () => {
   afterEach(() => vi.useRealTimers());
@@ -166,6 +167,20 @@ describe('createMermaidVisualEditor', () => {
     editor.destroy();
   });
 
+  it('keeps the last valid canvas visible when a later source edit has a syntax error', async () => {
+    const container = document.createElement('div');
+    const editor = createMermaidVisualEditor(container, { value: 'flowchart LR\nA[Valid]' });
+    await vi.waitFor(() => expect(container.querySelector('.mve-preview svg')).not.toBeNull());
+    mermaidMock.parse.mockRejectedValueOnce(new Error('Unexpected token'));
+    const source = container.querySelector<HTMLTextAreaElement>('.mve-source')!;
+    source.value = 'flowchart LR\nA[';
+    source.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.waitFor(() => expect(container.querySelector('.mve-preview-error')).not.toBeNull());
+    expect(container.querySelector('.mve-preview svg')).not.toBeNull();
+    expect(source.value).toBe('flowchart LR\nA[');
+    editor.destroy();
+  });
+
   it('renders a known diagram and mounts sequence editing tools', async () => {
     mermaidMock.render.mockResolvedValueOnce({ svg: '<svg data-rendered="yes"></svg>', diagramType: 'sequence' });
     const container = document.createElement('div');
@@ -199,7 +214,7 @@ describe('createMermaidVisualEditor', () => {
     expect(selections).toEqual([{ kind: 'node', diagramType: 'flowchart', id: 'A' }]);
     expect(container.querySelector('.mve-flowchart-selection')?.hasAttribute('hidden')).toBe(false);
 
-    const label = container.querySelector<HTMLInputElement>('.mve-flowchart-selection input[aria-label="Label"]')!;
+    const label = container.querySelector<HTMLTextAreaElement>('.mve-flowchart-selection textarea[aria-label="Label"]')!;
     label.value = 'Renamed';
     label.dispatchEvent(new Event('change', { bubbles: true }));
 
@@ -316,6 +331,54 @@ describe('createMermaidVisualEditor', () => {
     }
   });
 
+  it('opens the shared edit dialog on canvas double-click and injects adapter fields into it', async () => {
+    vi.useFakeTimers();
+    const container = document.createElement('div');
+    const unregister = registerDiagramAdapter({
+      diagramType: 'flowchart',
+      mount(context) {
+        const fields = document.createElement('div');
+        fields.className = 'mve-test-selection';
+        fields.textContent = 'Node editor fields';
+        const change = document.createElement('button');
+        change.textContent = 'Change node';
+        change.setAttribute('aria-label', 'Change node');
+        change.addEventListener('click', () => {
+          context.applySourceMutation((source) => source.source.replace('Node', 'Changed'));
+        });
+        fields.append(change);
+        context.toolbar.append(fields);
+        context.setSelection({ kind: 'node', diagramType: 'flowchart', id: 'A' });
+        return () => {};
+      },
+    });
+    const editor = createMermaidVisualEditor(container, { value: 'flowchart TD\nA[Node]' });
+    try {
+      await vi.advanceTimersByTimeAsync(120);
+      const dialog = container.querySelector<HTMLDialogElement>('.mve-edit-dialog')!;
+      expect(dialog.hasAttribute('open')).toBe(false);
+      expect(dialog.querySelector('.mve-test-selection')?.parentElement?.classList.contains('mve-edit-fields')).toBe(true);
+      container.querySelector('.mve-preview')!.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      expect(dialog.hasAttribute('open')).toBe(true);
+      expect(dialog.querySelector('h2')?.textContent).toBe('Edit node A');
+      dialog.querySelector<HTMLButtonElement>('[aria-label="Change node"]')?.click();
+      expect(editor.getValue()).toBe('flowchart TD\nA[Node]');
+      expect(dialog.hasAttribute('open')).toBe(true);
+      dialog.querySelector<HTMLButtonElement>('[aria-label="Cancel element editing"]')!.click();
+      expect(editor.getValue()).toBe('flowchart TD\nA[Node]');
+      expect(dialog.hasAttribute('open')).toBe(false);
+      container.querySelector('.mve-preview')!.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      dialog.querySelector<HTMLButtonElement>('[aria-label="Change node"]')?.click();
+      expect(editor.getValue()).toBe('flowchart TD\nA[Node]');
+      dialog.querySelector<HTMLButtonElement>('[aria-label="Apply element changes"]')!.click();
+      expect(editor.getValue()).toBe('flowchart TD\nA[Changed]');
+    } finally {
+      editor.destroy();
+      unregister();
+      vi.useRealTimers();
+    }
+  });
+
   it('keeps the common source and canvas shell available without an adapter', () => {
     const container = document.createElement('div');
     const editor = createMermaidVisualEditor(container, { value: 'A[plain]' });
@@ -324,6 +387,143 @@ describe('createMermaidVisualEditor', () => {
     expect(container.querySelector<HTMLTextAreaElement>('.mve-source-panel textarea')?.value).toBe('A[plain]');
     expect(container.querySelector('.mve-preview[role="region"]')).not.toBeNull();
     expect(container.querySelector('.mve-toolbar[role="toolbar"]')?.hasAttribute('hidden')).toBe(true);
+    editor.destroy();
+  });
+
+  it('keeps the edit dialog open and explains a failed mutation', async () => {
+    vi.useFakeTimers();
+    const container = document.createElement('div');
+    const unregister = registerDiagramAdapter({
+      diagramType: 'flowchart',
+      mount(context) {
+        const fields = document.createElement('div');
+        fields.className = 'mve-test-selection';
+        const input = document.createElement('input');
+        input.addEventListener('change', () => {
+          context.applySourceMutation(() => { throw new Error('Unsupported label syntax'); });
+        });
+        fields.append(input);
+        context.toolbar.append(fields);
+        context.setSelection({ kind: 'node', diagramType: 'flowchart', id: 'A' });
+        return () => {};
+      },
+    });
+    const editor = createMermaidVisualEditor(container, { value: 'flowchart TD\nA[Start]' });
+    try {
+      await vi.advanceTimersByTimeAsync(120);
+      container.querySelector('.mve-preview')!.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      const dialog = container.querySelector<HTMLDialogElement>('.mve-edit-dialog')!;
+      dialog.querySelector<HTMLInputElement>('input')!.value = 'Bad';
+      dialog.querySelector<HTMLButtonElement>('[aria-label="Apply element changes"]')!.click();
+      expect(dialog.hasAttribute('open')).toBe(true);
+      expect(container.querySelector('.mve-status')?.textContent).toBe('Unsupported label syntax');
+      expect(editor.getValue()).toBe('flowchart TD\nA[Start]');
+    } finally {
+      editor.destroy();
+      unregister();
+      vi.useRealTimers();
+    }
+  });
+
+  it('renders the 12 type options and delegates Save to the host with current source', async () => {
+    const container = document.createElement('div');
+    const onSave = vi.fn();
+    const editor = createMermaidVisualEditor(container, { value: templates.flowchart, onSave });
+
+    expect(container.querySelectorAll('.mve-diagram-select option')).toHaveLength(12);
+    container.querySelector<HTMLButtonElement>('[aria-label="Save diagram"]')!.click();
+    await vi.waitFor(() => expect(onSave).toHaveBeenCalledWith(templates.flowchart));
+    expect(container.querySelector('[aria-live="polite"]')?.textContent).toContain('Save request completed');
+    editor.destroy();
+  });
+
+  it('reports rejected host Save requests in the UI and onError callback', async () => {
+    const container = document.createElement('div');
+    const onError = vi.fn();
+    const editor = createMermaidVisualEditor(container, {
+      value: templates.flowchart,
+      onSave: vi.fn().mockRejectedValue(new Error('Disk full')),
+      onError,
+    });
+
+    container.querySelector<HTMLButtonElement>('[aria-label="Save diagram"]')!.click();
+    await vi.waitFor(() => expect(container.querySelector('[aria-live="polite"]')?.textContent).toContain('Disk full'));
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ code: 'save', message: 'Disk full' }));
+    editor.destroy();
+  });
+
+  it('reports an element removal to the host with its selection and updated source', async () => {
+    mermaidMock.render.mockResolvedValueOnce({
+      svg: '<svg><g class="node" id="flowchart-A-0"><rect></rect><g class="nodeLabel">Alpha</g></g></svg>',
+      diagramType: 'flowchart-v2',
+    });
+    const container = document.createElement('div');
+    const onRemove = vi.fn();
+    const editor = createMermaidVisualEditor(container, { value: 'flowchart LR\nA[Alpha]', onRemove });
+    await vi.waitFor(() => expect(container.querySelector('.mve-flowchart-palette')).not.toBeNull());
+    container.querySelector('.mve-preview g.node')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    container.querySelector<HTMLButtonElement>('[aria-label="Delete node"]')!.click();
+    expect(onRemove).toHaveBeenCalledWith(
+      { kind: 'node', diagramType: 'flowchart', id: 'A' },
+      editor.getValue(),
+    );
+    expect(editor.getValue()).not.toContain('A[Alpha]');
+    editor.destroy();
+  });
+
+  it('deletes the element under the pointer with Backspace outside text inputs', async () => {
+    mermaidMock.render.mockResolvedValueOnce({
+      svg: '<svg><g class="node" id="flowchart-A-0"><rect></rect><g class="nodeLabel">Alpha</g></g></svg>',
+      diagramType: 'flowchart-v2',
+    });
+    const container = document.createElement('div');
+    const editor = createMermaidVisualEditor(container, { value: 'flowchart LR\nA[Alpha]' });
+    await vi.waitFor(() => expect(container.querySelector('.mve-preview g.node')).not.toBeNull());
+    const node = container.querySelector('.mve-preview g.node')!;
+    node.dispatchEvent(new MouseEvent('pointermove', { bubbles: true }));
+    node.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
+    expect(editor.getValue()).not.toContain('A[Alpha]');
+    editor.destroy();
+  });
+
+  it('undoes and redoes source changes with editor shortcuts', () => {
+    const container = document.createElement('div');
+    const onChange = vi.fn();
+    const editor = createMermaidVisualEditor(container, { value: 'flowchart LR\nA[Old]', onChange });
+    const source = container.querySelector<HTMLTextAreaElement>('.mve-source')!;
+    source.value = 'flowchart LR\nA[New]';
+    source.dispatchEvent(new Event('input', { bubbles: true }));
+    source.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }));
+    expect(editor.getValue()).toBe('flowchart LR\nA[Old]');
+    source.dispatchEvent(new KeyboardEvent('keydown', { key: 'y', ctrlKey: true, bubbles: true }));
+    expect(editor.getValue()).toBe('flowchart LR\nA[New]');
+    expect(onChange).toHaveBeenCalledTimes(3);
+    editor.destroy();
+  });
+
+  it('confirms diagram replacement, applies the selected starter and notifies both callbacks', () => {
+    const container = document.createElement('div');
+    const onChange = vi.fn();
+    const onReset = vi.fn();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const editor = createMermaidVisualEditor(container, { value: 'flowchart TD\nA[custom]', onChange, onReset });
+    const typeSelect = container.querySelector<HTMLSelectElement>('.mve-diagram-select')!;
+
+    typeSelect.value = 'pie';
+    typeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(editor.getValue()).toBe(templates.pie);
+    expect(onChange).toHaveBeenCalledWith(templates.pie);
+
+    const source = container.querySelector<HTMLTextAreaElement>('.mve-source')!;
+    source.value = 'pie\n"Custom" : 100';
+    source.dispatchEvent(new Event('input', { bubbles: true }));
+    container.querySelector<HTMLButtonElement>('[aria-label="Reset diagram"]')!.click();
+    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(editor.getValue()).toBe(templates.pie);
+    expect(onChange).toHaveBeenLastCalledWith(templates.pie);
+    expect(onReset).toHaveBeenCalledWith(templates.pie);
+    confirm.mockRestore();
     editor.destroy();
   });
 

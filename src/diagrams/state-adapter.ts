@@ -14,6 +14,7 @@ import {
   type StateTransition,
 } from '../source/state-mutations';
 import type { EditorSelection } from '../runtime/types';
+import { installPointerConnections } from './pointer-connections';
 
 function button(document: Document, text: string, label: string, action: () => void): HTMLButtonElement {
   const element = document.createElement('button');
@@ -29,7 +30,7 @@ function field(document: Document, labelText: string, value: string, change: (va
   label.className = 'mve-state-field';
   const caption = document.createElement('span');
   caption.textContent = labelText;
-  const input = document.createElement('input');
+  const input = ['Transition label'].includes(labelText) ? document.createElement('textarea') : document.createElement('input');
   input.value = value;
   input.setAttribute('aria-label', labelText);
   input.addEventListener('change', () => change(input.value));
@@ -111,11 +112,13 @@ export const stateAdapter: DiagramAdapter = {
     edgeGroups.forEach((element, index) => { if (transitions[index]) edgeByElement.set(element, transitions[index]!); });
     let selected: EditorSelection | null = null;
     let connectionStart: string | undefined;
+    let connectionMode: 'normal' | 'start' | 'end' = 'normal';
+    let transitionLabel = '';
     let active = true;
 
-    const mutate = (action: (source: string) => string): boolean => {
+    const mutate = (action: (source: string) => string, removing = false): boolean => {
       try {
-        if (context.applySourceMutation((source) => action(source.source)) === false) {
+        if ((removing ? (context.removeSourceMutation ?? context.applySourceMutation) : context.applySourceMutation)((source) => action(source.source)) === false) {
           help.textContent = 'This state edit could not be applied.';
           return false;
         }
@@ -145,7 +148,7 @@ export const stateAdapter: DiagramAdapter = {
         selectionPanel.append(borderField(document, appearance.borderType,
           (border) => mutate((source) => setStateBorderType(source, current.id, border))));
         selectionPanel.append(button(document, 'Delete state', 'Delete state', () => {
-          if (mutate((source) => deleteState(source, current.id))) setSelected(null);
+          if (mutate((source) => deleteState(source, current.id), true)) setSelected(null);
         }));
       } else if (current.kind === 'edge') {
         const edge = transitions.find((item) => item.source === current.source && item.target === current.target
@@ -160,7 +163,7 @@ export const stateAdapter: DiagramAdapter = {
           field(document, 'To state', edge.target, (target) => mutate((text) => setStateTransition(text, edge, { target }))),
           field(document, 'Transition label', edge.label, (label) => mutate((text) => setStateTransition(text, edge, { label }))),
           button(document, 'Delete transition', 'Delete transition', () => {
-            if (mutate((source) => deleteStateTransition(source, edge))) setSelected(null);
+            if (mutate((source) => deleteStateTransition(source, edge), true)) setSelected(null);
           }),
         );
       }
@@ -172,11 +175,70 @@ export const stateAdapter: DiagramAdapter = {
       renderSelection();
     };
 
-    palette.append(button(document, '+ State', 'Add state', () => mutate((source) => addState(source))));
-    palette.append(button(document, 'Connect states', 'Connect two states', () => {
-      connectionStart = '';
-      help.textContent = 'Select two states to add a transition.';
+    const appendStatement = (source: string, statement: string): string => {
+      const ending = source.includes('\r\n') ? '\r\n' : '\n';
+      return `${source.replace(/(?:\r\n|\r|\n)+$/, '')}${ending}${statement}`;
+    };
+    const freshId = (source: string, prefix: string): string => {
+      const used = new Set(listStateIds(source));
+      let index = 1;
+      while (used.has(`${prefix}${index}`)) index++;
+      return `${prefix}${index}`;
+    };
+    const makeGroup = (title: string): HTMLElement => {
+      const group = document.createElement('section');
+      group.className = 'mve-palette-group';
+      const heading = document.createElement('h3');
+      heading.textContent = title;
+      group.append(heading);
+      palette.append(group);
+      return group;
+    };
+    const addItem = (group: HTMLElement, label: string, icon: string, ariaLabel: string, action: () => void): void => {
+      const item = button(document, label, ariaLabel, action);
+      const symbol = document.createElement('span');
+      symbol.className = 'mve-palette-icon';
+      symbol.textContent = icon;
+      item.append(symbol);
+      item.draggable = true;
+      item.addEventListener('dragstart', (event) => event.dataTransfer?.setData('application/x-mve-state-palette', ariaLabel));
+      group.append(item);
+    };
+    const states = makeGroup('States');
+    addItem(states, 'Simple state', 's', 'Add state', () => mutate((source) => addState(source)));
+    addItem(states, 'Composite', '{}', 'Add composite state', () => mutate((source) => {
+      const id = freshId(source, 'Composite');
+      const ending = source.includes('\r\n') ? '\r\n' : '\n';
+      return appendStatement(source, `state ${id} {${ending}  ${id}Inner${ending}}`);
     }));
+    addItem(states, 'Choice', 'cx', 'Add choice state', () => mutate((source) => {
+      const id = freshId(source, 'Choice');
+      return appendStatement(source, `state ${id} <<choice>>`);
+    }));
+    const transitionGroup = makeGroup('Transitions');
+    const arm = (mode: 'normal' | 'start' | 'end', label = ''): void => {
+      connectionMode = mode;
+      transitionLabel = label;
+      connectionStart = '';
+      help.textContent = mode === 'normal' ? 'Select two states to add a transition.' : 'Select a state to connect.';
+    };
+    addItem(transitionGroup, 'Start → state', '[*]→', 'Add start transition', () => arm('start'));
+    addItem(transitionGroup, 'State → end', '→[*]', 'Add end transition', () => arm('end'));
+    addItem(transitionGroup, 'Transition', '-->', 'Connect two states', () => arm('normal'));
+    addItem(transitionGroup, 'Labeled', '-->:', 'Add labeled transition', () => arm('normal', 'event'));
+    const notes = makeGroup('Notes');
+    addItem(notes, 'Note', 'n', 'Add note', () => mutate((source) => {
+      const next = listStateIds(source).length ? source : addState(source);
+      const id = listStateIds(next)[0]!;
+      return appendStatement(next, `note right of ${id} : Note`);
+    }));
+
+    const connectStates = (from: string, to: string): void => {
+      connectionStart = undefined;
+      connectionMode = 'normal';
+      mutate((source) => addStateTransition(source, from, to, transitionLabel));
+      transitionLabel = '';
+    };
 
     const click = (event: Event): void => {
       const target = event.target;
@@ -186,13 +248,18 @@ export const stateAdapter: DiagramAdapter = {
         const id = nodeIds.get(node);
         if (!id) return;
         if (connectionStart !== undefined) {
+          if (connectionMode === 'start' || connectionMode === 'end') {
+            const statement = connectionMode === 'start' ? `[*] --> ${id}` : `${id} --> [*]`;
+            connectionStart = undefined;
+            connectionMode = 'normal';
+            mutate((source) => appendStatement(source, statement));
+            return;
+          }
           if (connectionStart === '') {
             connectionStart = id;
             help.textContent = `Choose a destination for ${id}.`;
           } else if (connectionStart !== id) {
-            const from = connectionStart;
-            connectionStart = undefined;
-            mutate((source) => addStateTransition(source, from, id));
+            connectStates(connectionStart, id);
           }
           return;
         }
@@ -206,10 +273,39 @@ export const stateAdapter: DiagramAdapter = {
       }
     };
     svg.addEventListener('click', click);
+    const removePointerConnections = installPointerConnections(svg, (target) => {
+      if (!(target instanceof Element)) return undefined;
+      const element = target.closest('g.statediagram-state, g.stateGroup, g.node[id^="state-"], g[id^="state-"]');
+      const id = element && svg.contains(element) ? nodeIds.get(element) : undefined;
+      return id && element ? { id, element } : undefined;
+    }, connectStates, (target) => {
+      if (!(target instanceof Element)) return undefined;
+      const path = target.closest<SVGPathElement>(edgeSelector);
+      const edge = path && svg.contains(path) ? edgeByElement.get(path) : undefined;
+      return path && edge ? {
+        path, source: edge.source, target: edge.target,
+        reconnect: (endpoint: 'source' | 'target', id: string) => {
+          mutate((source) => setStateTransition(source, edge, { [endpoint]: id }));
+        },
+      } : undefined;
+    });
+    const dragOver = (event: DragEvent): void => {
+      if (event.dataTransfer?.types.includes('application/x-mve-state-palette')) event.preventDefault();
+    };
+    const drop = (event: DragEvent): void => {
+      const label = event.dataTransfer?.getData('application/x-mve-state-palette');
+      const item = [...palette.querySelectorAll<HTMLButtonElement>('button')].find((candidate) => candidate.getAttribute('aria-label') === label);
+      if (item) { event.preventDefault(); item.click(); }
+    };
+    svg.addEventListener('dragover', dragOver);
+    svg.addEventListener('drop', drop);
     return () => {
       if (!active) return;
       active = false;
       svg.removeEventListener('click', click);
+      removePointerConnections();
+      svg.removeEventListener('dragover', dragOver);
+      svg.removeEventListener('drop', drop);
       toolbar.replaceChildren();
       selected = null;
       context.setSelection(null);

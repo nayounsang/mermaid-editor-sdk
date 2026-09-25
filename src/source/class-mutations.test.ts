@@ -106,6 +106,7 @@ describe('Class diagram source mutations', () => {
     const styled = setClassStyle(source, 'A', 'fill', '#abcdef');
     expect(styled).toContain('style A fill:#abcdef');
     expect(setClassStyle(styled, 'A', 'fill', '#fedcba')).toContain('style A fill:#fedcba');
+    expect(setClassStyle(styled, 'A', 'stroke-dasharray', '6 4')).toContain('fill:#abcdef,stroke-dasharray:6 4');
   });
 
   it('deletes only a safely recognized class and its relations', () => {

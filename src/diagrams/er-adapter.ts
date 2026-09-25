@@ -19,6 +19,7 @@ import {
   type ERRelationship,
 } from '../source/er-mutations';
 import type { EditorSelection } from '../runtime/types';
+import { installPointerConnections } from './pointer-connections';
 
 const cardinalities: ReadonlyArray<readonly [ERCardinality, string]> = [
   ['one-one', 'One to one  ||--||'],
@@ -42,7 +43,7 @@ function field(document: Document, labelText: string, value: string, change: (va
   label.className = 'mve-er-field';
   const caption = document.createElement('span');
   caption.textContent = labelText;
-  const input = document.createElement('input');
+  const input = ['Relationship label', 'Attribute comment'].includes(labelText) ? document.createElement('textarea') : document.createElement('input');
   input.value = value;
   input.setAttribute('aria-label', labelText);
   input.addEventListener('change', () => change(input.value));
@@ -115,9 +116,9 @@ export const erAdapter: DiagramAdapter = {
     let activeCardinality: ERCardinality = 'one-many';
     let activeIdentifying = true;
 
-    const mutate = (action: (source: string) => string): boolean => {
+    const mutate = (action: (source: string) => string, removing = false): boolean => {
       try {
-        if (context.applySourceMutation((source) => action(source.source)) === false) {
+        if ((removing ? (context.removeSourceMutation ?? context.applySourceMutation) : context.applySourceMutation)((source) => action(source.source)) === false) {
           help.textContent = 'This ER edit could not be applied.';
           return false;
         }
@@ -148,7 +149,7 @@ export const erAdapter: DiagramAdapter = {
         field(document, 'Attribute comment', attribute.comment,
           (comment) => mutate((source) => setERAttribute(source, attribute.entity, attribute, { comment }))),
         button(document, '×', `Delete attribute ${attribute.name}`, () => {
-          mutate((source) => deleteERAttribute(source, attribute.entity, attribute));
+          mutate((source) => deleteERAttribute(source, attribute.entity, attribute), true);
         }),
       );
       return row;
@@ -174,8 +175,11 @@ export const erAdapter: DiagramAdapter = {
             styles[property],
             (value) => mutate((source) => setERStyle(source, current.id, property, value))));
         }
+        selectionPanel.append(selectField(document, 'Border line', styles['stroke-dasharray'],
+          [['', 'Default'], ['0', 'Solid'], ['6 4', 'Dashed'], ['2 3', 'Dotted']],
+          (value) => mutate((source) => setERStyle(source, current.id, 'stroke-dasharray', value))));
         selectionPanel.append(button(document, 'Delete entity', 'Delete entity', () => {
-          if (mutate((source) => deleteEREntity(source, current.id))) setSelected(null);
+          if (mutate((source) => deleteEREntity(source, current.id), true)) setSelected(null);
         }));
       } else if (current.kind === 'edge') {
         const relationship = relationships.find((item) => item.source === current.source && item.target === current.target
@@ -201,16 +205,44 @@ export const erAdapter: DiagramAdapter = {
           field(document, 'Relationship label', relationship.label,
             (label) => mutate((source) => setERRelationship(source, relationship, { label }))),
           button(document, 'Delete relationship', 'Delete relationship', () => {
-            if (mutate((source) => deleteERRelationship(source, relationship))) setSelected(null);
+            if (mutate((source) => deleteERRelationship(source, relationship), true)) setSelected(null);
           }),
         );
       }
     };
 
-    palette.append(button(document, '+ Entity', 'Add entity', () => mutate((source) => addEREntity(source))));
+    const makeGroup = (title: string): HTMLElement => {
+      const group = document.createElement('section');
+      group.className = 'mve-palette-group';
+      const heading = document.createElement('h3');
+      heading.textContent = title;
+      group.append(heading);
+      palette.append(group);
+      return group;
+    };
+    const addItem = (group: HTMLElement, label: string, icon: string, ariaLabel: string, action: () => void): void => {
+      const item = button(document, label, ariaLabel, action);
+      const symbol = document.createElement('span');
+      symbol.className = 'mve-palette-icon';
+      symbol.textContent = icon;
+      item.append(symbol);
+      item.draggable = true;
+      item.addEventListener('dragstart', (event) => event.dataTransfer?.setData('application/x-mve-er-palette', ariaLabel));
+      group.append(item);
+    };
+    const entities = makeGroup('Entity');
+    addItem(entities, 'Entity with fields', '{}', 'Add entity', () => mutate((source) => {
+      const next = addEREntity(source);
+      const added = listEREntityIds(next).find((id) => !listEREntityIds(source).includes(id));
+      return added ? addERAttribute(next, added) : next;
+    }));
+    addItem(entities, 'Empty entity', 'E', 'Add empty entity', () => mutate((source) => addEREntity(source)));
+    const relations = makeGroup('Relations');
     const cardinalityField = selectField(document, 'New relationship cardinality', activeCardinality, cardinalities,
       (value) => { activeCardinality = value; });
-    palette.append(cardinalityField,
+    const legacyControls = document.createElement('div');
+    legacyControls.hidden = true;
+    legacyControls.append(cardinalityField,
       selectField(document, 'New relationship line', 'identifying',
         [['identifying', 'Identifying'], ['non-identifying', 'Non-identifying']],
         (value) => { activeIdentifying = value === 'identifying'; }),
@@ -220,6 +252,25 @@ export const erAdapter: DiagramAdapter = {
         help.textContent = connectionArmed ? 'Select two entities to add a relationship.'
           : 'Select an entity or relationship. Connect entities to add a relationship.';
       }));
+    relations.append(legacyControls);
+    for (const [label, icon, cardinality] of [
+      ['One-to-many', '||..o{', 'one-many'],
+      ['One-to-one', '||..||', 'one-one'],
+      ['Many-to-many', '}o..o{', 'many-many'],
+      ['Zero-or-one', '|o..||', 'zero-one'],
+      ['One-or-many', '||..|{', 'one-or-many'],
+    ] as const) addItem(relations, label, icon, `Use ${label.toLowerCase()} relationship`, () => {
+      activeCardinality = cardinality;
+      connectionArmed = true;
+      connectionStart = undefined;
+      help.textContent = 'Select two entities to add a relationship.';
+    });
+
+    const connectEntities = (from: string, to: string): void => {
+      connectionStart = undefined;
+      connectionArmed = false;
+      mutate((source) => addERRelationship(source, from, to, activeCardinality, 'relates', activeIdentifying));
+    };
 
     const click = (event: Event): void => {
       const target = event.target;
@@ -233,10 +284,7 @@ export const erAdapter: DiagramAdapter = {
             connectionStart = id;
             help.textContent = `Choose a destination for ${id}.`;
           } else if (connectionStart !== id) {
-            const from = connectionStart;
-            connectionStart = undefined;
-            connectionArmed = false;
-            mutate((source) => addERRelationship(source, from, id, activeCardinality, 'relates', activeIdentifying));
+            connectEntities(connectionStart, id);
           }
           return;
         }
@@ -255,8 +303,37 @@ export const erAdapter: DiagramAdapter = {
       }
     };
     svg.addEventListener('click', click);
+    const removePointerConnections = installPointerConnections(svg, (target) => {
+      if (!(target instanceof Element)) return undefined;
+      const element = target.closest('g.node[id*="-entity-"]');
+      const id = element && svg.contains(element) ? nodeIds.get(element) : undefined;
+      return id && element ? { id, element } : undefined;
+    }, connectEntities, (target) => {
+      if (!(target instanceof Element) || !edgeMappingSafe) return undefined;
+      const path = target.closest<SVGPathElement>('path.relationshipLine');
+      const relationship = path && svg.contains(path) ? edgeByElement.get(path) : undefined;
+      return path && relationship ? {
+        path, source: relationship.source, target: relationship.target,
+        reconnect: (endpoint: 'source' | 'target', id: string) => {
+          mutate((source) => setERRelationship(source, relationship, { [endpoint]: id }));
+        },
+      } : undefined;
+    });
+    const dragOver = (event: DragEvent): void => {
+      if (event.dataTransfer?.types.includes('application/x-mve-er-palette')) event.preventDefault();
+    };
+    const drop = (event: DragEvent): void => {
+      const label = event.dataTransfer?.getData('application/x-mve-er-palette');
+      const item = [...palette.querySelectorAll<HTMLButtonElement>('button')].find((candidate) => candidate.getAttribute('aria-label') === label);
+      if (item) { event.preventDefault(); item.click(); }
+    };
+    svg.addEventListener('dragover', dragOver);
+    svg.addEventListener('drop', drop);
     return () => {
       svg.removeEventListener('click', click);
+      removePointerConnections();
+      svg.removeEventListener('dragover', dragOver);
+      svg.removeEventListener('drop', drop);
       toolbar.replaceChildren();
       selected = null;
       context.setSelection(null);

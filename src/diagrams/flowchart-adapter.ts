@@ -44,7 +44,7 @@ function field(document: Document, labelText: string, value: string, change: (va
   label.className = 'mve-flowchart-field';
   const caption = document.createElement('span');
   caption.textContent = labelText;
-  const input = document.createElement('input');
+  const input = ['Label', 'Title'].includes(labelText) ? document.createElement('textarea') : document.createElement('input');
   input.value = value;
   input.setAttribute('aria-label', labelText);
   input.addEventListener('change', () => change(input.value));
@@ -69,6 +69,16 @@ function selectField<T extends string>(document: Document, labelText: string, ch
   select.addEventListener('change', () => change(select.value as T));
   label.append(caption, select);
   return label;
+}
+
+type BorderLine = 'Default' | 'Solid' | 'Dashed' | 'Dotted';
+
+function borderLineFromStyle(value: string): BorderLine {
+  return ({ '0': 'Solid', '6 4': 'Dashed', '2 3': 'Dotted' } as Record<string, BorderLine>)[value] ?? 'Default';
+}
+
+function borderLineStyle(value: Exclude<BorderLine, 'Default'>): '0' | '6 4' | '2 3' {
+  return ({ Solid: '0', Dashed: '6 4', Dotted: '2 3' } as const)[value];
 }
 
 function groupIdElement(element: EventTarget | null, selector: string, svg: SVGSVGElement): Element | null {
@@ -150,7 +160,12 @@ export const flowchartAdapter: DiagramAdapter = {
     let selected: EditorSelection | null = null;
     let connectionStart: string | undefined;
     let activeConnector = '-->';
-    let pointerStart: { id: string; x: number; y: number } | undefined;
+    let activeConnectorLabel = '';
+    let pointerStart: { kind: 'node'; id: string; x: number; y: number }
+      | { kind: 'edge'; edge: FlowchartEdge; endpoint: 'source' | 'target'; x: number; y: number }
+      | undefined;
+    let dragLine: SVGLineElement | undefined;
+    let dropTarget: Element | undefined;
     let disposed = false;
     const injected: SVGGElement[] = [];
     const hoverHandlers: Array<{ group: SVGGElement; enter: () => void; leave: (event: PointerEvent) => void }> = [];
@@ -193,12 +208,12 @@ export const flowchartAdapter: DiagramAdapter = {
     const removeSelected = (): void => {
       if (!selected) return;
       const target = selected;
-      if (target.kind === 'node') context.applySourceMutation((doc) => deleteFlowchartNode(doc.source, target.id));
+      if (target.kind === 'node') (context.removeSourceMutation ?? context.applySourceMutation)((doc) => deleteFlowchartNode(doc.source, target.id));
       else if (target.kind === 'edge') {
         const edge = edgeList.find((candidate) => candidate.source === target.source && candidate.target === target.target
           && candidate.occurrence === (target.occurrence ?? 0));
-        if (edge) context.applySourceMutation((doc) => deleteFlowchartEdge(doc.source, edge));
-      } else context.applySourceMutation((doc) => deleteFlowchartSubgraph(doc.source, target.id));
+        if (edge) (context.removeSourceMutation ?? context.applySourceMutation)((doc) => deleteFlowchartEdge(doc.source, edge));
+      } else (context.removeSourceMutation ?? context.applySourceMutation)((doc) => deleteFlowchartSubgraph(doc.source, target.id));
       setSelected(null);
     };
 
@@ -217,6 +232,10 @@ export const flowchartAdapter: DiagramAdapter = {
             context.applySourceMutation((doc) => setFlowchartNode(doc.source, node.id, { shape }))),
           field(document, 'Fill', getFlowchartElementStyle(context.sourceDocument.source, node.id, 'fill'), (fill) => context.applySourceMutation((doc) => setFlowchartNodeStyle(doc.source, node.id, 'fill', fill))),
           field(document, 'Stroke', getFlowchartElementStyle(context.sourceDocument.source, node.id, 'stroke'), (stroke) => context.applySourceMutation((doc) => setFlowchartNodeStyle(doc.source, node.id, 'stroke', stroke))),
+          selectField(document, 'Border line', ['Default', 'Solid', 'Dashed', 'Dotted'] as const,
+            borderLineFromStyle(getFlowchartElementStyle(context.sourceDocument.source, node.id, 'stroke-dasharray')), (line) => {
+              context.applySourceMutation((doc) => setFlowchartNodeStyle(doc.source, node.id, 'stroke-dasharray', line === 'Default' ? '' : borderLineStyle(line)));
+            }),
           button(document, 'Delete', 'Delete node', removeSelected),
         );
       } else if (current.kind === 'edge') {
@@ -240,6 +259,10 @@ export const flowchartAdapter: DiagramAdapter = {
           field(document, 'Title', graph.title, (title) => context.applySourceMutation((doc) => setFlowchartSubgraph(doc.source, graph.id, { title }))),
           field(document, 'Fill', getFlowchartElementStyle(context.sourceDocument.source, graph.id, 'fill'), (fill) => context.applySourceMutation((doc) => setFlowchartSubgraph(doc.source, graph.id, { fill }))),
           field(document, 'Stroke', getFlowchartElementStyle(context.sourceDocument.source, graph.id, 'stroke'), (stroke) => context.applySourceMutation((doc) => setFlowchartSubgraph(doc.source, graph.id, { stroke }))),
+          selectField(document, 'Border line', ['Default', 'Solid', 'Dashed', 'Dotted'] as const,
+            borderLineFromStyle(getFlowchartElementStyle(context.sourceDocument.source, graph.id, 'stroke-dasharray')), (line) => {
+              context.applySourceMutation((doc) => setFlowchartSubgraph(doc.source, graph.id, { borderType: line.toLowerCase() as 'default' | 'solid' | 'dashed' | 'dotted' }));
+            }),
           button(document, 'Delete', 'Delete subgraph', removeSelected),
         );
       }
@@ -260,8 +283,8 @@ export const flowchartAdapter: DiagramAdapter = {
           : addFlowchartNode(doc.source, id, label, shape);
         return from
           ? targetSubgraph
-            ? addFlowchartEdgeToSubgraph(withNode, targetSubgraph, from, id, activeConnector)
-            : addFlowchartEdge(withNode, from, id, activeConnector)
+            ? addFlowchartEdgeToSubgraph(withNode, targetSubgraph, from, id, activeConnector, activeConnectorLabel)
+            : addFlowchartEdge(withNode, from, id, activeConnector, activeConnectorLabel)
           : withNode;
       });
     };
@@ -270,8 +293,9 @@ export const flowchartAdapter: DiagramAdapter = {
       connectionStart = '';
       help.textContent = `Choose two nodes to connect with ${activeConnector}.`;
     };
-    const armConnector = (operator: string): void => {
+    const armConnector = (operator: string, label = ''): void => {
       activeConnector = operator;
+      activeConnectorLabel = label;
       armConnection();
     };
     const beginPaletteDrag = (element: HTMLButtonElement, kind: string, value: string): void => {
@@ -300,15 +324,14 @@ export const flowchartAdapter: DiagramAdapter = {
       context.applySourceMutation((doc) => addFlowchartSubgraph(doc.source, id, `Group ${id.slice(2)}`));
     });
     beginPaletteDrag(subgraphItem, 'subgraph', '');
-    palette.append(subgraphItem);
     if (safeEdges) {
-      palette.append(button(document, 'Connect nodes', 'Connect two nodes', armConnection));
-      for (const [label, operator] of [['Arrow', '-->'], ['Line', '---'], ['Dotted arrow', '-.->'], ['Thick arrow', '==>']] as const) {
-        const connector = button(document, label, `Use ${label.toLowerCase()} connector`, () => armConnector(operator));
+      for (const [label, operator, edgeLabel] of [['Arrow', '-->', ''], ['Labeled arrow', '-->', 'label'], ['Dashed', '-.->', ''], ['Thick', '==>', '']] as const) {
+        const connector = button(document, label, `Use ${label.toLowerCase()} connector`, () => armConnector(operator, edgeLabel));
         beginPaletteDrag(connector, 'connector', operator);
         palette.append(connector);
       }
     }
+    palette.append(subgraphItem);
 
     const dragOver = (event: DragEvent): void => {
       if (event.dataTransfer?.types.includes('application/x-mve-flowchart-palette')) event.preventDefault();
@@ -354,8 +377,9 @@ export const flowchartAdapter: DiagramAdapter = {
         else if (connectionStart !== nodeId) {
           const from = connectionStart;
           connectionStart = undefined;
-          context.applySourceMutation((doc) => addFlowchartEdge(doc.source, from, nodeId, activeConnector));
+          context.applySourceMutation((doc) => addFlowchartEdge(doc.source, from, nodeId, activeConnector, activeConnectorLabel));
           activeConnector = '-->';
+          activeConnectorLabel = '';
           help.textContent = 'Select a node, edge, or subgraph. Hold Shift or drag between nodes to connect them.';
         }
         event.preventDefault();
@@ -388,17 +412,79 @@ export const flowchartAdapter: DiagramAdapter = {
     const pointerDown = (event: PointerEvent): void => {
       if (event.button !== 0) return;
       const id = eventNodeId(event, svg, nodeIds);
-      pointerStart = id ? { id, x: event.clientX, y: event.clientY } : undefined;
+      if (id) {
+        pointerStart = { kind: 'node', id, x: event.clientX, y: event.clientY };
+        return;
+      }
+      if (!safeEdges) return;
+      const edgeGroup = groupIdElement(event.target, 'g.edgePath', svg);
+      const path = edgeGroup?.querySelector<SVGPathElement>('path');
+      if (!edgeGroup || !path || typeof path.getTotalLength !== 'function') return;
+      const edge = getEdge(edgeGroup, edgeList, [...svg.querySelectorAll('g.edgePath')].indexOf(edgeGroup));
+      if (!edge) return;
+      try {
+        const length = path.getTotalLength();
+        const matrix = path.getScreenCTM();
+        if (!matrix) return;
+        const start = path.getPointAtLength(0).matrixTransform(matrix);
+        const end = path.getPointAtLength(length).matrixTransform(matrix);
+        const startDistance = Math.hypot(start.x - event.clientX, start.y - event.clientY);
+        const endDistance = Math.hypot(end.x - event.clientX, end.y - event.clientY);
+        if (Math.min(startDistance, endDistance) <= 24) pointerStart = {
+          kind: 'edge', edge, endpoint: startDistance < endDistance ? 'source' : 'target',
+          x: event.clientX, y: event.clientY,
+        };
+      } catch { /* Some SVG renderers do not expose path geometry. */ }
+    };
+    const pointerMove = (event: PointerEvent): void => {
+      if (!pointerStart) return;
+      const moved = (event.clientX - pointerStart.x) ** 2 + (event.clientY - pointerStart.y) ** 2 >= 25;
+      if (!moved) return;
+      const matrix = svg.getScreenCTM();
+      if (!matrix || typeof svg.createSVGPoint !== 'function') return;
+      const point = svg.createSVGPoint();
+      const toSvg = (x: number, y: number): SVGPoint => {
+        point.x = x; point.y = y;
+        return point.matrixTransform(matrix.inverse());
+      };
+      const start = toSvg(pointerStart.x, pointerStart.y);
+      const end = toSvg(event.clientX, event.clientY);
+      if (!dragLine) {
+        dragLine = document.createElementNS(SVG_NS, 'line');
+        dragLine.classList.add('mve-connection-preview');
+        svg.append(dragLine);
+      }
+      dragLine.setAttribute('x1', String(start.x));
+      dragLine.setAttribute('y1', String(start.y));
+      dragLine.setAttribute('x2', String(end.x));
+      dragLine.setAttribute('y2', String(end.y));
+      dropTarget?.classList.remove('mve-drop-target');
+      const group = groupIdElement(event.target, 'g.node, g.nodes .node', svg);
+      dropTarget = group && nodeIds.get(group) !== (pointerStart.kind === 'node' ? pointerStart.id : undefined) ? group : undefined;
+      dropTarget?.classList.add('mve-drop-target');
+    };
+    const clearPointer = (): void => {
+      pointerStart = undefined;
+      dragLine?.remove();
+      dragLine = undefined;
+      dropTarget?.classList.remove('mve-drop-target');
+      dropTarget = undefined;
     };
     const pointerUp = (event: PointerEvent): void => {
       const target = eventNodeId(event, svg, nodeIds);
       const moved = pointerStart && (event.clientX - pointerStart.x) ** 2 + (event.clientY - pointerStart.y) ** 2 >= 25;
-      if (pointerStart && moved && target && pointerStart.id !== target && safeEdges) {
-        const from = pointerStart.id;
-        context.applySourceMutation((doc) => addFlowchartEdge(doc.source, from, target, activeConnector));
-        activeConnector = '-->';
+      if (pointerStart && moved && target && safeEdges) {
+        if (pointerStart.kind === 'node' && pointerStart.id !== target) {
+          const from = pointerStart.id;
+          context.applySourceMutation((doc) => addFlowchartEdge(doc.source, from, target, activeConnector, activeConnectorLabel));
+          activeConnector = '-->';
+          activeConnectorLabel = '';
+        } else if (pointerStart.kind === 'edge') {
+          const { edge, endpoint } = pointerStart;
+          if (target !== edge[endpoint]) context.applySourceMutation((doc) => setFlowchartEdge(doc.source, edge, { [endpoint]: target }));
+        }
       }
-      pointerStart = undefined;
+      clearPointer();
     };
     const keyDown = (event: KeyboardEvent): void => {
       if ((event.key === 'Delete' || event.key === 'Backspace') && selected
@@ -495,7 +581,9 @@ export const flowchartAdapter: DiagramAdapter = {
     svg.addEventListener('click', click);
     svg.addEventListener('dblclick', doubleClick);
     svg.addEventListener('pointerdown', pointerDown);
+    svg.addEventListener('pointermove', pointerMove);
     svg.addEventListener('pointerup', pointerUp);
+    svg.addEventListener('pointercancel', clearPointer);
     svg.addEventListener('keydown', keyDown);
     canvas.addEventListener('keydown', keyDown);
     return () => {
@@ -503,7 +591,10 @@ export const flowchartAdapter: DiagramAdapter = {
       svg.removeEventListener('click', click);
       svg.removeEventListener('dblclick', doubleClick);
       svg.removeEventListener('pointerdown', pointerDown);
+      svg.removeEventListener('pointermove', pointerMove);
       svg.removeEventListener('pointerup', pointerUp);
+      svg.removeEventListener('pointercancel', clearPointer);
+      clearPointer();
       svg.removeEventListener('dragover', dragOver);
       svg.removeEventListener('drop', drop);
       svg.removeEventListener('keydown', keyDown);

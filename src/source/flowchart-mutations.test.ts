@@ -10,6 +10,7 @@ import {
   deleteFlowchartEdge,
   deleteFlowchartNode,
   deleteFlowchartSubgraph,
+  getFlowchartElementStyle,
   isFlowchartEdgeIndexingSafe,
   listFlowchartEdges,
   listFlowchartNodes,
@@ -190,6 +191,9 @@ describe('Flowchart source mutations', () => {
 
     expect(nodeStyled).toContain('style A fill:#abc');
     expect(setFlowchartNodeStyle(nodeStyled, 'A', 'stroke', 'red')).toContain('fill:#abc,stroke:red');
+    const bordered = setFlowchartNodeStyle(nodeStyled, 'A', 'stroke-dasharray', '6 4');
+    expect(getFlowchartElementStyle(bordered, 'A', 'stroke-dasharray')).toBe('6 4');
+    expect(setFlowchartNodeStyle(bordered, 'A', 'stroke-dasharray', '')).toBe(nodeStyled);
     expect(edgeStyled).toContain('linkStyle 0 stroke:blue');
   });
 
@@ -202,6 +206,8 @@ describe('Flowchart source mutations', () => {
     expect(setFlowchartSubgraph(added, 'SG1', { id: 'Group', title: 'Renamed', fill: '#eee' }))
       .toContain('subgraph Group[Renamed]');
     expect(setFlowchartSubgraph(added, 'SG1', { fill: '#eee' })).toContain('style SG1 fill:#eee');
+    expect(setFlowchartSubgraph(added, 'SG1', { borderType: 'dotted' })).toContain('style SG1 stroke-dasharray:2 3');
+    expect(setFlowchartSubgraph(setFlowchartSubgraph(added, 'SG1', { borderType: 'dotted' }), 'SG1', { borderType: 'default' })).toBe(added);
     expect(deleteFlowchartSubgraph(added, 'SG1')).toBe(source);
     expect(() => setFlowchartSubgraph(added, 'SG1', { id: 'SG2\nA --> B' })).toThrow(/ID is not supported/i);
   });

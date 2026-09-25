@@ -59,11 +59,22 @@ describe('ER adapter', () => {
     expect(fixture.selection()).toBeNull();
   });
 
+  it('connects entities by dragging between nodes', () => {
+    const fixture = makeContext('erDiagram\nA ||--o{ B : existing\n');
+    const cleanup = erAdapter.mount(fixture.context);
+    fixture.context.svg.querySelector<SVGGElement>('#diagram-id-entity-A-0')!
+      .dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 0, clientY: 0 }));
+    fixture.context.svg.querySelector<SVGGElement>('#diagram-id-entity-B-1')!
+      .dispatchEvent(new MouseEvent('pointerup', { bubbles: true, button: 0, clientX: 10, clientY: 0 }));
+    expect(fixture.getSource()).toContain('A ||--o{ B : relates');
+    cleanup();
+  });
+
   it('adds an entity from the toolbar', () => {
     const fixture = makeContext('erDiagram\nA ||--o{ B : related\n');
     const cleanup = erAdapter.mount(fixture.context);
     fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Add entity"]')!.click();
-    expect(fixture.getSource()).toContain('Entity1 {\n}\n');
+    expect(fixture.getSource()).toContain('Entity1 {\n  string attribute1\n}\n');
     cleanup();
   });
 
@@ -86,7 +97,7 @@ describe('ER adapter', () => {
     const cleanup = erAdapter.mount(fixture.context);
     fixture.context.svg.querySelector<SVGPathElement>('path.relationshipLine')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(fixture.selection()).toEqual({ kind: 'edge', diagramType: 'er', source: 'CUSTOMER', target: 'ORDER', occurrence: 0 });
-    const label = fixture.context.toolbar.querySelector<HTMLInputElement>('[aria-label="Relationship label"]')!;
+    const label = fixture.context.toolbar.querySelector<HTMLTextAreaElement>('[aria-label="Relationship label"]')!;
     label.value = 'owns orders';
     label.dispatchEvent(new Event('change', { bubbles: true }));
     const cardinality = fixture.context.toolbar.querySelector<HTMLSelectElement>('[aria-label="Cardinality"]')!;

@@ -600,23 +600,27 @@ export function deleteFlowchartNode(source: string, id: string): string {
   return /^\s*linkStyle\b/im.test(next) ? reindexLinkStyles(next, removedEdgeIndices) : next;
 }
 
-export function setFlowchartNodeStyle(source: string, id: string, property: 'fill' | 'stroke', value: string): string {
+export function setFlowchartNodeStyle(source: string, id: string, property: 'fill' | 'stroke' | 'stroke-dasharray', value: string): string {
   if (!listFlowchartNodes(source).some((node) => node.id === id)) throw new AmbiguousSourceMutationError(`Node ${id} could not be located safely.`);
   return setStyleDeclaration(source, id, property, value);
 }
 
-function setStyleDeclaration(source: string, id: string, property: 'fill' | 'stroke', value: string): string {
+function setStyleDeclaration(source: string, id: string, property: 'fill' | 'stroke' | 'stroke-dasharray', value: string): string {
   const lines = getLines(source);
   const existing = lines.filter((line) => new RegExp(`^\\s*style\\s+${escapeRegExp(id)}(?:\\s|$)`).test(line.text));
   if (existing.length > 1) throw new AmbiguousSourceMutationError('Node has multiple style declarations.');
-  validateStyleColor(value);
-  if (!existing.length) return appendLines(source, [`style ${id} ${property}:${value}`]);
+  if (property === 'stroke-dasharray') {
+    if (!['', '0', '6 4', '2 3'].includes(value)) throw new AmbiguousSourceMutationError('Border line style is not supported.');
+  } else validateStyleColor(value);
+  if (!existing.length) return value ? appendLines(source, [`style ${id} ${property}:${value}`]) : source;
   const line = existing[0]!;
   const match = /^(\s*style\s+\S+\s+)(.*)$/.exec(line.text)!;
   const props = new Map(match[2]!.split(',').map((part) => part.trim()).filter(Boolean).map((part) => {
     const index = part.indexOf(':'); return [part.slice(0, index).trim(), part.slice(index + 1).trim()];
   }));
-  props.set(property, value);
+  if (value) props.set(property, value);
+  else props.delete(property);
+  if (!props.size) return source.slice(0, line.start) + source.slice(line.fullEnd);
   return source.slice(0, line.start) + `${match[1]}${[...props].map(([key, val]) => `${key}:${val}`).join(',')}` + source.slice(line.end);
 }
 
@@ -624,7 +628,7 @@ function validateStyleColor(value: string): void {
   if (!/^#[\da-f]{3,8}$/i.test(value) && !/^[a-z]+$/i.test(value)) throw new AmbiguousSourceMutationError('Style color is not supported.');
 }
 
-export function getFlowchartElementStyle(source: string, id: string, property: 'fill' | 'stroke'): string {
+export function getFlowchartElementStyle(source: string, id: string, property: 'fill' | 'stroke' | 'stroke-dasharray'): string {
   const matches = getLines(source).filter((line) => new RegExp(`^\\s*style\\s+${escapeRegExp(id)}(?:\\s|$)`).test(line.text));
   if (matches.length !== 1) return '';
   const body = /^\s*style\s+\S+\s+(.*)$/.exec(matches[0]!.text)?.[1] ?? '';
@@ -657,7 +661,7 @@ export function setFlowchartEdgeStyle(source: string, edge: FlowchartEdge, value
   return source.slice(0, existing.start) + updated + source.slice(existing.end);
 }
 
-export function setFlowchartSubgraph(source: string, id: string, update: { id?: string; title?: string; fill?: string; stroke?: string }): string {
+export function setFlowchartSubgraph(source: string, id: string, update: { id?: string; title?: string; fill?: string; stroke?: string; borderType?: 'default' | 'solid' | 'dashed' | 'dotted' }): string {
   const graph = listFlowchartSubgraphs(source).find((candidate) => candidate.id === id);
   if (!graph) throw new AmbiguousSourceMutationError(`Subgraph ${id} could not be located safely.`);
   const nextId = update.id ?? id;
@@ -692,6 +696,9 @@ export function setFlowchartSubgraph(source: string, id: string, update: { id?: 
   let result = replaceSpans(source, edits);
   if (update.fill !== undefined) result = setStyleDeclaration(result, nextId, 'fill', update.fill);
   if (update.stroke !== undefined) result = setStyleDeclaration(result, nextId, 'stroke', update.stroke);
+  if (update.borderType !== undefined) result = setStyleDeclaration(result, nextId, 'stroke-dasharray', {
+    default: '', solid: '0', dashed: '6 4', dotted: '2 3',
+  }[update.borderType]);
   return result;
 }
 

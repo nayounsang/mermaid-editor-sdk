@@ -17,6 +17,7 @@ import {
   type ClassRelationOperator,
 } from '../source/class-mutations';
 import type { EditorSelection } from '../runtime/types';
+import { installPointerConnections } from './pointer-connections';
 
 const relationOperators: readonly ClassRelationOperator[] = [
   '<|--', '--|>', '*--', '--*', 'o--', '--o', '<--', '-->', '<|..', '..|>', '<..', '..>', '--', '..',
@@ -36,7 +37,7 @@ function field(document: Document, labelText: string, value: string, change: (va
   label.className = 'mve-class-field';
   const caption = document.createElement('span');
   caption.textContent = labelText;
-  const input = document.createElement('input');
+  const input = ['Member'].includes(labelText) ? document.createElement('textarea') : document.createElement('input');
   input.value = value;
   input.setAttribute('aria-label', labelText);
   input.addEventListener('change', () => change(input.value));
@@ -63,21 +64,21 @@ function operatorField(document: Document, value: ClassRelationOperator, change:
   return label;
 }
 
-function paletteOperatorField(document: Document, value: ClassRelationOperator, change: (value: ClassRelationOperator) => void): HTMLLabelElement {
+function borderLineField(document: Document, value: string, change: (value: string) => void): HTMLLabelElement {
   const label = document.createElement('label');
   label.className = 'mve-class-field';
   const caption = document.createElement('span');
-  caption.textContent = 'New relationship';
+  caption.textContent = 'Border line';
   const select = document.createElement('select');
-  select.setAttribute('aria-label', 'New relationship');
-  for (const operator of relationOperators) {
+  select.setAttribute('aria-label', 'Border line');
+  for (const [dash, text] of [['', 'Default'], ['0', 'Solid'], ['6 4', 'Dashed'], ['2 3', 'Dotted']]) {
     const option = document.createElement('option');
-    option.value = operator;
-    option.textContent = operator;
-    option.selected = operator === value;
+    option.value = dash!;
+    option.textContent = text!;
+    option.selected = dash === value;
     select.append(option);
   }
-  select.addEventListener('change', () => change(select.value as ClassRelationOperator));
+  select.addEventListener('change', () => change(select.value));
   label.append(caption, select);
   return label;
 }
@@ -116,6 +117,7 @@ export const classAdapter: DiagramAdapter = {
     let connecting = false;
     let connectionStart: string | undefined;
     let activeOperator: ClassRelationOperator = '-->';
+    let activeCardinality: 'one-many' | 'one-one' | undefined;
     const ids = listClassIds(context.sourceDocument.source);
     const nodeGroups = [...svg.querySelectorAll<SVGGElement>('g.classGroup, g.class, g.node')];
     const nodeIds = new Map<Element, string>();
@@ -134,9 +136,9 @@ export const classAdapter: DiagramAdapter = {
     const showError = (error: unknown): void => {
       help.textContent = error instanceof Error ? error.message : 'This class edit could not be applied safely.';
     };
-    const mutate = (action: (source: string) => string): boolean => {
+    const mutate = (action: (source: string) => string, removing = false): boolean => {
       try {
-        const applied = context.applySourceMutation((source) => action(source.source));
+        const applied = (removing ? (context.removeSourceMutation ?? context.applySourceMutation) : context.applySourceMutation)((source) => action(source.source));
         if (applied === false) {
           help.textContent = 'This class edit could not be applied.';
           return false;
@@ -168,8 +170,10 @@ export const classAdapter: DiagramAdapter = {
             getClassStyle(context.sourceDocument.source, current.id, property),
             (value) => mutate((source) => setClassStyle(source, current.id, property, value))));
         }
+        selectionPanel.append(borderLineField(document, getClassStyle(context.sourceDocument.source, current.id, 'stroke-dasharray'),
+          (value) => mutate((source) => setClassStyle(source, current.id, 'stroke-dasharray', value))));
         selectionPanel.append(button(document, 'Delete class', 'Delete class', () => {
-          if (mutate((source) => deleteClassNode(source, current.id))) setSelected(null);
+          if (mutate((source) => deleteClassNode(source, current.id), true)) setSelected(null);
         }));
       } else if (current.kind === 'edge') {
         const relation = relationList.find((item) => item.source === current.source && item.target === current.target
@@ -180,7 +184,7 @@ export const classAdapter: DiagramAdapter = {
           field(document, 'To class', relation.target, (targetId) => mutate((source) => setClassRelation(source, relation, { target: targetId }))),
           operatorField(document, relation.operator, (operator) => mutate((source) => setClassRelation(source, relation, { operator }))),
           button(document, 'Delete relationship', 'Delete relationship', () => {
-            if (mutate((source) => deleteClassRelation(source, relation))) setSelected(null);
+            if (mutate((source) => deleteClassRelation(source, relation), true)) setSelected(null);
           }),
         );
       }
@@ -200,15 +204,70 @@ export const classAdapter: DiagramAdapter = {
     };
 
     const addClass = (): void => { mutate((source) => addClassNode(source)); };
-    const connectButton = button(document, connecting ? 'Cancel connection' : 'Connect classes', 'Connect two classes', () => {
-      connecting = !connecting;
+    const addEmptyClass = (): void => { mutate((source) => {
+      const full = addClassNode(source);
+      return full.replace(/(class\s+Class\d+)\s*\{\s*\}(\s*)$/, '$1$2');
+    }); };
+    const armRelation = (operator: ClassRelationOperator, cardinality?: 'one-many' | 'one-one'): void => {
+      activeOperator = operator;
+      activeCardinality = cardinality;
+      connecting = true;
       connectionStart = undefined;
-      connectButton.textContent = connecting ? 'Cancel connection' : 'Connect classes';
-      help.textContent = connecting ? 'Select two classes to add an association.' : 'Add a class or connect two classes. Double-click a class or relationship to edit it.';
-    });
-    palette.append(button(document, '+ Class', 'Add class', addClass),
-      paletteOperatorField(document, activeOperator, (operator) => { activeOperator = operator; }), connectButton);
+      help.textContent = 'Select two classes to add a relationship.';
+    };
+    const makeGroup = (title: string): HTMLElement => {
+      const group = document.createElement('section');
+      group.className = 'mve-palette-group';
+      const heading = document.createElement('h3');
+      heading.textContent = title;
+      group.append(heading);
+      palette.append(group);
+      return group;
+    };
+    const addItem = (group: HTMLElement, label: string, icon: string, ariaLabel: string, action: () => void): void => {
+      const item = button(document, label, ariaLabel, action);
+      const symbol = document.createElement('span');
+      symbol.className = 'mve-palette-icon';
+      symbol.textContent = icon;
+      item.append(symbol);
+      item.draggable = true;
+      item.addEventListener('dragstart', (event) => {
+        event.dataTransfer?.setData('application/x-mve-class-palette', ariaLabel);
+        if (event.dataTransfer) event.dataTransfer.effectAllowed = 'copy';
+      });
+      group.append(item);
+    };
+    const classes = makeGroup('Class');
+    addItem(classes, 'Class block', 'class', 'Add class', addClass);
+    addItem(classes, 'Empty class', 'cls', 'Add empty class', addEmptyClass);
+    const relations = makeGroup('Relations');
+    for (const [label, icon, operator, ariaLabel] of [
+      ['Inheritance', '<|--', '<|--', 'Use inheritance relation'],
+      ['Composition', '*--', '*--', 'Use composition relation'],
+      ['Aggregation', 'o--', 'o--', 'Use aggregation relation'],
+      ['Association', '-->', '-->', 'Connect two classes'],
+      ['Dependency', '..>', '..>', 'Use dependency relation'],
+      ['Realization', '<|..', '<|..', 'Use realization relation'],
+    ] as const) addItem(relations, label, icon, ariaLabel, () => armRelation(operator));
+    const cardinality = makeGroup('Cardinality');
+    addItem(cardinality, 'One-to-many', '1..*', 'Use one-to-many relation', () => armRelation('-->', 'one-many'));
+    addItem(cardinality, 'One-to-one', '1..1', 'Use one-to-one relation', () => armRelation('-->', 'one-one'));
 
+    const connectRelation = (from: string, to: string): void => {
+      connecting = false;
+      connectionStart = undefined;
+      mutate((source) => {
+          const next = addClassRelation(source, from, to, activeOperator);
+          if (!activeCardinality) return next;
+          const ending = activeCardinality === 'one-many' ? '0..*' : '1';
+          const suffix = `${from} ${activeOperator} ${to}`;
+          const position = next.lastIndexOf(suffix);
+          return position >= 0 && !next.slice(position + suffix.length).trim()
+            ? `${next.slice(0, position)}${from} "1" ${activeOperator} "${ending}" ${to}${next.slice(position + suffix.length)}`
+            : next;
+      });
+      activeCardinality = undefined;
+    };
     const selectNode = (id: string): void => {
       if (connecting) {
         if (!connectionStart) {
@@ -216,11 +275,7 @@ export const classAdapter: DiagramAdapter = {
           help.textContent = `Select the second class to connect to ${id}.`;
           return;
         }
-        const from = connectionStart;
-        connectionStart = undefined;
-        connecting = false;
-        connectButton.textContent = 'Connect classes';
-        mutate((source) => addClassRelation(source, from, id, activeOperator));
+        connectRelation(connectionStart, id);
         return;
       }
       setSelected({ kind: 'node', diagramType: 'class', id });
@@ -244,10 +299,40 @@ export const classAdapter: DiagramAdapter = {
     };
     svg.addEventListener('click', click);
     svg.addEventListener('dblclick', doubleClick);
+    const removePointerConnections = installPointerConnections(svg, (target) => {
+      if (!(target instanceof Element)) return undefined;
+      const element = target.closest('g.classGroup, g.class, g.node');
+      const id = element && svg.contains(element) ? nodeIds.get(element) : undefined;
+      return id && element ? { id, element } : undefined;
+    }, connectRelation, (target) => {
+      if (!(target instanceof Element)) return undefined;
+      const path = target.closest<SVGPathElement>('path.relation, path.relationshipLine, .edgePaths path, g.edgePath path, path[id^="L"], path[id^="edge"]');
+      const relation = path && svg.contains(path) ? relationByElement.get(path) : undefined;
+      return path && relation ? {
+        path, source: relation.source, target: relation.target,
+        reconnect: (endpoint: 'source' | 'target', id: string) => {
+          mutate((source) => setClassRelation(source, relation, { [endpoint]: id }));
+        },
+      } : undefined;
+    });
+    const dragOver = (event: DragEvent): void => {
+      if (event.dataTransfer?.types.includes('application/x-mve-class-palette')) event.preventDefault();
+    };
+    const drop = (event: DragEvent): void => {
+      const label = event.dataTransfer?.getData('application/x-mve-class-palette');
+      if (!label) return;
+      const item = [...palette.querySelectorAll<HTMLButtonElement>('button')].find((candidate) => candidate.getAttribute('aria-label') === label);
+      if (item) { event.preventDefault(); item.click(); }
+    };
+    svg.addEventListener('dragover', dragOver);
+    svg.addEventListener('drop', drop);
 
     return () => {
       svg.removeEventListener('click', click);
       svg.removeEventListener('dblclick', doubleClick);
+      removePointerConnections();
+      svg.removeEventListener('dragover', dragOver);
+      svg.removeEventListener('drop', drop);
       toolbar.replaceChildren();
     };
   },

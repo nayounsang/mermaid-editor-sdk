@@ -371,7 +371,7 @@ export function addClassMember(source: string, classId: string, member = '+opera
   return source.slice(0, block.closeStart) + addition + source.slice(block.closeStart);
 }
 
-export type ClassStyleProperty = 'fill' | 'stroke';
+export type ClassStyleProperty = 'fill' | 'stroke' | 'stroke-dasharray';
 
 function classStyleLine(source: string, id: string): { start: number; end: number; text: string } | undefined {
   const matches: Array<{ start: number; end: number; text: string }> = [];
@@ -396,8 +396,8 @@ export function setClassStyle(source: string, id: string, property: ClassStylePr
   assertClassDiagram(source);
   if (!identifier.test(id)) throw new AmbiguousSourceMutationError('The class ID is invalid.');
   const normalized = color.trim();
-  if (normalized && !/^(?:#[\da-f]{3,8}|[a-z]{1,24})$/i.test(normalized)) {
-    throw new AmbiguousSourceMutationError('Class colors must be a CSS color name or hexadecimal color.');
+  if (normalized && (property === 'stroke-dasharray' ? !/^(?:0|6 4|2 3)$/.test(normalized) : !/^(?:#[\da-f]{3,8}|[a-z]{1,24})$/i.test(normalized))) {
+    throw new AmbiguousSourceMutationError(property === 'stroke-dasharray' ? 'Class border line style is not supported.' : 'Class colors must be a CSS color name or hexadecimal color.');
   }
   const line = classStyleLine(source, id);
   if (!line) return normalized ? appendLine(source, `style ${id} ${property}:${normalized}`) : source;

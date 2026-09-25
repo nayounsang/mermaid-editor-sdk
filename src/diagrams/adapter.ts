@@ -11,6 +11,7 @@ export interface DiagramAdapterContext {
   readonly svg: SVGSVGElement;
   readonly sourceDocument: SourceDocument;
   applySourceMutation(mutate: (source: SourceDocument) => string): boolean | void;
+  removeSourceMutation?(mutate: (source: SourceDocument) => string): boolean | void;
   setSelection(selection: EditorSelection | null): void;
 }
 

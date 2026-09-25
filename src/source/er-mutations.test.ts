@@ -162,8 +162,9 @@ describe('ER source mutations', () => {
 
   it('updates an entity style without replacing unrelated style properties', () => {
     const source = 'erDiagram\nA ||--o{ B : related\nstyle A fill:#fff,stroke:#333\n';
-    expect(getERStyles(source, 'A')).toEqual({ fill: '#fff', stroke: '#333' });
+    expect(getERStyles(source, 'A')).toEqual({ fill: '#fff', stroke: '#333', 'stroke-dasharray': '' });
     expect(setERStyle(source, 'A', 'fill', '#fee')).toContain('style A fill:#fee,stroke:#333');
+    expect(setERStyle(source, 'A', 'stroke-dasharray', '2 3')).toContain('fill:#fff,stroke:#333,stroke-dasharray:2 3');
   });
 
   it('reads function colors without splitting their internal commas', () => {

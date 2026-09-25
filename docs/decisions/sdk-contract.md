@@ -17,7 +17,7 @@ export type EditorSelection =
   | { kind: 'subgraph'; diagramType: 'flowchart'; id: string; title?: string };
 
 export type EditorError = {
-  code: 'parse' | 'render' | 'mutation' | 'destroyed';
+  code: 'parse' | 'render' | 'mutation' | 'save' | 'destroyed';
   message: string;
   cause?: unknown;
 };
@@ -27,6 +27,9 @@ export interface MermaidVisualEditorOptions {
   onChange?: (value: string) => void;
   onSelectionChange?: (selection: EditorSelection | null) => void;
   onError?: (error: EditorError) => void;
+  onSave?: (currentSource: string) => void | Promise<void>;
+  onReset?: (currentSource: string) => void | Promise<void>;
+  onRemove?: (selection: EditorSelection, nextSource: string) => void | Promise<void>;
 }
 
 export interface MermaidVisualEditor {
@@ -54,8 +57,12 @@ Edge selection의 optional `occurrence`는 같은 방향의 source/target 쌍 �
 | 사용자 편집 | textarea 입력이나 지원된 GUI mutation으로 값이 실제 바뀌었을 때 전체 source를 `onChange(value)`로 알린다. 렌더 debounce가 callback 전달을 지연시키지 않는다. 동일 문자열을 다시 만들면 중복 callback은 없다. |
 | `setValue(value)` | string만 허용한다. 현재 값과 다르면 source 및 preview를 갱신한다. 외부 갱신만으로 `onChange`는 호출하지 않는다. 같은 값은 no-op이다. |
 | `getValue()` | 가장 최근 사용자 변경 또는 `setValue`를 반영한 현재 전체 source를 동기 반환한다. preview render 완료를 기다리지 않는다. |
+| Save | `onSave(currentSource)`를 호출한다. 저장 위치 선택과 파일 쓰기는 host가 맡는다. callback의 Promise가 reject되면 상태 문구와 `onError`의 `save` 오류로 알린다. |
+| Reset | 현재 diagram type의 기준 starter로 source를 교체한다. 현재 값이 starter와 다르면 먼저 확인한다. 교체 후 `onChange`를 동기 호출하고 `onReset(newSource)`를 알림 callback으로 호출한다. |
+| 요소 삭제 | 선택된 요소를 삭제해 source가 바뀌면 `onChange` 후 `onRemove(selection, nextSource)`를 호출한다. callback은 host 측 후속 동작을 위한 알림이다. |
 | callback 순서 | source 변경을 instance 내부 상태에 먼저 적용한 뒤 `onChange`를 동기 호출한다. 그 다음 preview render를 예약한다. callback 안에서 `getValue`하면 새 값을 읽는다. |
 | selection | 사용자가 adapter가 인식하는 구조를 선택하면 불변 snapshot을 전달한다. 선택 해제, 현재 구조 삭제 또는 선택을 식별할 수 없는 source 갱신은 `null`을 전달한다. 초기 mount만으로 임의 selection callback을 발생시키지 않는다. |
+| 요소 대화상자 | adapter mutation은 Apply 전까지 초안 source에 누적한다. Apply는 한 번의 source 변경 및 `onChange`로 확정하고, Cancel/Escape는 초안을 버린다. |
 | parse/render 오류 | source는 그대로 유지하고 UI에 오류를 표시한다. `onError`는 현재 source에 대한 오류를 알린다. 다음 입력이나 `setValue`에서 재렌더한다. GUI 미지원은 parse/render error가 아니다. |
 | destroy | idempotent. listener, observer, pending timer/frame 및 instance 참조를 해제하고 SDK-owned root만 제거한다. 이후 public mutator는 `destroyed` 상태 오류를 동기 throw하고 callback은 더 발생하지 않는다. `getValue()`는 마지막 source를 반환해 host cleanup 순서와 무관하게 읽을 수 있다. |
 
@@ -68,7 +75,7 @@ Edge selection의 optional `occurrence`는 같은 방향의 source/target 쌍 �
 
 ## 제외하는 option
 
-Task 03 조사에서 host 주입값 `hasSource`, `sheets`, `activeIdx`, `title`은 VS Code 저장/다중 문서 상태였다. public SDK option으로 옮기지 않는다. Mermaid config 값도 HTML에 고정되어 있었으며, 초기 core API에는 새 renderer options를 임의 추가하지 않는다. Theme/options 요구는 구현 후 별도 근거가 생길 때만 추가 task로 다룬다.
+Task 03 조사에서 host 주입값 `hasSource`, `sheets`, `activeIdx`, `title`은 VS Code 저장/다중 문서 상태였다. public SDK option으로 옮기지 않는다. Save/Reset callback은 host 동작 요청만 전달하며 파일 I/O는 수행하지 않는다. Mermaid config 값도 HTML에 고정되어 있었으며, 초기 core API에는 새 renderer options를 임의 추가하지 않는다. Theme/options 요구는 구현 후 별도 근거가 생길 때만 추가 task로 다룬다.
 
 ## API 결정 이유
 

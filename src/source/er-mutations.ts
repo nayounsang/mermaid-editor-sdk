@@ -496,7 +496,7 @@ export function deleteERRelationship(source: string, relationship: Pick<ERRelati
   return source.slice(0, line.start) + source.slice(line.fullEnd);
 }
 
-export type ERStyleProperty = 'fill' | 'stroke';
+export type ERStyleProperty = 'fill' | 'stroke' | 'stroke-dasharray';
 
 function erStyleLines(source: string, id: string): Array<{ line: SourceLine; prefix: string; values: string }> {
   const result: Array<{ line: SourceLine; prefix: string; values: string }> = [];
@@ -548,7 +548,7 @@ export function getERStyles(source: string, id: string): Readonly<Record<ERStyle
   assertERDiagram(source);
   const line = erStyleLines(source, id)[0];
   const properties = line?.values ? styleProperties(line.values) : new Map<string, string>();
-  return { fill: properties.get('fill') ?? '', stroke: properties.get('stroke') ?? '' };
+  return { fill: properties.get('fill') ?? '', stroke: properties.get('stroke') ?? '', 'stroke-dasharray': properties.get('stroke-dasharray') ?? '' };
 }
 
 export function getERStyle(source: string, id: string, property: ERStyleProperty): string {
@@ -559,7 +559,9 @@ export function setERStyle(source: string, id: string, property: ERStyleProperty
   assertERDiagram(source);
   if (!listEREntityIds(source).includes(id)) throw new AmbiguousSourceMutationError('The entity is missing or ambiguous.');
   const value = color.trim();
-  if (value && !/^(?:#[\da-f]{3,8}|[a-z]{1,24})$/i.test(value)) throw new AmbiguousSourceMutationError('Entity colors must be a CSS color name or hexadecimal color.');
+  if (value && (property === 'stroke-dasharray' ? !/^(?:0|6 4|2 3)$/.test(value) : !/^(?:#[\da-f]{3,8}|[a-z]{1,24})$/i.test(value))) {
+    throw new AmbiguousSourceMutationError(property === 'stroke-dasharray' ? 'Entity border line style is not supported.' : 'Entity colors must be a CSS color name or hexadecimal color.');
+  }
   const existing = erStyleLines(source, id)[0];
   const styles = existing?.values ? styleProperties(existing.values) : new Map<string, string>();
   if (value) styles.set(property, value);

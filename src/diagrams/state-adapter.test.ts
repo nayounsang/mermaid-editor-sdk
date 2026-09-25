@@ -53,6 +53,17 @@ describe('State adapter', () => {
     expect(fixture.context.toolbar.childElementCount).toBe(0);
   });
 
+  it('connects states by dragging between nodes', () => {
+    const fixture = makeContext('stateDiagram-v2\nA --> B\n');
+    const cleanup = stateAdapter.mount(fixture.context);
+    fixture.context.svg.querySelector<SVGGElement>('#state-A-0')!
+      .dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 0, clientY: 0 }));
+    fixture.context.svg.querySelector<SVGGElement>('#state-B-1')!
+      .dispatchEvent(new MouseEvent('pointerup', { bubbles: true, button: 0, clientX: 10, clientY: 0 }));
+    expect(fixture.getSource()).toBe('stateDiagram-v2\nA --> B\nA --> B\n');
+    cleanup();
+  });
+
   it('adds states from the toolbar and reports selection changes', () => {
     const fixture = makeContext('stateDiagram-v2\nA --> B\n');
     const cleanup = stateAdapter.mount(fixture.context);
@@ -62,6 +73,16 @@ describe('State adapter', () => {
     expect(fixture.selection()).toEqual({ kind: 'node', diagramType: 'state', id: 'A' });
     cleanup();
     expect(fixture.selection()).toBeNull();
+  });
+
+  it('exposes the state catalog and adds a composite state', () => {
+    const fixture = makeContext('stateDiagram-v2\nA --> B\n');
+    const cleanup = stateAdapter.mount(fixture.context);
+    expect([...fixture.context.toolbar.querySelectorAll('.mve-palette-group h3')].map((heading) => heading.textContent))
+      .toEqual(['States', 'Transitions', 'Notes']);
+    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Add composite state"]')!.click();
+    expect(fixture.getSource()).toContain('state Composite1 {\n  Composite1Inner\n}');
+    cleanup();
   });
 
   it('keeps state controls available when an existing style contains rgb colors', () => {
@@ -136,7 +157,7 @@ describe('State adapter', () => {
     expect(transitions).toHaveLength(2);
     transitions[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(fixture.selection()).toEqual({ kind: 'edge', diagramType: 'state', source: '상태', target: '완료', occurrence: 0 });
-    const label = fixture.context.toolbar.querySelector<HTMLInputElement>('[aria-label="Transition label"]')!;
+    const label = fixture.context.toolbar.querySelector<HTMLTextAreaElement>('[aria-label="Transition label"]')!;
     label.value = 'revised';
     label.dispatchEvent(new Event('change', { bubbles: true }));
     expect(fixture.getSource()).toBe('stateDiagram-v2\n상태 --> 완료 : revised\nA --> B : second\n');
@@ -151,7 +172,7 @@ describe('State adapter', () => {
     expect(transitions).toHaveLength(2);
     transitions[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(fixture.selection()).toEqual({ kind: 'edge', diagramType: 'state', source: '상태', target: '완료', occurrence: 0 });
-    const label = fixture.context.toolbar.querySelector<HTMLInputElement>('[aria-label="Transition label"]')!;
+    const label = fixture.context.toolbar.querySelector<HTMLTextAreaElement>('[aria-label="Transition label"]')!;
     label.value = 'revised';
     label.dispatchEvent(new Event('change', { bubbles: true }));
     expect(fixture.getSource()).toBe('stateDiagram\n상태 --> 완료 : revised\nA --> B : second\n');
@@ -169,7 +190,7 @@ describe('State adapter', () => {
     const transition = transitionPaths[1];
     transition!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(fixture.selection()).toEqual({ kind: 'edge', diagramType: 'state', source: 'C', target: 'D', occurrence: 0 });
-    const label = fixture.context.toolbar.querySelector<HTMLInputElement>('[aria-label="Transition label"]')!;
+    const label = fixture.context.toolbar.querySelector<HTMLTextAreaElement>('[aria-label="Transition label"]')!;
     label.value = 'revised';
     label.dispatchEvent(new Event('change', { bubbles: true }));
     expect(fixture.getSource()).toContain('C --> D : revised');
@@ -188,7 +209,7 @@ describe('State adapter', () => {
     const transition = transitionPaths[1];
     transition!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(fixture.selection()).toEqual({ kind: 'edge', diagramType: 'state', source: 'C', target: 'D', occurrence: 0 });
-    const label = fixture.context.toolbar.querySelector<HTMLInputElement>('[aria-label="Transition label"]')!;
+    const label = fixture.context.toolbar.querySelector<HTMLTextAreaElement>('[aria-label="Transition label"]')!;
     label.value = 'revised';
     label.dispatchEvent(new Event('change', { bubbles: true }));
     expect(fixture.getSource()).toContain('C --> D : revised');

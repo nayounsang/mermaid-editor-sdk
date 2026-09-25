@@ -30,7 +30,7 @@ describe('Flowchart adapter', () => {
       '<svg><g class="node" data-id="A"></g><g class="node" data-id="B"></g></svg>');
     const cleanup = flowchartAdapter.mount(fixture.context);
 
-    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Connect two nodes"]')!.click();
+    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Use arrow connector"]')!.click();
     fixture.context.svg.querySelector<SVGGElement>('[data-id="A"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     fixture.context.svg.querySelector<SVGGElement>('[data-id="B"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
@@ -49,6 +49,24 @@ describe('Flowchart adapter', () => {
     target.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, button: 0, clientX: 10, clientY: 0 }));
 
     expect(fixture.getSource()).toContain('A --> B');
+    cleanup();
+  });
+
+  it('moves an existing edge endpoint to another node', () => {
+    const fixture = makeContext('flowchart LR\nA[Alpha]\nB[Beta]\nC[Gamma]\nA --> B\n',
+      '<svg><g class="node" data-id="A"></g><g class="node" data-id="B"></g><g class="node" data-id="C"></g><g class="edgePath" id="L-A-B-0"><path></path></g></svg>');
+    const path = fixture.context.svg.querySelector<SVGPathElement>('g.edgePath path')!;
+    Object.defineProperties(path, {
+      getTotalLength: { value: () => 10 },
+      getPointAtLength: { value: (length: number) => ({ x: length, y: 0, matrixTransform() { return this; } }) },
+      getScreenCTM: { value: () => ({}) },
+    });
+    const cleanup = flowchartAdapter.mount(fixture.context);
+    path.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 0, clientY: 0 }));
+    fixture.context.svg.querySelector<SVGGElement>('[data-id="C"]')!
+      .dispatchEvent(new MouseEvent('pointerup', { bubbles: true, button: 0, clientX: 10, clientY: 0 }));
+    expect(fixture.getSource()).toContain('C --> B');
+    expect(fixture.getSource()).not.toContain('A --> B');
     cleanup();
   });
 
@@ -95,15 +113,25 @@ describe('Flowchart adapter', () => {
     const fixture = makeContext('flowchart LR\nA[Alpha]\nB[Beta]\nC[Gamma]\n',
       '<svg><g class="node" data-id="A"></g><g class="node" data-id="B"></g><g class="node" data-id="C"></g></svg>');
     const cleanup = flowchartAdapter.mount(fixture.context);
-    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Use dotted arrow connector"]')!.click();
-    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Connect two nodes"]')!.click();
+    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Use dashed connector"]')!.click();
     fixture.context.svg.querySelector<SVGGElement>('[data-id="A"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     fixture.context.svg.querySelector<SVGGElement>('[data-id="B"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Connect two nodes"]')!.click();
+    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Use arrow connector"]')!.click();
     fixture.context.svg.querySelector<SVGGElement>('[data-id="B"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     fixture.context.svg.querySelector<SVGGElement>('[data-id="C"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(fixture.getSource()).toContain('A -.-> B');
     expect(fixture.getSource()).toContain('B --> C');
+    cleanup();
+  });
+
+  it('adds a labeled arrow from the palette', () => {
+    const fixture = makeContext('flowchart LR\nA[Alpha]\nB[Beta]\n',
+      '<svg><g class="node" data-id="A"></g><g class="node" data-id="B"></g></svg>');
+    const cleanup = flowchartAdapter.mount(fixture.context);
+    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Use labeled arrow connector"]')!.click();
+    fixture.context.svg.querySelector<SVGGElement>('[data-id="A"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.context.svg.querySelector<SVGGElement>('[data-id="B"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(fixture.getSource()).toContain('A -->|label| B');
     cleanup();
   });
 

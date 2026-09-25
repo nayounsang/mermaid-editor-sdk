@@ -69,6 +69,9 @@ interface MermaidVisualEditorOptions {
   onChange?: (value: string) => void
   onSelectionChange?: (selection: EditorSelection | null) => void
   onError?: (error: EditorError) => void
+  onSave?: (currentSource: string) => void | Promise<void>
+  onReset?: (currentSource: string) => void | Promise<void>
+  onRemove?: (selection: EditorSelection, nextSource: string) => void | Promise<void>
 }
 
 interface MermaidVisualEditor {
@@ -94,7 +97,7 @@ function createMermaidVisualEditor(
 - `destroy()` 이후에는 listener와 callback을 정리한다.
 - 파싱 실패 및 GUI 편집 불가 유형은 editor UI에서 서로 다른 상태로 표시한다. GUI 편집 미지원은 파싱 오류로 취급하지 않는다.
 
-`save()` API는 제공하지 않는다. 저장은 host 책임이다. Markdown 문자열 전체, 파일 경로 또는 파일 저장 대화상자는 SDK API에 넣지 않는다.
+파일 저장 API는 제공하지 않는다. `onSave`는 host에 현재 Mermaid source의 저장을 요청하고, `onReset`은 기본 source 적용을 알린다. `onRemove`는 선택 요소 삭제 후 선택 정보와 새 source를 host에 알린다. 파일 쓰기, 파일 경로 또는 저장 대화상자는 host 책임이다.
 
 ## 6. Mermaid source 보존 정책
 

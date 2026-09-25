@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import mermaid from 'mermaid';
 import { SourceDocument } from '../source/source-document';
 import { classAdapter } from './class-adapter';
 import type { DiagramAdapterContext } from './adapter';
@@ -43,6 +44,36 @@ describe('Class adapter', () => {
     relationCleanup();
   });
 
+  it('connects classes by dragging between nodes', () => {
+    const fixture = makeContext('classDiagram\nclass User\nclass Account\n');
+    const cleanup = classAdapter.mount(fixture.context);
+    fixture.context.svg.querySelector<SVGGElement>('#classId-User')!
+      .dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 0, clientY: 0 }));
+    fixture.context.svg.querySelector<SVGGElement>('#classId-Account')!
+      .dispatchEvent(new MouseEvent('pointerup', { bubbles: true, button: 0, clientX: 10, clientY: 0 }));
+    expect(fixture.getSource()).toContain('User --> Account');
+    cleanup();
+  });
+
+  it('moves a class relationship endpoint by dragging near the path end', () => {
+    const fixture = makeContext('classDiagram\nclass User\nclass Account\nclass Admin\nUser --> Account\n');
+    const admin = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    admin.classList.add('classGroup');
+    admin.setAttribute('id', 'classId-Admin');
+    fixture.context.svg.append(admin);
+    const path = fixture.context.svg.querySelector<SVGPathElement>('.relationshipLine')!;
+    Object.defineProperties(path, {
+      getTotalLength: { value: () => 10 },
+      getPointAtLength: { value: (length: number) => ({ x: length, y: 0, matrixTransform() { return this; } }) },
+      getScreenCTM: { value: () => ({}) },
+    });
+    const cleanup = classAdapter.mount(fixture.context);
+    path.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 0, clientY: 0 }));
+    admin.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, button: 0, clientX: 10, clientY: 0 }));
+    expect(fixture.getSource()).toContain('Admin --> Account');
+    cleanup();
+  });
+
   it('adds a class with an editable member block and removes toolbar controls on cleanup', () => {
     const fixture = makeContext('classDiagram\n');
     const cleanup = classAdapter.mount(fixture.context);
@@ -50,6 +81,29 @@ describe('Class adapter', () => {
     expect(fixture.getSource()).toContain('class Class1 {');
     cleanup();
     expect(fixture.context.toolbar.childElementCount).toBe(0);
+  });
+
+  it('offers the catalog relation groups and creates an empty class', () => {
+    const fixture = makeContext('classDiagram\n');
+    const cleanup = classAdapter.mount(fixture.context);
+    expect([...fixture.context.toolbar.querySelectorAll('.mve-palette-group h3')].map((heading) => heading.textContent))
+      .toEqual(['Class', 'Relations', 'Cardinality']);
+    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Add empty class"]')!.click();
+    expect(fixture.getSource()).toContain('class Class1');
+    expect(fixture.getSource()).not.toContain('class Class1 {');
+    cleanup();
+  });
+
+  it('creates a valid one-to-many class relation from the palette', async () => {
+    const fixture = makeContext('classDiagram\nclass User\nclass Account\n');
+    const cleanup = classAdapter.mount(fixture.context);
+    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Use one-to-many relation"]')!.click();
+    fixture.context.svg.querySelector<SVGGElement>('#classId-User')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.context.svg.querySelector<SVGGElement>('#classId-Account')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(fixture.getSource()).toContain('User "1" --> "0..*" Account');
+    mermaid.initialize({ startOnLoad: false });
+    await expect(mermaid.parse(fixture.getSource())).resolves.toBeTruthy();
+    cleanup();
   });
 
   it('keeps selection and reports an unsupported class deletion', () => {

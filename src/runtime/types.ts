@@ -6,7 +6,7 @@ export type EditorSelection =
   | { kind: 'subgraph'; diagramType: 'flowchart'; id: string; title?: string };
 
 export interface EditorError {
-  code: 'parse' | 'render' | 'mutation' | 'destroyed';
+  code: 'parse' | 'render' | 'mutation' | 'save' | 'destroyed';
   message: string;
   cause?: unknown;
 }
@@ -16,6 +16,9 @@ export interface MermaidVisualEditorOptions {
   onChange?: (value: string) => void;
   onSelectionChange?: (selection: EditorSelection | null) => void;
   onError?: (error: EditorError) => void;
+  onSave?: (currentSource: string) => void | Promise<void>;
+  onReset?: (currentSource: string) => void | Promise<void>;
+  onRemove?: (selection: EditorSelection, nextSource: string) => void | Promise<void>;
 }
 
 export interface MermaidVisualEditor {

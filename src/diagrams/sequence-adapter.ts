@@ -54,7 +54,12 @@ export const sequenceAdapter: DiagramAdapter = {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'mve-sequence-item';
-        button.textContent = `+ ${item.label}`;
+        const label = document.createElement('span');
+        label.textContent = item.label;
+        const icon = document.createElement('span');
+        icon.className = 'mve-palette-icon';
+        icon.textContent = item.icon;
+        button.append(label, icon);
         button.setAttribute('aria-label', `Add ${item.label.toLowerCase()}`);
         button.draggable = true;
         button.addEventListener('click', () => {
