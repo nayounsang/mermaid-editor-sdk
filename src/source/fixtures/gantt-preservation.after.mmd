@@ -1,0 +1,12 @@
+---
+config:
+  gantt:
+    topAxis: true
+---
+gantt
+    dateFormat YYYY-MM-DD
+%% keep this source note
+    section Build
+    Compile :compile, 2026-06-01, 2d
+    Test :after compile, 1d
+    Critical task :crit, 3d

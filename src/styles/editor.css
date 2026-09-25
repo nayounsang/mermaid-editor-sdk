@@ -69,6 +69,7 @@
 .mve-state-selection,
 .mve-er-palette,
 .mve-er-selection,
+.mve-gantt-group-items,
 .mve-sequence-group-items {
   align-items: end;
   display: flex;
@@ -81,7 +82,19 @@
   display: contents;
 }
 
+.mve-gantt-group {
+  display: contents;
+}
+
 .mve-sequence-group-title {
+  color: #5f6368;
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.mve-gantt-group-title {
   color: #5f6368;
   flex-basis: 100%;
   font-size: 0.75rem;

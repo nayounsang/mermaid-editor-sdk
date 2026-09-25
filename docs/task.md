@@ -189,7 +189,7 @@ flowchart TD
 - [x] 19 Class adapter
 - [x] 20 State adapter
 - [x] 21 ER adapter
-- [ ] 22 Gantt adapter
+- [x] 22 Gantt adapter
 - [ ] 23 Pie adapter
 - [ ] 24 Journey adapter
 - [ ] 25 Mindmap adapter
