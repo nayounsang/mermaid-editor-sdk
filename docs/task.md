@@ -189,7 +189,7 @@ flowchart TD
 - [x] 26 Gitgraph adapter
 - [x] 27 Timeline adapter
 - [x] 28 Quadrant adapter
-- [ ] 29 typed options와 selection
+- [x] 29 typed options와 selection
 - [ ] 31 Extension consumer 전환
 - [ ] 32 CSP 브라우저 검증
 - [ ] 33 consumer 문서와 예제
