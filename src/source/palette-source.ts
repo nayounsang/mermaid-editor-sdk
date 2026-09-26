@@ -19,7 +19,7 @@ export interface DiagramLine {
 }
 
 /** Return diagram statements without interpreting metadata as diagram content. */
-export function diagramLines(source: string, header: RegExp): DiagramLine[] {
+export function diagramLines(source: string, header: RegExp, options: { accessibilityMetadata?: boolean; lineComment?: RegExp } = {}): DiagramLine[] {
   const result: DiagramLine[] = [];
   let block: 'frontmatter' | 'directive' | 'description' | undefined;
   let firstContent = true;
@@ -41,12 +41,12 @@ export function diagramLines(source: string, header: RegExp): DiagramLine[] {
       if (!trimmed.includes('}%%')) block = 'directive';
       continue;
     }
-    if (trimmed.startsWith('%')) continue;
-    if (/^accDescr\s*\{/.test(trimmed)) {
+    if ((options.lineComment ?? /^(?:%|#)/).test(trimmed)) continue;
+    if (options.accessibilityMetadata !== false && /^accDescr\s*\{/.test(trimmed)) {
       if (!trimmed.includes('}')) block = 'description';
       continue;
     }
-    if (/^acc(?:Title|Descr)\s*:/.test(trimmed)) continue;
+    if (options.accessibilityMetadata !== false && /^acc(?:Title|Descr)\s*:/.test(trimmed)) continue;
     result.push({ text, start: match.index, end: match.index + text.length });
   }
   if (block) throw new AmbiguousSourceMutationError('An unfinished metadata block prevents safe palette insertion.');

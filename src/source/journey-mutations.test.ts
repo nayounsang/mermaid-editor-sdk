@@ -46,6 +46,13 @@ describe('Journey source mutations', () => {
     await mermaid.parse(after);
   });
 
+  it('preserves a hash comment in the diagram body', async () => {
+    const source = 'journey\n# source note\n';
+    const after = addJourneyPaletteItem(source, 'task');
+    expect(after.startsWith(source)).toBe(true);
+    await mermaid.parse(after);
+  });
+
   it('rejects an existing title without changing the source', () => {
     expect(() => addJourneyPaletteItem('journey\ntitle Existing\n', 'title')).toThrow(AmbiguousSourceMutationError);
   });
