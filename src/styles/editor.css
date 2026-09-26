@@ -9,8 +9,8 @@
 .mve-status[data-state='error'] { background: #fff1f1; color: #b42318; }
 .mve-palette-panel { background: #fff; border: 1px solid #e0e1dc; border-radius: 0.8rem; min-width: 0; overflow: auto; padding: 0.8rem; }
 .mve-palette-panel h2 { font-size: 0.85rem; margin: 0 0 0.75rem; }
-.mve-palette-group, .mve-sequence-group, .mve-gantt-group { border-top: 1px solid #e5e9f0; display: block; padding: 0.55rem 0; }
-.mve-palette-group h3, .mve-sequence-group h3, .mve-gantt-group h3 { color: #64748b; font-size: 0.68rem; letter-spacing: 0.06em; margin: 0 0 0.4rem; text-transform: uppercase; }
+.mve-palette-group, .mve-sequence-group, .mve-gantt-group, .mve-pie-group { border-top: 1px solid #e5e9f0; display: block; padding: 0.55rem 0; }
+.mve-palette-group h3, .mve-sequence-group h3, .mve-gantt-group h3, .mve-pie-group h3 { color: #64748b; font-size: 0.68rem; letter-spacing: 0.06em; margin: 0 0 0.4rem; text-transform: uppercase; }
 .mve-palette-item, .mve-palette-panel .mve-toolbar button { background: #fff; border: 1px solid #d8dee8; border-radius: 0.35rem; color: #202124; cursor: pointer; display: flex; font: inherit; gap: 0.5rem; justify-content: space-between; margin: 0.25rem 0; padding: 0.42rem 0.55rem; text-align: left; width: 100%; }
 .mve-palette-item:hover, .mve-palette-item:focus-visible, .mve-palette-panel .mve-toolbar button:hover, .mve-palette-panel .mve-toolbar button:focus-visible { background: #eff6ff; border-color: #93c5fd; outline: 2px solid #dbeafe; }
 .mve-palette-panel .mve-dragging { opacity: 0.48; }
@@ -56,6 +56,7 @@
 .mve-state-selection,
 .mve-er-palette,
 .mve-er-selection,
+.mve-pie-group-items,
 .mve-gantt-group-items,
 .mve-sequence-group-items {
   align-items: end;
@@ -69,6 +70,7 @@
   display: contents;
 }
 
+.mve-pie-group,
 .mve-gantt-group {
   display: contents;
 }
@@ -81,6 +83,7 @@
   margin: 0;
 }
 
+.mve-pie-group-title,
 .mve-gantt-group-title {
   color: #5f6368;
   flex-basis: 100%;
@@ -232,12 +235,14 @@
 .mve-palette-panel .mve-state-palette,
 .mve-palette-panel .mve-er-palette,
 .mve-palette-panel .mve-sequence-group-items,
+.mve-palette-panel .mve-pie-group-items,
 .mve-palette-panel .mve-gantt-group-items {
   display: block;
   width: 100%;
 }
 
 .mve-palette-panel .mve-sequence-group,
+.mve-palette-panel .mve-pie-group,
 .mve-palette-panel .mve-gantt-group { display: block; }
 .mve-palette-panel .mve-toolbar select { font: inherit; max-width: 100%; width: 100%; }
 .mve-palette-panel .mve-toolbar label { display: block; font-size: 0.75rem; margin: 0.35rem 0; }

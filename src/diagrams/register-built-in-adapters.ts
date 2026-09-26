@@ -5,6 +5,7 @@ import { classAdapter } from './class-adapter';
 import { stateAdapter } from './state-adapter';
 import { erAdapter } from './er-adapter';
 import { ganttAdapter } from './gantt-adapter';
+import { pieAdapter } from './pie-adapter';
 
 let unregisterFlowchart: (() => void) | undefined;
 let unregisterSequence: (() => void) | undefined;
@@ -12,6 +13,7 @@ let unregisterClass: (() => void) | undefined;
 let unregisterState: (() => void) | undefined;
 let unregisterER: (() => void) | undefined;
 let unregisterGantt: (() => void) | undefined;
+let unregisterPie: (() => void) | undefined;
 
 export function registerBuiltInAdapters(): void {
   if (!unregisterFlowchart) unregisterFlowchart = registerDiagramAdapter(flowchartAdapter);
@@ -20,4 +22,5 @@ export function registerBuiltInAdapters(): void {
   if (!unregisterState) unregisterState = registerDiagramAdapter(stateAdapter);
   if (!unregisterER) unregisterER = registerDiagramAdapter(erAdapter);
   if (!unregisterGantt) unregisterGantt = registerDiagramAdapter(ganttAdapter);
+  if (!unregisterPie) unregisterPie = registerDiagramAdapter(pieAdapter);
 }
