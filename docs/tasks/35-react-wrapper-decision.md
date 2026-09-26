@@ -20,4 +20,4 @@ core API와 consumer 수요를 확인한 뒤 wrapper 여부를 판단한다.
 
 ## 선행 작업
 
-13, 33
+13

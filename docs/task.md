@@ -59,11 +59,11 @@
 | 29 | [typed options와 selection](tasks/29-options-selection.md) | 03, 04, 06, 13, 16 | 검증된 설정을 typed option에 연결하고 selection callback을 구현한다. |
 | 31 | [Extension consumer 전환](tasks/31-extension-consumer.md) | 13–16, 29 | 기존 Extension의 editor 실행부를 SDK로 바꾸고 block 탐색/저장을 host에 둔다. |
 | 32 | [CSP 브라우저 검증](tasks/32-csp-browser-validation.md) | 10, 13, 16 | browser bundle을 consumer CSP에서 실행해 unsafe-eval 요구를 확인한다. |
-| 34 | [배포 license audit](tasks/34-distribution-license-audit.md) | 05, 10, 33 | 실제 package 산출물의 코드/자산과 제3자 고지를 대조한다. |
-| 35 | [React wrapper 결정](tasks/35-react-wrapper-decision.md) | 13, 33 | core API와 consumer 수요를 확인한 뒤 wrapper 여부를 판단한다. |
-| 36 | [완료 조건 통합 검증](tasks/36-release-validation.md) | 17–29, 31–34 | 설계 완료 조건 1–11을 fixture, browser, Extension, package 결과에 연결한다. |
+| 34 | [배포 license audit](tasks/34-distribution-license-audit.md) | 05, 10 | 실제 package 산출물의 코드/자산과 제3자 고지를 대조한다. |
+| 35 | [React wrapper 결정](tasks/35-react-wrapper-decision.md) | 13 | core API와 consumer 수요를 확인한 뒤 wrapper 여부를 판단한다. |
+| 36 | [완료 조건 통합 검증](tasks/36-release-validation.md) | 17–29, 31, 32, 34 | 설계 완료 조건 1–10과 CSP 브라우저 확인을 fixture, browser, Extension, package 결과에 연결한다. |
 | 37 | [SDK editor UI Storybook](tasks/37-sdk-ui-storybook.md) | — | 사용자가 지정한 Mermaid NG를 바탕으로 SDK 편집 화면의 레이아웃·색·시각 위계를 확인할 정적 UI Storybook을 제공한다. |
-| 33 | [consumer 문서와 예제](tasks/33-consumer-docs.md) | 14, 15, 29, 32 | framework 독립 설치·초기화·동기화·정리 예제를 작성한다. |
+| 33 | [consumer 문서와 예제](tasks/33-consumer-docs.md) | 14, 15, 29, 32, 34–36 | 검증 결과와 최종 API에 맞춰 framework 독립 설치·초기화·동기화·정리 예제를 작성한다. |
 
 ## 병렬 및 조건부 흐름
 
@@ -127,15 +127,12 @@ flowchart TD
   U --> V
   E --> W[34 배포 license audit]
   J --> W
-  V --> W
 
   M --> X{35 React wrapper 수요 확인?}
-  V --> X
   X -->|있음| Y[별도 wrapper 구현 task 정의]
   X -->|없음| Z[framework 독립 core 배포]
   S --> AA[36 완료 조건 통합 검증]
   U --> AA
-  V --> AA
   W --> AA
   T17 --> AA
   T18 --> AA
@@ -149,6 +146,9 @@ flowchart TD
   T26 --> AA
   T27 --> AA
   T28 --> AA
+  W --> V
+  X --> V
+  AA --> V
   AB[37 SDK editor UI Storybook]
 ```
 

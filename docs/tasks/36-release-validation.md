@@ -8,7 +8,7 @@
 
 ## 목적
 
-설계 완료 조건 1–11을 fixture, browser, Extension, package 결과에 연결한다.
+설계 완료 조건 1–10과 조건 11의 CSP 브라우저 확인을 fixture, browser, Extension, package 결과에 연결한다.
 
 ## 산출물과 완료 조건
 
@@ -20,4 +20,4 @@
 
 ## 선행 작업
 
-17–29, 31–34
+17–29, 31, 32, 34
