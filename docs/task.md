@@ -191,7 +191,7 @@ flowchart TD
 - [x] 21 ER adapter
 - [x] 22 Gantt adapter
 - [x] 23 Pie adapter
-- [ ] 24 Journey adapter
+- [x] 24 Journey adapter
 - [ ] 25 Mindmap adapter
 - [ ] 26 Gitgraph adapter
 - [ ] 27 Timeline adapter
