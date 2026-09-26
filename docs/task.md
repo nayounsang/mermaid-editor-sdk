@@ -18,7 +18,6 @@
 | 01–05 | 각각 `docs/research/baseline-source.md`, `support-matrix.md`, `injected-options.md`, `host-bridge.md`, `provenance-license.md` |
 | 06–08 | 각각 `docs/decisions/sdk-contract.md`, `source-fidelity.md`, `build-architecture.md` |
 | 09–29, 31, 37 | 코드 (카드에 테스트·fixture가 명시된 경우 함께 추가) |
-| 30 | 코드. 기능을 구현하지 않기로 하면 `docs/decisions/export-api.md`에 결정 기록 |
 | 32 | `docs/validation/csp-browser.md` 및 필요한 재현 코드 |
 | 33 | `docs/consumer-guide.md` 및 실행 가능한 예제 코드 |
 | 34 | `docs/validation/distribution-license-audit.md` 및 package license notice |
@@ -58,13 +57,12 @@
 | 27 | [Timeline adapter](tasks/27-timeline-adapter.md) | 16 | 기준 구현의 timeline 편집을 옮긴다. |
 | 28 | [Quadrant adapter](tasks/28-quadrant-adapter.md) | 16 | 기준 구현의 quadrant 편집을 옮긴다. |
 | 29 | [typed options와 selection](tasks/29-options-selection.md) | 03, 04, 06, 13, 16 | 검증된 설정을 typed option에 연결하고 selection callback을 구현한다. |
-| 30 | [SVG/export data](tasks/30-svg-export.md) | 06, 13, 16 | host 저장과 분리된 export data API의 필요·범위를 확정하고 합의된 기능을 구현한다. |
 | 31 | [Extension consumer 전환](tasks/31-extension-consumer.md) | 13–16, 29 | 기존 Extension의 editor 실행부를 SDK로 바꾸고 block 탐색/저장을 host에 둔다. |
 | 32 | [CSP 브라우저 검증](tasks/32-csp-browser-validation.md) | 10, 13, 16 | browser bundle을 consumer CSP에서 실행해 unsafe-eval 요구를 확인한다. |
-| 33 | [consumer 문서와 예제](tasks/33-consumer-docs.md) | 14, 15, 29, 30, 32 | framework 독립 설치·초기화·동기화·정리 예제를 작성한다. |
+| 33 | [consumer 문서와 예제](tasks/33-consumer-docs.md) | 14, 15, 29, 32 | framework 독립 설치·초기화·동기화·정리 예제를 작성한다. |
 | 34 | [배포 license audit](tasks/34-distribution-license-audit.md) | 05, 10, 33 | 실제 package 산출물의 코드/자산과 제3자 고지를 대조한다. |
 | 35 | [React wrapper 결정](tasks/35-react-wrapper-decision.md) | 13, 33 | core API와 consumer 수요를 확인한 뒤 wrapper 여부를 판단한다. |
-| 36 | [완료 조건 통합 검증](tasks/36-release-validation.md) | 17–34 | 설계 완료 조건 1–11을 fixture, browser, Extension, package 결과에 연결한다. |
+| 36 | [완료 조건 통합 검증](tasks/36-release-validation.md) | 17–29, 31–34 | 설계 완료 조건 1–11을 fixture, browser, Extension, package 결과에 연결한다. |
 | 37 | [SDK editor UI Storybook](tasks/37-sdk-ui-storybook.md) | — | 사용자가 지정한 Mermaid NG를 바탕으로 SDK 편집 화면의 레이아웃·색·시각 위계를 확인할 정적 UI Storybook을 제공한다. |
 
 ## 병렬 및 조건부 흐름
@@ -117,8 +115,6 @@ flowchart TD
   D --> Q
   M --> Q
   P --> Q
-  M --> R[30 SVG/export data]
-  P --> R
   N --> S[31 Extension consumer]
   O --> S
   Q --> S
@@ -128,7 +124,6 @@ flowchart TD
   P --> U
   Q --> V[33 문서·예제]
   O --> V
-  R --> V
   U --> V
   E --> W[34 배포 license audit]
   J --> W
@@ -154,7 +149,6 @@ flowchart TD
   T26 --> AA
   T27 --> AA
   T28 --> AA
-  R --> AA
   AB[37 SDK editor UI Storybook]
 ```
 
@@ -162,7 +156,6 @@ flowchart TD
 
 - 기준 커밋에 별도 모듈 source/build가 실제로 있으면 08에서 재사용성을 평가한다. 없다면 host-independent HTML 코드를 모듈화하고 Mermaid bundle을 별도 관리한다.
 - source mutation의 보존 범위를 fixture로 증명하지 못하면 12에서 해당 문법의 GUI 변경을 제한한다.
-- export가 consumer 요구에 필요하지 않다고 결정되면 30은 근거가 있는 범위 결정으로 완료한다.
 - CSP에서 unsafe-eval이 필요하면 의존성 원인을 추적한다. 제거가 불가능하면 재현 조건과 consumer 제한을 문서화한다.
 - React wrapper는 수요가 있을 때만 별도 구현 task를 추가한다.
 
@@ -197,7 +190,6 @@ flowchart TD
 - [x] 27 Timeline adapter
 - [x] 28 Quadrant adapter
 - [ ] 29 typed options와 selection
-- [ ] 30 SVG/export data
 - [ ] 31 Extension consumer 전환
 - [ ] 32 CSP 브라우저 검증
 - [ ] 33 consumer 문서와 예제
