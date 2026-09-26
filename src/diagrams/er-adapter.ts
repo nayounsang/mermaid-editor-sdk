@@ -300,7 +300,9 @@ export const erAdapter: DiagramAdapter = {
         }
         if (relationship) setSelected({ kind: 'edge', diagramType: 'er', source: relationship.source,
           target: relationship.target, occurrence: relationship.occurrence });
+        return;
       }
+      setSelected(null);
     };
     svg.addEventListener('click', click);
     const removePointerConnections = installPointerConnections(svg, (target) => {

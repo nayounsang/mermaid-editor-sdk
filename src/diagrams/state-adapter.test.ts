@@ -75,6 +75,16 @@ describe('State adapter', () => {
     expect(fixture.selection()).toBeNull();
   });
 
+  it('reports null when the user clicks the empty canvas to clear a selection', () => {
+    const fixture = makeContext('stateDiagram-v2\nA --> B\n');
+    const cleanup = stateAdapter.mount(fixture.context);
+    fixture.context.svg.querySelector<SVGGElement>('#state-A-0')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(fixture.selection()).toEqual({ kind: 'node', diagramType: 'state', id: 'A' });
+    fixture.context.svg.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(fixture.selection()).toBeNull();
+    cleanup();
+  });
+
   it('exposes the state catalog and adds a composite state', () => {
     const fixture = makeContext('stateDiagram-v2\nA --> B\n');
     const cleanup = stateAdapter.mount(fixture.context);

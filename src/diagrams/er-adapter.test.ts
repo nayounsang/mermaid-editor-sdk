@@ -133,6 +133,16 @@ describe('ER adapter', () => {
     cleanup();
   });
 
+  it('reports null when the user clicks the empty canvas to clear a selection', async () => {
+    const fixture = await makeRenderedContext('erDiagram\nA ||--o{ B : related\n', 'er-clear-selection');
+    const cleanup = erAdapter.mount(fixture.context);
+    fixture.context.svg.querySelector<SVGGElement>('[id$="-entity-A-0"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(fixture.selection()).toEqual({ kind: 'node', diagramType: 'er', id: 'A' });
+    fixture.context.svg.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(fixture.selection()).toBeNull();
+    cleanup();
+  });
+
   it('does not map canonical relationship paths by index when alias cardinality is present', async () => {
     const source = 'erDiagram\nA zero or one optionally to one or many B : alias\nC ||--o{ D : canonical\n';
     const fixture = await makeRenderedContext(source, 'er-alias-cardinality-selection');

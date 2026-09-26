@@ -117,4 +117,14 @@ describe('Class adapter', () => {
     expect(fixture.context.toolbar.querySelector('.mve-class-help')?.textContent).toBe('This class edit could not be applied.');
     cleanup();
   });
+
+  it('reports null when the user clicks the empty canvas to clear a selection', () => {
+    const fixture = makeContext('classDiagram\nclass User\n');
+    const cleanup = classAdapter.mount(fixture.context);
+    fixture.context.svg.querySelector<SVGGElement>('#classId-User')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(fixture.selection()).toEqual({ kind: 'node', diagramType: 'class', id: 'User' });
+    fixture.context.svg.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(fixture.selection()).toBeNull();
+    cleanup();
+  });
 });

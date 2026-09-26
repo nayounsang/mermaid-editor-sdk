@@ -270,7 +270,9 @@ export const stateAdapter: DiagramAdapter = {
       if (path && svg.contains(path)) {
         const edge = edgeByElement.get(path);
         if (edge) setSelected({ kind: 'edge', diagramType: 'state', source: edge.source, target: edge.target, occurrence: edge.occurrence });
+        return;
       }
+      setSelected(null);
     };
     svg.addEventListener('click', click);
     const removePointerConnections = installPointerConnections(svg, (target) => {

@@ -291,6 +291,7 @@ export const classAdapter: DiagramAdapter = {
       const edge = event.target.closest('path.relation, path.relationshipLine, .edgePaths path, g.edgePath path, path[id^="L"], path[id^="edge"]');
       const relation = edge ? relationByElement.get(edge) : undefined;
       if (relation) setSelected({ kind: 'edge', diagramType: 'class', source: relation.source, target: relation.target, occurrence: relation.occurrence });
+      else setSelected(null);
     };
     const doubleClick = (event: Event): void => {
       click(event);
