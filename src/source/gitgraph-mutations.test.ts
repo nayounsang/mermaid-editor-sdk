@@ -63,6 +63,13 @@ describe('Gitgraph source mutations', () => {
     await mermaid.parse(withBranch);
   });
 
+  it('does not treat text inside a tag value as a commit ID field', async () => {
+    const source = 'gitGraph\n    commit id: "release"\n    commit tag: "tag id: release"\n';
+    const after = addGitgraphPaletteItem(source, 'commit-id');
+    expect(after).toContain('commit id: "msg"');
+    await mermaid.parse(after);
+  });
+
   it('uses a configured main branch when inserting checkout', () => {
     const source = '%%{init: {"gitGraph": {"mainBranchName": "trunk"}}}%%\ngitGraph\n';
     expect(addGitgraphPaletteItem(source, 'checkout')).toBe(`${source}    checkout trunk\n`);

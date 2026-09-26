@@ -56,8 +56,22 @@ function parseBranchScalar(value: string): string {
 }
 
 function sourceScalar(source: string, key: string): string | undefined {
-  const match = new RegExp(`\\b${key}\\s*:\\s*("(?:\\\\.|[^"\\\\])*"|'(?:''|[^'])*'|[^\\s,]+)`, 'i').exec(source);
-  return match ? parseBranchScalar(match[1]!) : undefined;
+  let quote: 'single' | 'double' | undefined;
+  for (let index = 0; index < source.length; index++) {
+    const character = source[index]!;
+    if (quote === 'double' && character === '\\') { index++; continue; }
+    if (quote === 'single' && character === "'" && source[index + 1] === "'") { index++; continue; }
+    if (character === '"' && quote !== 'single') { quote = quote === 'double' ? undefined : 'double'; continue; }
+    if (character === "'" && quote !== 'double') { quote = quote === 'single' ? undefined : 'single'; continue; }
+    if (quote || source.slice(index, index + key.length).toLowerCase() !== key.toLowerCase()) continue;
+    const previous = source[index - 1];
+    const next = source[index + key.length];
+    if (previous && /[\w$]/.test(previous) || next && /[\w$]/.test(next)) continue;
+    const field = new RegExp(`^\\s*:\\s*("(?:\\\\.|[^"\\\\])*"|'(?:''|[^'])*'|[^\\s,]+)`, 'i')
+      .exec(source.slice(index + key.length));
+    if (field) return parseBranchScalar(field[1]!);
+  }
+  return undefined;
 }
 
 function configuredMainBranch(source: string): string {

@@ -32,6 +32,11 @@
 - Candidate risks / residual coverage: flow-style YAML의 mainBranchName이나 cherry-pick 등 topology를 안전하게 모델링하지 못하는 source는 상태 의존 삽입을 거부한다. Gitgraph 전용 click/cleanup 테스트가 있고, 공통 drop/lifecycle은 Journey adapter 테스트에서 검증한다.
 - 검토 범위: behavior, security, performance, architecture/naming, test quality, dependency reuse, ecosystem/catalog/registry.
 
+## 후속 수정
+
+- 따옴표로 감싼 tag/message 값 안의 `id:` 텍스트를 실제 commit ID 필드로 오인하지 않도록 source scanner를 보완하고 회귀 테스트를 추가했다. Gitgraph 전용 테스트 25개, 전체 27개 파일의 310개 테스트 및 lint/typecheck/build가 통과했다.
+- 수정분 strict review: P/R/T 모두 No findings. 새 의존성이나 ecosystem 영향은 없다.
+
 ## 결과 저장 위치
 
 코드 및 type별 round-trip 테스트/fixture
