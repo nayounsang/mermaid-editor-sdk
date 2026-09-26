@@ -1,4 +1,4 @@
-import { AmbiguousSourceMutationError } from './source-document';
+import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
 export type GanttPaletteItemId =
   | 'title'
@@ -79,10 +79,6 @@ function assertGantt(source: string): void {
   }
 }
 
-function lineEnding(source: string): string {
-  return /\r\n|\n|\r/.exec(source)?.[0] ?? '\n';
-}
-
 function taskId(source: string): string {
   const used = new Set([...source.matchAll(/\bmveTask(\d+)\b/g)].map((match) => Number(match[1])));
   let index = 1;
@@ -129,7 +125,6 @@ export function addGanttPaletteItem(source: string, itemId: GanttPaletteItemId):
     const previousId = previousTaskId(source);
     snippet = previousId ? `Task name :after ${previousId}, 7d` : item.snippet;
   }
-  const ending = lineEnding(source);
   const line = `${indentation(source)}${snippet}`;
-  return `${source}${/(?:\r\n|\n|\r)$/.test(source) ? '' : ending}${line}${/(?:\r\n|\n|\r)$/.test(source) ? ending : ''}`;
+  return appendSourceLines(source, [line], 'gantt');
 }

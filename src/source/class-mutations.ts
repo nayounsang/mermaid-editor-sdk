@@ -1,4 +1,4 @@
-import { AmbiguousSourceMutationError } from './source-document';
+import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
 export type ClassRelationOperator = '<|--' | '--|>' | '*--' | '--*' | 'o--' | '--o' | '<--' | '-->' | '<..' | '..>' | '<|..' | '..|>' | '--' | '..';
 
@@ -51,8 +51,7 @@ function lineEnding(source: string): string {
 }
 
 function appendLine(source: string, statement: string): string {
-  const ending = lineEnding(source);
-  return `${source}${/(?:\r\n|\n|\r)$/.test(source) ? '' : ending}${statement}${/(?:\r\n|\n|\r)$/.test(source) ? '' : ending}`;
+  return appendSourceLines(source, [statement], 'class');
 }
 
 function scanRelations(source: string): RelationSpan[] {
@@ -340,6 +339,35 @@ export function setClassMember(source: string, classId: string, oldMember: strin
   if (entries.length !== 1) throw new AmbiguousSourceMutationError('The class member is missing or ambiguous.');
   const entry = entries[0]!;
   return source.slice(0, entry.start) + newMember.trim() + source.slice(entry.end);
+}
+
+export function deleteClassMember(source: string, classId: string, member: string): string {
+  assertClassDiagram(source);
+  if (!identifier.test(classId) || !isEditableMember(member.trim())) {
+    throw new AmbiguousSourceMutationError('The class member selection is invalid.');
+  }
+  let ranges: Array<{ start: number; end: number }>;
+  try {
+    const block = findClassBlock(source, classId);
+    const body = source.slice(block.openEnd, block.closeStart);
+    ranges = [...body.matchAll(/[^\r\n]*(?:\r\n|\n|\r|$)/g)]
+      .filter((match) => match[0] && isEditableMember(match[0]!.trim()) && match[0]!.trim() === member.trim())
+      .map((match) => ({ start: block.openEnd + match.index!, end: block.openEnd + match.index! + match[0]!.length }));
+  } catch {
+    const entries = findColonClassMembers(source, classId).filter((entry) => entry.member === member.trim());
+    ranges = entries.map((entry) => {
+      let start = entry.start;
+      while (start > 0 && source[start - 1] !== '\n' && source[start - 1] !== '\r') start--;
+      let end = entry.end;
+      while (end < source.length && source[end] !== '\n' && source[end] !== '\r') end++;
+      if (source.startsWith('\r\n', end)) end += 2;
+      else if (source[end] === '\r' || source[end] === '\n') end++;
+      return { start, end };
+    });
+  }
+  if (ranges.length !== 1) throw new AmbiguousSourceMutationError('The class member is missing or ambiguous.');
+  const range = ranges[0]!;
+  return source.slice(0, range.start) + source.slice(range.end);
 }
 
 export function addClassMember(source: string, classId: string, member = '+operation(): void'): string {

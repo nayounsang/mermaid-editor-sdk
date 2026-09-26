@@ -1,4 +1,5 @@
-import { AmbiguousSourceMutationError } from './source-document';
+import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
+import type { DiagramType } from '../diagrams/capability';
 
 export interface PaletteItem<Id extends string> {
   id: Id;
@@ -56,8 +57,6 @@ export function diagramLines(source: string, header: RegExp, options: { accessib
   return result;
 }
 
-export function appendDiagramLine(source: string, snippet: string, indent = '    '): string {
-  const ending = /\r\n|\n|\r/.exec(source)?.[0] ?? '\n';
-  const terminated = /[\r\n]$/.test(source);
-  return `${source}${terminated ? '' : ending}${indent}${snippet}${terminated ? ending : ''}`;
+export function appendDiagramLine(source: string, snippet: string, indent: string, diagramType: DiagramType): string {
+  return appendSourceLines(source, snippet.split('\n').map((line) => `${indent}${line}`), diagramType);
 }

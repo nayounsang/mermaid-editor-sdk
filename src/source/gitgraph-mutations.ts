@@ -254,5 +254,5 @@ export function addGitgraphPaletteItem(source: string, id: GitgraphPaletteItemId
     }
     snippet = `merge ${branchReference(target)}`;
   }
-  return appendDiagramLine(source, snippet, indent);
+  return appendDiagramLine(source, snippet, indent, 'gitgraph');
 }

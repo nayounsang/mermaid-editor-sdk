@@ -1,4 +1,4 @@
-import { AmbiguousSourceMutationError } from './source-document';
+import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
 export type PiePaletteItemId = 'title' | 'slice';
 
@@ -109,10 +109,6 @@ function scanPie(source: string): PieSource {
   return { slices, hasTitle };
 }
 
-function lineEnding(source: string): string {
-  return /\r\n|\n|\r/.exec(source)?.[0] ?? '\n';
-}
-
 function indentation(source: string): string {
   const first = scanPie(source).slices[0];
   if (!first) return '    ';
@@ -148,8 +144,7 @@ export function listPieSlices(source: string): PieSlice[] {
 }
 
 function appendLine(source: string, line: string): string {
-  const ending = lineEnding(source);
-  return `${source}${/(?:\r\n|\n|\r)$/.test(source) ? '' : ending}${indentation(source)}${line}${/(?:\r\n|\n|\r)$/.test(source) ? ending : ''}`;
+  return appendSourceLines(source, [`${indentation(source)}${line}`], 'pie');
 }
 
 export function addPiePaletteItem(source: string, itemId: PiePaletteItemId): string {

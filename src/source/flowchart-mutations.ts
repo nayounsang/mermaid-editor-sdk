@@ -1,4 +1,4 @@
-import { AmbiguousSourceMutationError } from './source-document';
+import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
 export type FlowchartNodeShape = 'bare' | 'rect' | 'round' | 'diamond' | 'circle' | 'stadium' | 'subroutine' | 'database' | 'hexagon';
 
@@ -320,10 +320,7 @@ function replaceSpans(source: string, edits: Array<{ start: number; end: number;
 function preferredEnding(source: string): string { return /\r\n|\n|\r/.exec(source)?.[0] ?? '\n'; }
 
 function appendLines(source: string, additions: string[]): string {
-  if (!additions.length) return source;
-  const eol = preferredEnding(source);
-  const prefix = source.length === 0 || /(?:\r\n|\n|\r)$/.test(source) ? '' : eol;
-  return source + prefix + additions.join(eol) + (/(?:\r\n|\n|\r)$/.test(source) ? eol : '');
+  return appendSourceLines(source, additions, 'flowchart');
 }
 
 function insertLinesInSubgraph(source: string, id: string, additions: string[]): string {
@@ -636,6 +633,46 @@ export function getFlowchartElementStyle(source: string, id: string, property: '
     .find(([name]) => name === property)?.[1]?.trim() ?? '';
 }
 
+export interface FlowchartStyleIndex {
+  readonly elements: ReadonlyMap<string, Readonly<Record<string, string>>>;
+  readonly edges: ReadonlyMap<number, string>;
+}
+
+export function getFlowchartStyleIndex(source: string): FlowchartStyleIndex {
+  const elements = new Map<string, Readonly<Record<string, string>>>();
+  const duplicateElements = new Set<string>();
+  const edges = new Map<number, string>();
+
+  for (const line of getLines(source)) {
+    const style = /^\s*style\s+(\S+)\s+(.*)$/.exec(line.text);
+    if (style) {
+      const id = style[1]!;
+      if (elements.has(id)) {
+        elements.delete(id);
+        duplicateElements.add(id);
+      } else if (!duplicateElements.has(id)) {
+        elements.set(id, Object.fromEntries(style[2]!.split(',').map((part) => part.trim()).filter(Boolean).map((part) => {
+          const colon = part.indexOf(':');
+          return colon < 0 ? [part, ''] : [part.slice(0, colon).trim(), part.slice(colon + 1).trim()];
+        })));
+      }
+      continue;
+    }
+
+    const linkStyle = /^\s*linkStyle\s+(\d+)\s+(.*)$/.exec(line.text);
+    if (linkStyle) {
+      const index = Number(linkStyle[1]);
+      if (!edges.has(index)) {
+        const stroke = linkStyle[2]!.split(',').map((part) => part.trim()).map((part) => part.split(':', 2))
+          .find(([name]) => name === 'stroke')?.[1]?.trim();
+        if (stroke !== undefined) edges.set(index, stroke);
+      }
+    }
+  }
+
+  return { elements, edges };
+}
+
 export function getFlowchartEdgeStyle(source: string, edge: FlowchartEdge, property: 'stroke'): string {
   const edges = listFlowchartEdges(source);
   const index = edges.findIndex((candidate) => candidate.lineStart === edge.lineStart && candidate.operatorStart === edge.operatorStart);
@@ -648,16 +685,29 @@ export function getFlowchartEdgeStyle(source: string, edge: FlowchartEdge, prope
 
 export function setFlowchartEdgeStyle(source: string, edge: FlowchartEdge, value: string): string {
   if (!isFlowchartEdgeIndexingSafe(source)) throw new AmbiguousSourceMutationError('Edge syntax cannot be indexed safely.');
-  validateStyleColor(value);
+  if (value) validateStyleColor(value);
   const edges = listFlowchartEdges(source);
   const index = edges.findIndex((candidate) => candidate.lineStart === edge.lineStart && candidate.operatorStart === edge.operatorStart);
   if (index < 0) throw new AmbiguousSourceMutationError('The edge statement changed or cannot be located safely.');
   const lines = getLines(source);
   const existing = lines.find((line) => new RegExp(`^\\s*linkStyle\\s+${index}(?:\\s|$)`).test(line.text));
-  if (!existing) return appendLines(source, [`linkStyle ${index} stroke:${value}`]);
-  const updated = /stroke\s*:\s*[^,\s]+/i.test(existing.text)
-    ? existing.text.replace(/stroke\s*:\s*[^,\s]+/i, `stroke:${value}`)
-    : `${existing.text},stroke:${value}`;
+  if (!existing) return value ? appendLines(source, [`linkStyle ${index} stroke:${value}`]) : source;
+  const match = /^(\s*linkStyle\s+\d+\s+)(.*)$/.exec(existing.text);
+  if (!match) throw new AmbiguousSourceMutationError('The edge style cannot be located safely.');
+  const properties = match[2]!.split(',').map((part) => part.trim()).filter(Boolean);
+  const nextProperties: string[] = [];
+  let foundStroke = false;
+  for (const property of properties) {
+    if (!/^stroke\s*:/i.test(property)) {
+      nextProperties.push(property);
+      continue;
+    }
+    if (value && !foundStroke) nextProperties.push(`stroke:${value}`);
+    foundStroke = true;
+  }
+  if (value && !foundStroke) nextProperties.push(`stroke:${value}`);
+  if (!nextProperties.length) return source.slice(0, existing.start) + source.slice(existing.fullEnd);
+  const updated = `${match[1]}${nextProperties.join(',')}`;
   return source.slice(0, existing.start) + updated + source.slice(existing.end);
 }
 

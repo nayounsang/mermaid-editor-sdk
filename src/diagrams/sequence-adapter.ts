@@ -12,7 +12,7 @@ interface SequencePaletteGroup {
   items: readonly SequencePaletteItem[];
 }
 
-const sequencePalette: readonly SequencePaletteGroup[] = [
+export const sequencePalette: readonly SequencePaletteGroup[] = [
   { title: 'Actors', items: [
     { id: 'participant', label: 'Participant', icon: 'p' },
     { id: 'actor', label: 'Actor', icon: 'a' },

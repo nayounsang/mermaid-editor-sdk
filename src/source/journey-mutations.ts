@@ -33,5 +33,5 @@ export function addJourneyPaletteItem(source: string, id: JourneyPaletteItemId):
     snippet = `section ${name}`;
   }
   const indent = /^[\t ]*/.exec(lines[1]?.text ?? '    ')![0];
-  return appendDiagramLine(source, snippet, indent);
+  return appendDiagramLine(source, snippet, indent, 'journey');
 }

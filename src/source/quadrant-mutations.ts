@@ -53,5 +53,5 @@ export function addQuadrantPaletteItem(source: string, id: QuadrantPaletteItemId
 
   const firstBodyLine = lines[1];
   const indent = firstBodyLine ? /^[\t ]*/.exec(firstBodyLine.text)![0] : '    ';
-  return appendDiagramLine(source, snippet, indent);
+  return appendDiagramLine(source, snippet, indent, 'quadrant');
 }

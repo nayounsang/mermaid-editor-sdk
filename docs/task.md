@@ -18,7 +18,7 @@
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | 01–05         | 각각 `docs/research/baseline-source.md`, `support-matrix.md`, `injected-options.md`, `host-bridge.md`, `provenance-license.md` |
 | 06–08         | 각각 `docs/decisions/sdk-contract.md`, `source-fidelity.md`, `build-architecture.md`                                           |
-| 09–29, 31, 37 | 코드 (카드에 테스트·fixture가 명시된 경우 함께 추가)                                                                                           |
+| 09–29, 31, 37–38 | 코드 (카드에 테스트·fixture가 명시된 경우 함께 추가)                                                                                         |
 | 32            | `docs/validation/csp-browser.md` 및 필요한 재현 코드                                                                                 |
 | 34            | `docs/validation/distribution-license-audit.md` 및 package license notice                                                     |
 | 35            | `docs/react-design.md`                                                                                                       |
@@ -68,6 +68,7 @@
 | 35  | [React 전환 사전 설계](tasks/35-react-wrapper-decision.md)          | 13                    | Mermaid source와 diagram model의 양방향 session 및 React UI 구조를 설계한다.               |
 | 36  | [완료 조건 통합 검증](tasks/36-release-validation.md)                 | 17–29, 31, 32, 34     | 설계 완료 조건 1–10과 CSP 브라우저 확인을 fixture, browser, Extension, package 결과에 연결한다.    |
 | 37  | [SDK editor UI Storybook](tasks/37-sdk-ui-storybook.md)       | —                     | 사용자가 지정한 Mermaid NG를 바탕으로 SDK 편집 화면의 레이아웃·색·시각 위계를 확인할 정적 UI Storybook을 제공한다. |
+| 38  | [React migration](tasks/38-react-migration.md) | 35, 37 | 기존 SDK 전체를 React UI와 source/model session 구조로 옮기고 package root를 React editor로 전환한다. |
 | 33  | [consumer 문서와 예제](tasks/33-consumer-docs.md)                  | 14, 15, 29, 32, 34–36 | 검증 결과와 최종 API에 맞춰 framework 독립 설치·초기화·동기화·정리 예제를 작성한다.                        |
 
 
@@ -137,7 +138,7 @@ flowchart TD
   J --> W
 
   M --> X[35 React source·model 및 UI 구조 설계]
-  X --> Y[구현 범위를 별도 React migration task로 정의]
+  X --> Y[38 React migration]
   S --> AA[36 완료 조건 통합 검증]
   U --> AA
   W --> AA
@@ -157,6 +158,7 @@ flowchart TD
   X --> V
   AA --> V
   AB[37 SDK editor UI Storybook]
+  Y[38 React migration]
 ```
 
 
@@ -168,7 +170,7 @@ flowchart TD
 - 기준 커밋에 별도 모듈 source/build가 실제로 있으면 08에서 재사용성을 평가한다. 없다면 host-independent HTML 코드를 모듈화하고 Mermaid bundle을 별도 관리한다.
 - source mutation의 보존 범위를 fixture로 증명하지 못하면 12에서 해당 문법의 GUI 변경을 제한한다.
 - CSP에서 unsafe-eval이 필요하면 의존성 원인을 추적한다. 제거가 불가능하면 재현 조건과 consumer 제한을 문서화한다.
-- React UI 및 source/model 양방향 구조는 task 35 설계에 기록하고 구현은 별도 migration task로 관리한다.
+- React UI 및 source/model 양방향 구조는 task 35 설계를 구현하는 task 38에서 관리한다.
 
 
 
@@ -209,4 +211,5 @@ flowchart TD
 - [x] 35 React 전환 사전 설계
 - [ ] 36 완료 조건 통합 검증
 - [x] 37 SDK editor UI Storybook
+- [ ] 38 React migration
 - [ ] 33 consumer 문서와 예제

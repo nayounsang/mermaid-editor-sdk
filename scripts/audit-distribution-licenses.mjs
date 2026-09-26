@@ -61,7 +61,7 @@ const build = spawnSync('npm', ['run', 'build'], {
   cwd: projectRoot,
   encoding: 'utf8',
   stdio: ['ignore', 'inherit', 'inherit'],
-  env: { ...process.env, KEEP_DIST_SOURCEMAPS: '1' },
+  env: { ...globalThis.process.env, KEEP_DIST_SOURCEMAPS: '1' },
 });
 if (build.error) throw build.error;
 if (build.status !== 0) throw new Error(`npm run build failed with status ${build.status}.`);
@@ -114,7 +114,7 @@ try {
     throw new Error('npm tarball unexpectedly includes JavaScript source maps.');
   }
   const unexpectedTopLevel = [...new Set(archiveEntries.map((entry) => entry.split('/')[1]).filter(Boolean))]
-    .filter((entry) => !['LICENSE', 'THIRD-PARTY-LICENSES', 'dist', 'package.json'].includes(entry));
+    .filter((entry) => !['LICENSE', 'README.md', 'THIRD-PARTY-LICENSES', 'dist', 'package.json'].includes(entry));
   if (unexpectedTopLevel.length) {
     throw new Error(`npm tarball contains files outside package.json files boundary: ${unexpectedTopLevel.join(', ')}.`);
   }
@@ -128,7 +128,7 @@ try {
 
   const archiveBytes = fs.readFileSync(archivePath);
   const digest = crypto.createHash('sha256').update(archiveBytes).digest('hex');
-  console.log(JSON.stringify({
+  globalThis.console.log(JSON.stringify({
     sourceMaps: mapFiles.length,
     bundledModuleSources: vendorSources.size,
     sdkModuleSources: localSources.size,

@@ -1,4 +1,4 @@
-import { AmbiguousSourceMutationError } from './source-document';
+import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
 export type ERCardinality = 'one-one' | 'one-many' | 'many-many' | 'zero-one' | 'one-or-many';
 export type ERKey = string;
@@ -247,8 +247,7 @@ function styleLines(source: string, id: string): Array<{ line: SourceLine; token
 function lineEnding(source: string): string { return /\r\n|\n|\r/.exec(source)?.[0] ?? '\n'; }
 
 function appendLine(source: string, value: string): string {
-  const ending = lineEnding(source);
-  return `${source}${/(?:\r\n|\n|\r)$/.test(source) ? '' : ending}${value}${/(?:\r\n|\n|\r)$/.test(source) ? ending : ''}`;
+  return appendSourceLines(source, [value], 'er');
 }
 
 function cardinalityTokens(cardinality: ERCardinality): string {

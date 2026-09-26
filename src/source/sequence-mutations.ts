@@ -1,4 +1,4 @@
-import { AmbiguousSourceMutationError } from './source-document';
+import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
 export type SequencePaletteItemId =
   | 'participant'
@@ -28,11 +28,6 @@ const sequencePaletteSnippets: Record<SequencePaletteItemId, string> = {
   opt: 'opt if condition\n    \nend',
   parallel: 'par task one\n    \nand task two\n    \nend',
 };
-
-function getLineEnding(source: string): string {
-  const firstEnding = /\r\n|\n|\r/.exec(source)?.[0];
-  return firstEnding ?? '\n';
-}
 
 function listDeclaredParticipants(source: string): string[] {
   const participants = new Set<string>();
@@ -139,11 +134,5 @@ export function addSequencePaletteItem(source: string, item: SequencePaletteItem
   }
 
   const snippet = getSnippet(source, item);
-  const lineEnding = getLineEnding(source);
-  const hasTrailingLineEnding = /(?:\r\n|\n|\r)$/.test(source);
-  const separator = hasTrailingLineEnding ? '' : lineEnding;
-  const suffix = hasTrailingLineEnding ? lineEnding : '';
-  const indentedSnippet = snippet.split('\n').join(`${lineEnding}    `);
-
-  return `${source}${separator}    ${indentedSnippet}${suffix}`;
+  return appendSourceLines(source, snippet.split('\n').map((line) => `    ${line}`), 'sequence');
 }

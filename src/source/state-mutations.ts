@@ -1,4 +1,4 @@
-import { AmbiguousSourceMutationError } from './source-document';
+import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
 export interface StateTransition {
   source: string;
@@ -292,8 +292,7 @@ function stateReferencePattern(id: string, global = false): RegExp {
 function lineEnding(source: string): string { return /\r\n|\n|\r/.exec(source)?.[0] ?? '\n'; }
 
 function appendLine(source: string, line: string): string {
-  const ending = lineEnding(source);
-  return `${source}${/(?:\r\n|\n|\r)$/.test(source) ? '' : ending}${line}${/(?:\r\n|\n|\r)$/.test(source) ? ending : ''}`;
+  return appendSourceLines(source, [line], 'state');
 }
 
 export function listStateIds(source: string): string[] {
@@ -319,6 +318,35 @@ export function addState(source: string, requestedId?: string): string {
     throw new AmbiguousSourceMutationError('The state ID is invalid or already present.');
   }
   return appendLine(source, `state ${id}`);
+}
+
+export type StatePaletteItemId = 'simple' | 'composite' | 'choice' | 'note' | 'start-transition' | 'end-transition';
+
+export function addStatePaletteItem(source: string, item: StatePaletteItemId, stateId?: string, label = ''): string {
+  diagramBody(source);
+  if (item === 'simple') return addState(source);
+  if (item === 'composite' || item === 'choice') {
+    const used = new Set(listStateIds(source));
+    const prefix = item === 'composite' ? 'Composite' : 'Choice';
+    let index = 1;
+    while (used.has(`${prefix}${index}`)) index++;
+    const id = `${prefix}${index}`;
+    if (item === 'choice') return appendLine(source, `state ${id} <<choice>>`);
+    const ending = lineEnding(source);
+    return appendLine(source, `state ${id} {${ending}  ${id}Inner${ending}}`);
+  }
+  if (item === 'note') {
+    const withState = listStateIds(source).length ? source : addState(source);
+    const id = listStateIds(withState)[0];
+    if (!id) throw new AmbiguousSourceMutationError('A note requires a state to attach to.');
+    return appendLine(withState, `note right of ${id} : ${label.trim() || 'Note'}`);
+  }
+  if (!stateId || !listStateIds(source).includes(stateId)) {
+    throw new AmbiguousSourceMutationError('A start or end transition requires an existing state.');
+  }
+  if (/[\r\n]/.test(label)) throw new AmbiguousSourceMutationError('A transition label must fit on one source line.');
+  const transition = item === 'start-transition' ? `[*] --> ${stateId}` : `${stateId} --> [*]`;
+  return appendLine(source, `${transition}${label.trim() ? ` : ${label.trim()}` : ''}`);
 }
 
 export function renameState(source: string, oldId: string, newId: string): string {

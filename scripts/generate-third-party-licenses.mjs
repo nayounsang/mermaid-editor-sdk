@@ -41,7 +41,7 @@ function readPackage(packageName, packageDirectory, metadata) {
     text: fs.readFileSync(path.join(packageDirectory, file), 'utf8').replace(/[ \t]+$/gm, '').trim(),
   }));
 
-  if (licenseTexts.length === 0 && packageName === 'fastdom') {
+  if (licenseTexts.length === 0 && fs.existsSync(path.join(packageDirectory, 'README.md'))) {
     const readme = fs.readFileSync(path.join(packageDirectory, 'README.md'), 'utf8');
     const licenseSection = readme.split(/^## License\s*$/m)[1]?.trim();
     if (licenseSection) {
@@ -109,7 +109,7 @@ for (const dependency of packages) {
 }
 
 fs.writeFileSync(path.join(projectRoot, 'THIRD-PARTY-LICENSES'), `${output.join('\n')}\n`);
-if (process.env.KEEP_DIST_SOURCEMAPS !== '1') {
+if (globalThis.process.env.KEEP_DIST_SOURCEMAPS !== '1') {
   for (const file of fs.readdirSync(distDirectory).filter((entry) => entry.endsWith('.map'))) {
     fs.rmSync(path.join(distDirectory, file));
   }

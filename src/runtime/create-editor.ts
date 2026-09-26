@@ -1,4 +1,3 @@
-import mermaid from 'mermaid';
 import { getDiagramAdapter } from '../diagrams/adapter';
 import { registerBuiltInAdapters } from '../diagrams/register-built-in-adapters';
 import { classifyDiagram, withParseResult, withPreviewResult } from '../diagrams/capability';
@@ -8,9 +7,8 @@ import { SourceDocument } from '../source/source-document';
 import type { EditorError, EditorSelection, MermaidVisualEditor, MermaidVisualEditorOptions } from './types';
 import { DestroyedEditorError } from './types';
 import { appendPaletteEntry, diagramTypeFromSource, diagramTypes, paletteCatalog, templates, type EditableDiagramType } from './diagram-catalog';
+import { MermaidRendererError, renderMermaid } from '../renderer/mermaid-renderer';
 
-let mermaidInitialized = false;
-let nextRenderId = 0;
 const previewDebounceMs = 120;
 type EditorStatusState = 'loading' | 'empty' | 'error' | 'unsupported' | 'unknown' | 'source-only' | 'ready';
 
@@ -75,12 +73,6 @@ function isAdapterDiagramType(diagramType: DiagramType): diagramType is AdapterD
   return diagramType !== 'unknown' && diagramType !== 'unsupported';
 }
 
-function initializeMermaid(): void {
-  if (mermaidInitialized) return;
-  mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
-  mermaidInitialized = true;
-}
-
 export function createMermaidVisualEditor(
   container: HTMLElement,
   options: MermaidVisualEditorOptions,
@@ -109,7 +101,6 @@ export function createMermaidVisualEditor(
   }
 
   registerBuiltInAdapters();
-  initializeMermaid();
 
   let value = initialValue;
   let destroyed = false;
@@ -521,71 +512,9 @@ export function createMermaidVisualEditor(
       return;
     }
 
+    let result: Awaited<ReturnType<typeof renderMermaid>>;
     try {
-      await mermaid.parse(currentValue);
-      if (destroyed || revision !== renderRevision) return;
-      capability = withParseResult(capability, true);
-    } catch (cause) {
-      if (destroyed || revision !== renderRevision) return;
-      if (lastValidSvg) preview.innerHTML = lastValidSvg;
-      else preview.replaceChildren();
-      const detail = cause instanceof Error ? cause.message.replace(/\s+/g, ' ').slice(0, 180) : 'Unknown syntax error';
-      const warning = container.ownerDocument.createElement('div');
-      warning.className = 'mve-preview-error';
-      warning.setAttribute('role', 'alert');
-      warning.textContent = `Mermaid syntax error: ${detail}. Fix the source below to update the canvas.`;
-      preview.prepend(warning);
-      setStatus('error', `Mermaid source has a syntax error: ${detail}. Source editing is available.`, 'parse');
-      notifyError(onError, {
-        code: 'parse',
-        message: cause instanceof Error ? cause.message : 'Unknown Mermaid parse error.',
-        cause,
-      });
-      return;
-    }
-
-    try {
-      const result = await mermaid.render(`mve-diagram-${++nextRenderId}`, currentValue);
-      if (destroyed || revision !== renderRevision) return;
-      capability = classifyDiagram(result.diagramType);
-      syncDiagramType(capability.diagramType);
-      capability = withParseResult(capability, true);
-      capability = withPreviewResult(capability, true);
-      preview.innerHTML = result.svg;
-      lastValidSvg = result.svg;
-      updateZoom();
-      result.bindFunctions?.(preview);
-      let mounted = false;
-      if (isAdapterDiagramType(capability.diagramType)) {
-        mounted = mountDiagramAdapter(capability.diagramType, currentValue, revision);
-        if (destroyed || revision !== renderRevision) return;
-        if (mounted) capability = { ...capability, editor: 'visual' };
-      }
-      palette.hidden = mounted;
-      if (!mounted && capability.diagramType !== 'unsupported' && capability.diagramType !== 'unknown') {
-        renderFallbackPalette(capability.diagramType);
-      }
-      if (capability.diagramType === 'unsupported') {
-        palette.hidden = false;
-        palette.replaceChildren();
-        const help = container.ownerDocument.createElement('p');
-        help.className = 'mve-palette-help';
-        help.textContent = 'This diagram type is not supported for visual editing. Edit the Mermaid source below.';
-        palette.append(help);
-        setStatus('unsupported', 'This Mermaid diagram type is not visually supported. Preview and source editing are available.');
-      } else if (capability.diagramType === 'unknown') {
-        palette.hidden = false;
-        palette.replaceChildren();
-        const help = container.ownerDocument.createElement('p');
-        help.className = 'mve-palette-help';
-        help.textContent = 'The diagram type could not be identified. Edit the Mermaid source below.';
-        palette.append(help);
-        setStatus('unknown', 'Mermaid preview is ready, but the diagram type could not be identified. Source editing is available.');
-      } else if (capability.editor === 'source-only') {
-        setStatus('source-only', `${capability.diagramType} preview is ready. Visual editing is unavailable; source editing is available.`);
-      } else {
-        setStatus('ready', `${capability.diagramType} preview is ready.`);
-      }
+      result = await renderMermaid(currentValue);
     } catch (cause) {
       if (destroyed || revision !== renderRevision) return;
       if (lastValidSvg) preview.innerHTML = lastValidSvg;
@@ -594,14 +523,63 @@ export function createMermaidVisualEditor(
       const warning = container.ownerDocument.createElement('div');
       warning.className = 'mve-preview-error';
       warning.setAttribute('role', 'alert');
-      warning.textContent = `Mermaid render error: ${detail}. Edit the source below to try again.`;
+      const parseError = cause instanceof MermaidRendererError && cause.stage === 'parse';
+      warning.textContent = parseError
+        ? `Mermaid syntax error: ${detail}. Fix the source below to update the canvas.`
+        : `Mermaid render error: ${detail}. Edit the source below to try again.`;
       preview.prepend(warning);
-      setStatus('error', `Mermaid preview could not be rendered: ${detail}. Source editing is available.`, 'render');
+      const code = parseError ? 'parse' : 'render';
+      const sourceMessage = parseError ? 'Mermaid source has a syntax error' : 'Mermaid preview could not be rendered';
+      setStatus('error', `${sourceMessage}: ${detail}. Source editing is available.`, code);
       notifyError(onError, {
-        code: 'render',
-        message: cause instanceof Error ? cause.message : 'Unknown Mermaid rendering error.',
+        code,
+        message: cause instanceof MermaidRendererError && cause.cause instanceof Error
+          ? cause.cause.message
+          : cause instanceof Error ? cause.message : 'Unknown Mermaid rendering error.',
         cause,
       });
+      return;
+    }
+
+    if (destroyed || revision !== renderRevision) return;
+    capability = classifyDiagram(result.diagramType);
+    syncDiagramType(capability.diagramType);
+    capability = withParseResult(capability, true);
+    capability = withPreviewResult(capability, true);
+    preview.innerHTML = result.svg;
+    lastValidSvg = result.svg;
+    updateZoom();
+    result.bindFunctions?.(preview);
+    let mounted = false;
+    if (isAdapterDiagramType(capability.diagramType)) {
+      mounted = mountDiagramAdapter(capability.diagramType, currentValue, revision);
+      if (destroyed || revision !== renderRevision) return;
+      if (mounted) capability = { ...capability, editor: 'visual' };
+    }
+    palette.hidden = mounted;
+    if (!mounted && capability.diagramType !== 'unsupported' && capability.diagramType !== 'unknown') {
+      renderFallbackPalette(capability.diagramType);
+    }
+    if (capability.diagramType === 'unsupported') {
+      palette.hidden = false;
+      palette.replaceChildren();
+      const help = container.ownerDocument.createElement('p');
+      help.className = 'mve-palette-help';
+      help.textContent = 'This diagram type is not supported for visual editing. Edit the Mermaid source below.';
+      palette.append(help);
+      setStatus('unsupported', 'This Mermaid diagram type is not visually supported. Preview and source editing are available.');
+    } else if (capability.diagramType === 'unknown') {
+      palette.hidden = false;
+      palette.replaceChildren();
+      const help = container.ownerDocument.createElement('p');
+      help.className = 'mve-palette-help';
+      help.textContent = 'The diagram type could not be identified. Edit the Mermaid source below.';
+      palette.append(help);
+      setStatus('unknown', 'Mermaid preview is ready, but the diagram type could not be identified. Source editing is available.');
+    } else if (capability.editor === 'source-only') {
+      setStatus('source-only', `${capability.diagramType} preview is ready. Visual editing is unavailable; source editing is available.`);
+    } else {
+      setStatus('ready', `${capability.diagramType} diagram preview is ready.`);
     }
   };
 

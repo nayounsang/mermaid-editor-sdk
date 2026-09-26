@@ -43,5 +43,5 @@ export function addMindmapPaletteItem(source: string, id: MindmapPaletteItemId):
     while (used.has(`mveNode${index}`)) index++;
     snippet = `mveNode${index}((Title))`;
   }
-  return appendDiagramLine(source, snippet, indent);
+  return appendDiagramLine(source, snippet, indent, 'mindmap');
 }

@@ -1,4 +1,5 @@
 import type { DiagramType } from '../diagrams/capability';
+import { diffChars } from 'diff';
 
 export type SourceRegionKind = 'blank' | 'comment' | 'metadata' | 'statement' | 'opaque';
 
@@ -6,7 +7,9 @@ export interface SourceRegion {
   kind: SourceRegionKind;
   start: number;
   end: number;
+  fullEnd: number;
   text: string;
+  rawText: string;
   editable: boolean;
 }
 
@@ -15,6 +18,21 @@ export class AmbiguousSourceMutationError extends Error {
     super(message);
     this.name = 'AmbiguousSourceMutationError';
   }
+}
+
+/** Append diagram statements before trailing comments and whitespace. */
+export function appendSourceLines(source: string, additions: readonly string[], diagramType: DiagramType): string {
+  if (!additions.length) return source;
+  const regions = new SourceDocument(source, diagramType).regions;
+  let suffixIndex = regions.length;
+  while (suffixIndex > 0 && regions[suffixIndex - 1]!.kind !== 'statement') suffixIndex--;
+  const insertion = regions[suffixIndex]?.start ?? source.length;
+  const before = source.slice(0, insertion);
+  const after = source.slice(insertion);
+  const ending = /\r\n|\n|\r/.exec(source)?.[0] ?? '\n';
+  const separator = before && !/(?:\r\n|\n|\r)$/.test(before) ? ending : '';
+  const needsEndingAfter = after.length > 0 || /(?:\r\n|\n|\r)$/.test(source);
+  return `${before}${separator}${additions.join(ending)}${needsEndingAfter ? ending : ''}${after}`;
 }
 
 const simpleNodeDeclaration = /^\s*[\w.-]+\s*(?:\[[^\]\r\n]*\]|\([^)\r\n]*\)|\{[^}\r\n]*\})\s*;?\s*$/;
@@ -31,10 +49,12 @@ function isOpaqueLine(line: string): boolean {
 
 export class SourceDocument {
   readonly source: string;
+  readonly diagramType: DiagramType;
   readonly regions: readonly SourceRegion[];
 
   constructor(source: string, diagramType: DiagramType) {
     this.source = source;
+    this.diagramType = diagramType;
     this.regions = Object.freeze(
       scanRegions(source, diagramType).map((region) => Object.freeze(region)),
     );
@@ -55,7 +75,7 @@ export class SourceDocument {
     if (getFlowNodeId(region.text) !== getFlowNodeId(replacement)) {
       throw new AmbiguousSourceMutationError('Node identity changes require reference-aware mutation support.');
     }
-    return this.source.slice(0, start) + replacement + this.source.slice(end);
+    return this.serializeMutation(this.source.slice(0, start) + replacement + this.source.slice(end));
   }
 
   findUniqueEditableStatement(statement: string): SourceRegion {
@@ -64,6 +84,52 @@ export class SourceDocument {
       throw new AmbiguousSourceMutationError('The statement is missing or occurs more than once.');
     }
     return matches[0]!;
+  }
+
+  serializeMutation(candidate: string): string {
+    if (candidate === this.source) return this.source;
+    const changes = diffChars(this.source, candidate);
+    let sourceOffset = 0;
+    let output = '';
+
+    for (const change of changes) {
+      if (change.added) {
+        const protectedInsertion = this.regions.some((region) => region.kind !== 'statement'
+          && region.start < sourceOffset && sourceOffset < region.fullEnd);
+        if (protectedInsertion) throw new AmbiguousSourceMutationError('The mutation inserts text inside a protected source region.');
+        output += change.value;
+        continue;
+      }
+      if (change.removed) {
+        const spanEnd = sourceOffset + change.value.length;
+        const overlapsProtectedRegion = this.regions.some((region) => region.kind !== 'statement'
+          && sourceOffset < region.fullEnd && spanEnd > region.start);
+        if (overlapsProtectedRegion) throw new AmbiguousSourceMutationError('The mutation changes a protected source region.');
+        sourceOffset = spanEnd;
+        continue;
+      }
+      output += this.source.slice(sourceOffset, sourceOffset + change.value.length);
+      sourceOffset += change.value.length;
+    }
+
+    if (sourceOffset !== this.source.length || output !== candidate) {
+      throw new AmbiguousSourceMutationError('The source diff could not be serialized without losing source spans.');
+    }
+    const currentProtectedRegions = this.regions
+      .filter((region) => region.kind !== 'statement')
+      .map((region) => `${region.kind}\u0000${region.rawText}`);
+    const nextProtectedRegions = scanRegions(candidate, this.diagramType)
+      .filter((region) => region.kind !== 'statement')
+      .map((region) => `${region.kind}\u0000${region.rawText}`);
+    let nextRegionIndex = 0;
+    for (const protectedRegion of currentProtectedRegions) {
+      while (nextRegionIndex < nextProtectedRegions.length && nextProtectedRegions[nextRegionIndex] !== protectedRegion) nextRegionIndex++;
+      if (nextRegionIndex >= nextProtectedRegions.length) {
+        throw new AmbiguousSourceMutationError('The mutation does not preserve comments, metadata, whitespace, or opaque source regions.');
+      }
+      nextRegionIndex++;
+    }
+    return output;
   }
 }
 
@@ -99,6 +165,8 @@ function scanRegions(
       if (trimmed === '---' || trimmed === '...') frontmatter = false;
     } else if (!trimmed) {
       kind = 'blank';
+    } else if (visibleLine.trimStart().startsWith('%%') && !visibleLine.trimStart().startsWith('%%{')) {
+      kind = 'comment';
     } else if (isOpaqueLine(visibleLine)) {
       kind = 'opaque';
     } else {
@@ -107,7 +175,7 @@ function scanRegions(
       frontmatterAllowed = false;
     }
 
-    regions.push({ kind, start, end, text: line, editable });
+    regions.push({ kind, start, end, fullEnd: offset + rawLine.length, text: line, rawText: rawLine, editable });
     if (trimmed) firstContent = false;
     offset += rawLine.length;
   }

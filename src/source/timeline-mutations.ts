@@ -43,5 +43,5 @@ export function addTimelinePaletteItem(source: string, id: TimelinePaletteItemId
       if (section) indent = `${/^[\t ]*/.exec(section.text)![0]}    `;
     }
   }
-  return appendDiagramLine(source, snippet, indent);
+  return appendDiagramLine(source, snippet, indent, 'timeline');
 }

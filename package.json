@@ -1,7 +1,7 @@
 {
   "name": "mermaid-visual-editor-sdk",
   "version": "0.1.0",
-  "description": "Framework independent Mermaid visual editor SDK",
+  "description": "React Mermaid visual editor SDK",
   "license": "MIT",
   "type": "module",
   "files": [
@@ -19,14 +19,28 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./react": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./legacy": {
+      "types": "./dist/legacy.d.ts",
+      "import": "./dist/legacy.js",
+      "require": "./dist/legacy.cjs"
+    },
     "./style.css": "./dist/style.css"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "sideEffects": [
     "**/*.css"
   ],
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vite build && tsc -p tsconfig.types.json && node scripts/generate-third-party-licenses.mjs",
+    "build": "vite build && vite build --config vite.legacy.config.ts && tsc -p tsconfig.types.json && node scripts/generate-third-party-licenses.mjs",
     "csp:fixture": "node scripts/serve-csp-fixture.mjs",
     "audit:distribution": "node scripts/audit-distribution-licenses.mjs",
     "lint": "eslint .",
@@ -34,13 +48,29 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "mermaid": "11.17.2"
+    "@base-ui/react": "^1.8.0",
+    "@codemirror/view": "^6.43.13",
+    "@dnd-kit/react": "^0.5.0",
+    "@hookform/resolvers": "^5.9.1",
+    "@uiw/react-codemirror": "^4.25.12",
+    "diff": "^9.0.0",
+    "es-toolkit": "^1.52.0",
+    "mermaid": "11.17.2",
+    "nanoid": "^6.0.1",
+    "p-queue": "^9.3.3",
+    "react-hook-form": "^7.89.0",
+    "zod": "^4.6.5",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "eslint": "^10.11.0",
     "jsdom": "^26.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "typescript": "^5.8.0",
     "typescript-eslint": "^8.70.1",
     "vite": "^6.2.0",

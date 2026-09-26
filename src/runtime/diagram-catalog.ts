@@ -1,4 +1,11 @@
 import type { DiagramType } from '../diagrams/capability';
+import { addGitgraphPaletteItem, type GitgraphPaletteItemId } from '../source/gitgraph-mutations';
+import { addJourneyPaletteItem, type JourneyPaletteItemId } from '../source/journey-mutations';
+import { addMindmapPaletteItem, type MindmapPaletteItemId } from '../source/mindmap-mutations';
+import { addPiePaletteItem, type PiePaletteItemId } from '../source/pie-mutations';
+import { addQuadrantPaletteItem, type QuadrantPaletteItemId } from '../source/quadrant-mutations';
+import { addTimelinePaletteItem, type TimelinePaletteItemId } from '../source/timeline-mutations';
+import { diagramLines } from '../source/palette-source';
 
 export type EditableDiagramType = Exclude<DiagramType, 'unknown' | 'unsupported'>;
 
@@ -19,8 +26,13 @@ export const diagramTypes: readonly { id: EditableDiagramType; label: string }[]
 ];
 
 export function diagramTypeFromSource(source: string): EditableDiagramType | undefined {
-  const first = source.split(/\r\n|\r|\n/).map((line) => line.trim())
-    .find((line) => line && !line.startsWith('%%')) ?? '';
+  let lines: ReturnType<typeof diagramLines>;
+  try {
+    lines = diagramLines(source.replace(/^\uFEFF/, ''), /^.+$/);
+  } catch {
+    return undefined;
+  }
+  const first = lines[0]?.text.trim() ?? '';
   const directive = /^([\w-]+)/.exec(first)?.[1]?.toLowerCase();
   const types: Record<string, EditableDiagramType> = {
     graph: 'flowchart', flowchart: 'flowchart', sequencediagram: 'sequence',
@@ -57,33 +69,34 @@ export const paletteCatalog: Partial<Record<EditableDiagramType, readonly Palett
 };
 
 export function appendPaletteEntry(source: string, type: EditableDiagramType, entry: PaletteEntry): string {
-  const ending = /\r\n|\r|\n/.exec(source)?.[0] ?? '\n';
-  const lines = source.replace(/\r\n|\r/g, '\n').split('\n');
-  let line = entry.snippet;
-  const replaceOrInsert = (pattern: RegExp, replacement: string): void => {
-    const index = lines.findIndex((candidate) => pattern.test(candidate));
-    if (index >= 0) lines[index] = replacement;
-    else lines.splice(1, 0, replacement);
+  if (entry.label === 'Title') {
+    const titleByType: Partial<Record<EditableDiagramType, string>> = {
+      pie: 'Pie title', journey: 'My journey', timeline: 'Timeline title', quadrant: 'Chart title',
+    };
+    const title = titleByType[type];
+    if (title && type === 'pie') {
+      const header = /(^[\t ]*pie)(?:[\t ]+title(?:[\t ]+[^\r\n]*)?)?/im;
+      if (header.test(source)) return source.replace(header, `$1 title ${title}`);
+    } else if (title) {
+      const existingTitle = /^([\t ]*)title(?:[\t ]+[^\r\n]*)?$/im;
+      if (existingTitle.test(source)) return source.replace(existingTitle, `$1title ${title}`);
+    }
+  }
+
+  const labelIds: Partial<Record<EditableDiagramType, Record<string, string>>> = {
+    pie: { Title: 'title', Slice: 'slice' },
+    journey: { Title: 'title', Section: 'section', Task: 'task', 'Multi-actor': 'multi-actor' },
+    mindmap: { 'Root (circle)': 'root', Branch: 'branch', 'Square node': 'square', Rounded: 'rounded', Cloud: 'cloud' },
+    gitgraph: { Commit: 'commit', 'Commit with id': 'commit-id', 'Tagged commit': 'tagged', Branch: 'branch', Checkout: 'checkout', Merge: 'merge' },
+    timeline: { Title: 'title', Section: 'section', Event: 'event' },
+    quadrant: { Title: 'title', 'X-axis': 'x-axis', 'Y-axis': 'y-axis', 'Quadrant label': 'quadrant-label', 'Data point': 'point' },
   };
-  if (entry.label === 'Title' && type === 'pie') lines[0] = 'pie title Pie title';
-  else if (entry.label === 'Title' && type === 'journey') replaceOrInsert(/^\s*title\s+/i, '    title My journey');
-  else if (entry.label === 'Title' && type === 'timeline') replaceOrInsert(/^\s*title\s+/i, '    title Timeline title');
-  else if (entry.label === 'Title' && type === 'quadrant') replaceOrInsert(/^\s*title\s+/i, '    title Chart title');
-  else if (type === 'mindmap' && entry.label === 'Root (circle)') replaceOrInsert(/^\s*root\s*\(/i, '  root((Title))');
-  else if (type === 'gitgraph' && entry.label === 'Branch') {
-    let index = 1;
-    while (lines.some((candidate) => new RegExp(`^\\s*branch\\s+feature${index === 1 ? '' : index}\\s*$`, 'i').test(candidate))) index++;
-    line = `    branch feature${index === 1 ? '' : index}`;
-    lines.push(line);
-  }
-  else if (type === 'gitgraph' && entry.label === 'Commit with id') {
-    let index = 1;
-    while (lines.some((candidate) => candidate.includes(`id: "c${index}"`))) index++;
-    lines.push(`    commit id: "c${index}" msg: "New commit"`);
-  }
-  else if (type === 'quadrant' && entry.label === 'X-axis') replaceOrInsert(/^\s*x-axis\s+/i, line);
-  else if (type === 'quadrant' && entry.label === 'Y-axis') replaceOrInsert(/^\s*y-axis\s+/i, line);
-  else if (type === 'quadrant' && entry.label === 'Quadrant label') replaceOrInsert(/^\s*quadrant-1\s+/i, line);
-  else lines.push(line);
-  return lines.join(ending);
+  const item = labelIds[type]?.[entry.label];
+  if (type === 'pie' && item) return addPiePaletteItem(source, item as PiePaletteItemId);
+  if (type === 'journey' && item) return addJourneyPaletteItem(source, item as JourneyPaletteItemId);
+  if (type === 'mindmap' && item) return addMindmapPaletteItem(source, item as MindmapPaletteItemId);
+  if (type === 'gitgraph' && item) return addGitgraphPaletteItem(source, item as GitgraphPaletteItemId);
+  if (type === 'timeline' && item) return addTimelinePaletteItem(source, item as TimelinePaletteItemId);
+  if (type === 'quadrant' && item) return addQuadrantPaletteItem(source, item as QuadrantPaletteItemId);
+  throw new Error(`Palette entry "${entry.label}" is not supported for ${type}.`);
 }
