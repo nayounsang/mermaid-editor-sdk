@@ -17,3 +17,4 @@ Report any intentional deviations to me for review. I will then direct the follo
 
 - **DO NOT CREATE GIT BRANCH**
 - Work in main and commit to main.
+- If you make branch and work on the branch, you replace commit to main and delete the branch
