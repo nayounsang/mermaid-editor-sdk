@@ -10,6 +10,7 @@ import { journeyAdapter } from './journey-adapter';
 import { gitgraphAdapter } from './gitgraph-adapter';
 import { timelineAdapter } from './timeline-adapter';
 import { mindmapAdapter } from './mindmap-adapter';
+import { quadrantAdapter } from './quadrant-adapter';
 
 let unregisterFlowchart: (() => void) | undefined;
 let unregisterSequence: (() => void) | undefined;
@@ -22,6 +23,7 @@ let unregisterTimeline: (() => void) | undefined;
 let unregisterMindmap: (() => void) | undefined;
 let unregisterJourney: (() => void) | undefined;
 let unregisterPie: (() => void) | undefined;
+let unregisterQuadrant: (() => void) | undefined;
 
 export function registerBuiltInAdapters(): void {
   if (!unregisterFlowchart) unregisterFlowchart = registerDiagramAdapter(flowchartAdapter);
@@ -35,4 +37,5 @@ export function registerBuiltInAdapters(): void {
   if (!unregisterMindmap) unregisterMindmap = registerDiagramAdapter(mindmapAdapter);
   if (!unregisterJourney) unregisterJourney = registerDiagramAdapter(journeyAdapter);
   if (!unregisterPie) unregisterPie = registerDiagramAdapter(pieAdapter);
+  if (!unregisterQuadrant) unregisterQuadrant = registerDiagramAdapter(quadrantAdapter);
 }

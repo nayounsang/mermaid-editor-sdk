@@ -195,7 +195,7 @@ flowchart TD
 - [x] 25 Mindmap adapter
 - [x] 26 Gitgraph adapter
 - [x] 27 Timeline adapter
-- [ ] 28 Quadrant adapter
+- [x] 28 Quadrant adapter
 - [ ] 29 typed options와 selection
 - [ ] 30 SVG/export data
 - [ ] 31 Extension consumer 전환

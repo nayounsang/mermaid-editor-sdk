@@ -3,6 +3,10 @@ import mermaid from 'mermaid';
 import { appendPaletteEntry, diagramTypeFromSource, paletteCatalog, templates } from './diagram-catalog';
 
 describe('source-only palette catalog', () => {
+  it('uses the baseline Quadrant data point snippet in its fallback catalog', () => {
+    expect(paletteCatalog.quadrant?.find(({ label }) => label === 'Data point')?.snippet).toBe('    Label: [0.5, 0.5]');
+  });
+
   it('identifies the current diagram and preserves its line endings', async () => {
     const source = 'gitGraph\r\n    commit\r\n    branch feature\r\n';
     expect(diagramTypeFromSource(source)).toBe('gitgraph');
