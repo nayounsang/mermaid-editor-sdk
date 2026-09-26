@@ -38,13 +38,15 @@ function readPackage(packageName, packageDirectory, metadata) {
   );
   let licenseTexts = noticeFiles.map((file) => ({
     file,
-    text: fs.readFileSync(path.join(packageDirectory, file), 'utf8').trim(),
+    text: fs.readFileSync(path.join(packageDirectory, file), 'utf8').replace(/[ \t]+$/gm, '').trim(),
   }));
 
   if (licenseTexts.length === 0 && packageName === 'fastdom') {
     const readme = fs.readFileSync(path.join(packageDirectory, 'README.md'), 'utf8');
     const licenseSection = readme.split(/^## License\s*$/m)[1]?.trim();
-    if (licenseSection) licenseTexts = [{ file: 'README.md (License section)', text: licenseSection }];
+    if (licenseSection) {
+      licenseTexts = [{ file: 'README.md (License section)', text: licenseSection.replace(/[ \t]+$/gm, '').trim() }];
+    }
   }
   if (licenseTexts.length === 0) {
     throw new Error(`Cannot find a license or notice file for bundled dependency ${packageName}.`);
@@ -87,7 +89,7 @@ const output = [
   'Third-party software notices',
   '============================',
   '',
-  'Generated from the JavaScript source maps in the current dist build. The package inventory is a build-time aid; task 34 audits the final npm tarball and all vendored code.',
+  'Generated from the JavaScript source maps in the current dist build. Each listed package version has its license and notice text included below.',
   '',
   'Bundled package inventory',
   '--------------------------',
@@ -107,6 +109,8 @@ for (const dependency of packages) {
 }
 
 fs.writeFileSync(path.join(projectRoot, 'THIRD-PARTY-LICENSES'), `${output.join('\n')}\n`);
-for (const file of fs.readdirSync(distDirectory).filter((entry) => entry.endsWith('.map'))) {
-  fs.rmSync(path.join(distDirectory, file));
+if (process.env.KEEP_DIST_SOURCEMAPS !== '1') {
+  for (const file of fs.readdirSync(distDirectory).filter((entry) => entry.endsWith('.map'))) {
+    fs.rmSync(path.join(distDirectory, file));
+  }
 }

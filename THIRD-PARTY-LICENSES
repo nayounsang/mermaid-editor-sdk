@@ -1,7 +1,7 @@
 Third-party software notices
 ============================
 
-Generated from the JavaScript source maps in the current dist build. The package inventory is a build-time aid; task 34 audits the final npm tarball and all vendored code.
+Generated from the JavaScript source maps in the current dist build. Each listed package version has its license and notice text included below.
 
 Bundled package inventory
 --------------------------
