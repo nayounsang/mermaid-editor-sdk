@@ -190,7 +190,7 @@ flowchart TD
 - [x] 27 Timeline adapter
 - [x] 28 Quadrant adapter
 - [x] 29 typed options와 selection
-- [ ] 31 Extension consumer 전환
+- [x] 31 Extension consumer 전환
 - [ ] 32 CSP 브라우저 검증
 - [ ] 34 배포 license audit
 - [ ] 35 React wrapper 결정
