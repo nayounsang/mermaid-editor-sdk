@@ -15,4 +15,5 @@ Report any intentional deviations to me for review. I will then direct the follo
 
 ## Branch and Commit
 
-- DO NOT MAKE BRANCH. Work in main and commit to main.
+- **DO NOT CREATE GIT BRANCH**
+- Work in main and commit to main.
