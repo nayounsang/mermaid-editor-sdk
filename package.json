@@ -27,6 +27,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build && tsc -p tsconfig.types.json && node scripts/generate-third-party-licenses.mjs",
+    "csp:fixture": "node scripts/serve-csp-fixture.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
