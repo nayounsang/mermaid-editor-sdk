@@ -194,7 +194,7 @@ flowchart TD
 - [x] 24 Journey adapter
 - [x] 25 Mindmap adapter
 - [x] 26 Gitgraph adapter
-- [ ] 27 Timeline adapter
+- [x] 27 Timeline adapter
 - [ ] 28 Quadrant adapter
 - [ ] 29 typed options와 selection
 - [ ] 30 SVG/export data
