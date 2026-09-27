@@ -19,12 +19,16 @@ export interface MermaidCanvasProps {
   readonly onSourceMutation: (mutate: (source: SourceDocument) => string, remove?: boolean) => boolean;
   readonly sourceRevision: number;
   readonly onParseResult: (sourceRevision: number, valid: boolean) => void;
-  readonly onSave: () => void;
+  readonly onSave?: () => void;
+  readonly isSaving?: boolean;
   readonly onReset: () => void;
   readonly onEditSelection: () => void;
   readonly pendingConnection?: { readonly diagramType: EditableDiagramType; readonly source?: string };
 }
-export function MermaidCanvas({ source, model, onSelection, onRenderState, onSourceMutation, sourceRevision, onParseResult, onSave, onReset, onEditSelection, pendingConnection }: MermaidCanvasProps) {
+const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 3;
+
+export function MermaidCanvas({ source, model, onSelection, onRenderState, onSourceMutation, sourceRevision, onParseResult, onSave, isSaving = false, onReset, onEditSelection, pendingConnection }: MermaidCanvasProps) {
   const [svg, setSvg] = useState('');
   const [renderedSource, setRenderedSource] = useState('');
   const [binder, setBinder] = useState<((element: Element) => void) | undefined>();
@@ -54,6 +58,18 @@ export function MermaidCanvas({ source, model, onSelection, onRenderState, onSou
   useEffect(() => {
     setZoom(1);
   }, [model.diagramType]);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const handleWheel = (event: WheelEvent): void => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      setZoom((value) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value * (event.deltaY < 0 ? 1.1 : 0.9))));
+    };
+    stage.addEventListener('wheel', handleWheel, { passive: false });
+    return () => stage.removeEventListener('wheel', handleWheel);
+  }, []);
 
   useEffect(() => {
     let current = true;
@@ -134,7 +150,7 @@ export function MermaidCanvas({ source, model, onSelection, onRenderState, onSou
     const svgElement = previewRef.current?.querySelector('svg');
     const viewBox = svgElement?.getAttribute('viewBox')?.trim().split(/[ ,]+/).map(Number);
     if (stage && viewBox?.length === 4 && viewBox[2]! > 0 && viewBox[3]! > 0 && stage.clientWidth > 0 && stage.clientHeight > 0) {
-      setZoom(Math.max(0.2, Math.min(3, Math.min((stage.clientWidth - 32) / viewBox[2]!, (stage.clientHeight - 32) / viewBox[3]!))));
+      setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min((stage.clientWidth - 32) / viewBox[2]!, (stage.clientHeight - 32) / viewBox[3]!))));
       stage.scrollTo({ top: 0, left: 0 });
       return;
     }
@@ -144,10 +160,11 @@ export function MermaidCanvas({ source, model, onSelection, onRenderState, onSou
   const centerCanvas = (): void => {
     const stage = stageRef.current;
     if (!stage) return;
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     stage.scrollTo({
       top: Math.max(0, (stage.scrollHeight - stage.clientHeight) / 2),
       left: Math.max(0, (stage.scrollWidth - stage.clientWidth) / 2),
-      behavior: 'smooth',
+      behavior: reduceMotion ? 'auto' : 'smooth',
     });
   };
 
@@ -156,12 +173,12 @@ export function MermaidCanvas({ source, model, onSelection, onRenderState, onSou
       <header className="mve-canvas-heading">
         <span className="mve-canvas-label">Canvas</span>
         <div className="mve-canvas-toolbar">
-          <Button type="button" aria-label="Zoom in" onClick={() => setZoom((value) => Math.min(value + 0.1, 3))}>+</Button>
+          <Button type="button" aria-label="Zoom in" disabled={zoom >= MAX_ZOOM} onClick={() => setZoom((value) => Math.min(value + 0.1, MAX_ZOOM))}>+</Button>
           <output className="mve-zoom-label" aria-label="Zoom level">{Math.round(zoom * 100)}%</output>
-          <Button type="button" aria-label="Zoom out" onClick={() => setZoom((value) => Math.max(value - 0.1, 0.2))}>−</Button>
+          <Button type="button" aria-label="Zoom out" disabled={zoom <= MIN_ZOOM} onClick={() => setZoom((value) => Math.max(value - 0.1, MIN_ZOOM))}>−</Button>
           <Button type="button" onClick={fitCanvas}>Fit</Button>
           <Button type="button" onClick={centerCanvas}>Center</Button>
-          <Button type="button" onClick={onSave}>Save</Button>
+          {onSave ? <Button type="button" disabled={isSaving} onClick={onSave}>{isSaving ? 'Saving…' : 'Save'}</Button> : null}
           <Button type="button" onClick={onReset}>Reset</Button>
         </div>
       </header>
@@ -182,7 +199,10 @@ export function MermaidCanvas({ source, model, onSelection, onRenderState, onSou
       }} onKeyUp={(event) => {
         if (event.code === 'Space') { spaceDownRef.current = false; panRef.current = null; }
       }} onPointerDown={(event) => {
-        if (!spaceDownRef.current || event.button !== 0) return;
+        if (!spaceDownRef.current || event.button !== 0) {
+          if (event.target === event.currentTarget) event.currentTarget.focus({ preventScroll: true });
+          return;
+        }
         panRef.current = { x: event.clientX, y: event.clientY, left: event.currentTarget.scrollLeft, top: event.currentTarget.scrollTop };
         event.currentTarget.setPointerCapture(event.pointerId);
         event.currentTarget.classList.add('mve-panning');
@@ -197,10 +217,7 @@ export function MermaidCanvas({ source, model, onSelection, onRenderState, onSou
       }} onPointerCancel={(event) => {
         panRef.current = null;
         event.currentTarget.classList.remove('mve-panning');
-      }} onWheel={(event) => {
-        event.preventDefault();
-        setZoom((value) => Math.max(0.2, Math.min(3, value * (event.deltaY < 0 ? 1.1 : 0.9))));
-      }} onPointerEnter={(event) => event.currentTarget.focus({ preventScroll: true })} tabIndex={0}>
+      }} tabIndex={0} aria-label="Diagram canvas. Scroll to move around; hold Space and drag to pan. Use Control or Command plus scroll to zoom.">
         {errorBanner ? <div className="mve-preview-error" role="alert">{errorBanner}</div> : null}
         <div className="mve-preview" ref={previewRef} dangerouslySetInnerHTML={{ __html: svg }} style={{ zoom }} />
         <div className="mve-react-adapter-toolbar" ref={adapterToolbarRef} hidden aria-hidden="true" />

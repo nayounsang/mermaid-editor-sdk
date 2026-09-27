@@ -67,10 +67,11 @@ export interface SelectionEditorProps {
   readonly selection: EditorSelection | null;
   readonly model: RendererModel;
   readonly dispatch: (action: DiagramAction) => string | undefined;
+  readonly dispatchPreservingSelection?: (action: DiagramAction) => string | undefined;
   readonly onDelete?: (selection: EditorSelection, nextSource: string) => void | Promise<void>;
 }
 
-export function SelectionEditor({ open, onClose, selection, model, dispatch, onDelete }: SelectionEditorProps) {
+export function SelectionEditor({ open, onClose, selection, model, dispatch, dispatchPreservingSelection = dispatch, onDelete }: SelectionEditorProps) {
   const [memberDrafts, setMemberDrafts] = useState<Record<string, string>>({});
   const [attributeDrafts, setAttributeDrafts] = useState<Record<string, { type: string; name: string; key: string; comment: string }>>({});
   const { control, handleSubmit, reset, formState: { errors } } = useForm<EditorForm>({
@@ -88,23 +89,44 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, onD
   const attributes = selection?.kind === 'node' && selection.diagramType === 'er'
     ? model.elements.filter((item): item is DiagramSemanticElement => item.kind === 'semantic' && item.semanticType === 'attribute' && item.attributes.entity === selection.id)
     : [];
+  const nodeLabel = selectedNode?.kind === 'node' ? selectedNode.label : '';
+  const nodeShape = selectedNode?.kind === 'node' ? selectedNode.shape ?? 'rect' : 'rect';
+  const nodeFill = selectedNode?.kind === 'node' ? selectedNode.attributes.fill ?? '' : '';
+  const nodeStroke = selectedNode?.kind === 'node' ? selectedNode.attributes.stroke ?? '' : '';
+  const nodeBorderType = borderTypeValue(selectedNode?.kind === 'node' ? selectedNode.attributes.borderType : '');
+  const edgeLabel = selectedEdge?.kind === 'edge' ? selectedEdge.label : '';
+  const edgeOperator = selectedEdge?.kind === 'edge' ? selectedEdge.operator : '';
+  const edgeStroke = selectedEdge?.kind === 'edge' ? selectedEdge.attributes.stroke ?? '' : '';
+  const edgeIdentifying = selectedEdge?.attributes.identifying !== 'false';
+  const subgraphLabel = selectedSubgraph?.kind === 'subgraph' ? selectedSubgraph.label : selection?.kind === 'subgraph' ? selection.title ?? selection.id : '';
+  const subgraphFill = selectedSubgraph?.kind === 'subgraph' ? selectedSubgraph.attributes.fill ?? '' : '';
+  const subgraphStroke = selectedSubgraph?.kind === 'subgraph' ? selectedSubgraph.attributes.stroke ?? '' : '';
+  const subgraphBorderType = borderTypeValue(selectedSubgraph?.kind === 'subgraph' ? selectedSubgraph.attributes.borderType : '');
+  const memberDraftSignature = JSON.stringify(members.map((member) => [member.id, member.statement]));
+  const attributeDraftSignature = JSON.stringify(attributes.map((attribute) => [attribute.id, {
+    type: attribute.attributes.type ?? 'string', name: attribute.attributes.name ?? '',
+    key: attribute.attributes.key ?? '', comment: attribute.attributes.comment ?? '',
+  }]));
 
   useEffect(() => {
     if (selection?.kind === 'node') {
-      reset({ kind: 'node', id: selection.id, label: selectedNode?.kind === 'node' ? selectedNode.label : '', from: '', to: '', operator: '', shape: selectedNode?.kind === 'node' ? selectedNode.shape ?? 'rect' : 'rect', fill: selectedNode?.kind === 'node' ? selectedNode.attributes.fill ?? '' : '', stroke: selectedNode?.kind === 'node' ? selectedNode.attributes.stroke ?? '' : '', borderType: borderTypeValue(selectedNode?.kind === 'node' ? selectedNode.attributes.borderType : ''), title: '', identifying: true });
+      reset({ kind: 'node', id: selection.id, label: nodeLabel, from: '', to: '', operator: '', shape: nodeShape, fill: nodeFill, stroke: nodeStroke, borderType: nodeBorderType, title: '', identifying: true });
     } else if (selection?.kind === 'edge') {
-      reset({ kind: 'edge', id: '', label: selectedEdge?.kind === 'edge' ? selectedEdge.label : '', from: selection.source, to: selection.target, operator: selectedEdge?.kind === 'edge' ? selectedEdge.operator : '', shape: 'rect', fill: '', stroke: selectedEdge?.kind === 'edge' ? selectedEdge.attributes.stroke ?? '' : '', borderType: 'default', title: '', identifying: selectedEdge?.attributes.identifying !== 'false' });
+      reset({ kind: 'edge', id: '', label: edgeLabel, from: selection.source, to: selection.target, operator: edgeOperator, shape: 'rect', fill: '', stroke: edgeStroke, borderType: 'default', title: '', identifying: edgeIdentifying });
     } else if (selection?.kind === 'subgraph') {
-      reset({ kind: 'subgraph', id: selection.id, label: '', from: '', to: '', operator: '', shape: 'rect', fill: selectedSubgraph?.kind === 'subgraph' ? selectedSubgraph.attributes.fill ?? '' : '', stroke: selectedSubgraph?.kind === 'subgraph' ? selectedSubgraph.attributes.stroke ?? '' : '', borderType: borderTypeValue(selectedSubgraph?.kind === 'subgraph' ? selectedSubgraph.attributes.borderType : ''), title: selectedSubgraph?.kind === 'subgraph' ? selectedSubgraph.label : selection.title ?? selection.id, identifying: true });
+      reset({ kind: 'subgraph', id: selection.id, label: '', from: '', to: '', operator: '', shape: 'rect', fill: subgraphFill, stroke: subgraphStroke, borderType: subgraphBorderType, title: subgraphLabel, identifying: true });
     } else {
       reset({ kind: 'node', id: '', label: '', from: '', to: '', operator: '', shape: 'rect', fill: '', stroke: '', borderType: 'default', title: '', identifying: true });
     }
-    setMemberDrafts(Object.fromEntries(members.map((member) => [member.id, member.statement])));
-    setAttributeDrafts(Object.fromEntries(attributes.map((attribute) => [attribute.id, {
-      type: attribute.attributes.type ?? 'string', name: attribute.attributes.name ?? '',
-      key: attribute.attributes.key ?? '', comment: attribute.attributes.comment ?? '',
-    }])));
-  }, [open, selection, selectedNode, selectedEdge, selectedSubgraph, model.elements, reset]);
+  }, [open, selection, nodeLabel, nodeShape, nodeFill, nodeStroke, nodeBorderType, edgeLabel, edgeOperator, edgeStroke, edgeIdentifying, subgraphLabel, subgraphFill, subgraphStroke, subgraphBorderType, reset]);
+
+  useEffect(() => {
+    setMemberDrafts(Object.fromEntries(JSON.parse(memberDraftSignature) as [string, string][]));
+  }, [memberDraftSignature]);
+
+  useEffect(() => {
+    setAttributeDrafts(Object.fromEntries(JSON.parse(attributeDraftSignature) as [string, { type: string; name: string; key: string; comment: string }][]));
+  }, [attributeDraftSignature]);
 
   const remove = (): void => {
     if (!selection) return;
@@ -113,6 +135,7 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, onD
       : selection.kind === 'node' ? dispatch({ type: 'delete-node', id: `${selection.diagramType}:node:${encodeURIComponent(selection.id)}` })
       : dispatch({ type: 'delete-subgraph', id: `${selection.diagramType}:subgraph:${encodeURIComponent(selection.id)}` });
     if (next) {
+      onClose();
       void onDelete?.(selection, next);
     }
   };
@@ -183,6 +206,7 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, onD
           }
         }}>
       <header><Dialog.Title>{dialogTitle}</Dialog.Title><Dialog.Close render={<Button type="button" aria-label="Close selection editor">×</Button>} /></header>
+      <div className="mve-dialog-body">
       {!selection ? <p>Select a supported node or relationship to edit its properties.</p> : selection.kind === 'node' ? (
         <form className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
           {selection.diagramType === 'flowchart' && <TextField control={control} name="label" label="Label" multiline />}
@@ -202,27 +226,29 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, onD
           {errorMessage && <p role="alert">{errorMessage}</p>}
           <div><Button type="submit">Apply</Button> <Button type="button" aria-label={`Delete ${selection.diagramType} node ${selection.id}`} onClick={remove}>Delete</Button></div>
           {selection.diagramType === 'class' && <section className="mve-child-elements"><h3>Class members</h3>
-            {members.map((member) => <div className="mve-child-element" key={member.id}>
-              <Input aria-label="Class member" value={memberDrafts[member.id] ?? member.statement} onValueChange={(value) => setMemberDrafts((current) => ({ ...current, [member.id]: value }))} />
-              <Button type="button" onClick={() => dispatch({ type: 'update-class-member', classId: selection.id, oldMember: member.statement, newMember: memberDrafts[member.id] ?? member.statement })}>Apply member</Button>
-              <Button type="button" aria-label={`Delete class member ${member.id}`} onClick={() => dispatch({ type: 'delete-class-member', classId: selection.id, member: member.statement })}>Delete</Button>
+            {members.map((member) => <div className="mve-child-element mve-class-member" key={member.id}>
+              <label className="mve-child-field">Member<Input aria-label="Class member" value={memberDrafts[member.id] ?? member.statement} onValueChange={(value) => setMemberDrafts((current) => ({ ...current, [member.id]: value }))} /></label>
+              <Button type="button" onClick={() => dispatchPreservingSelection({ type: 'update-class-member', classId: selection.id, oldMember: member.statement, newMember: memberDrafts[member.id] ?? member.statement })}>Apply member</Button>
+              <Button type="button" aria-label={`Delete class member ${member.id}`} onClick={() => dispatchPreservingSelection({ type: 'delete-class-member', classId: selection.id, member: member.statement })}>Delete</Button>
             </div>)}
-            <Button type="button" onClick={() => dispatch({ type: 'create-class-member', classId: selection.id })}>Add member</Button>
+            <Button type="button" onClick={() => dispatchPreservingSelection({ type: 'create-class-member', classId: selection.id })}>Add member</Button>
           </section>}
           {selection.diagramType === 'er' && <section className="mve-child-elements"><h3>Entity attributes</h3>
             {attributes.map((attribute) => {
               const draft = attributeDrafts[attribute.id] ?? { type: 'string', name: '', key: '', comment: '' };
               const occurrence = Number(attribute.attributes.occurrence ?? 0);
-              return <div className="mve-child-element" key={attribute.id}>
-                <Input aria-label="Attribute type" value={draft.type} onValueChange={(type) => setAttributeDrafts((current) => ({ ...current, [attribute.id]: { ...draft, type } }))} />
-                <Input aria-label="Attribute name" value={draft.name} onValueChange={(name) => setAttributeDrafts((current) => ({ ...current, [attribute.id]: { ...draft, name } }))} />
-                <Input aria-label="Attribute key" value={draft.key} onValueChange={(key) => setAttributeDrafts((current) => ({ ...current, [attribute.id]: { ...draft, key } }))} />
-                <Input aria-label="Attribute comment" value={draft.comment} onValueChange={(comment) => setAttributeDrafts((current) => ({ ...current, [attribute.id]: { ...draft, comment } }))} />
-                <Button type="button" onClick={() => dispatch({ type: 'update-er-attribute', entity: selection.id, name: attribute.attributes.name ?? '', occurrence, patch: draft })}>Apply attribute</Button>
-                <Button type="button" aria-label={`Delete ER attribute ${attribute.attributes.name ?? ''}`} onClick={() => dispatch({ type: 'delete-er-attribute', entity: selection.id, name: attribute.attributes.name ?? '', occurrence })}>Delete</Button>
+              return <div className="mve-child-element mve-er-attribute" key={attribute.id}>
+                <label className="mve-child-field">Type<Input aria-label="Attribute type" value={draft.type} onValueChange={(type) => setAttributeDrafts((current) => ({ ...current, [attribute.id]: { ...draft, type } }))} /></label>
+                <label className="mve-child-field">Name<Input aria-label="Attribute name" value={draft.name} onValueChange={(name) => setAttributeDrafts((current) => ({ ...current, [attribute.id]: { ...draft, name } }))} /></label>
+                <label className="mve-child-field">Key<Input aria-label="Attribute key" value={draft.key} onValueChange={(key) => setAttributeDrafts((current) => ({ ...current, [attribute.id]: { ...draft, key } }))} /></label>
+                <label className="mve-child-field">Comment<Input aria-label="Attribute comment" value={draft.comment} onValueChange={(comment) => setAttributeDrafts((current) => ({ ...current, [attribute.id]: { ...draft, comment } }))} /></label>
+                <div className="mve-child-actions">
+                  <Button type="button" onClick={() => dispatchPreservingSelection({ type: 'update-er-attribute', entity: selection.id, name: attribute.attributes.name ?? '', occurrence, patch: draft })}>Apply attribute</Button>
+                  <Button type="button" aria-label={`Delete ER attribute ${attribute.attributes.name ?? ''}`} onClick={() => dispatchPreservingSelection({ type: 'delete-er-attribute', entity: selection.id, name: attribute.attributes.name ?? '', occurrence })}>Delete</Button>
+                </div>
               </div>;
             })}
-            <Button type="button" onClick={() => dispatch({ type: 'create-er-attribute', entity: selection.id })}>Add attribute</Button>
+            <Button type="button" onClick={() => dispatchPreservingSelection({ type: 'create-er-attribute', entity: selection.id })}>Add attribute</Button>
           </section>}
         </form>
       ) : selection.kind === 'edge' ? (
@@ -266,6 +292,7 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, onD
           <div><Button type="submit">Apply</Button> <Button type="button" aria-label={`Delete flowchart subgraph ${selection.id}`} onClick={remove}>Delete</Button></div>
         </form>
       )}
+      </div>
       <footer className="mve-edit-dialog-actions"><Dialog.Close render={<Button type="button">Cancel</Button>} /></footer>
         </Dialog.Popup>
       </Dialog.Portal>

@@ -10,6 +10,8 @@ import { appendPaletteEntry, diagramTypeFromSource, diagramTypes, paletteCatalog
 import { MermaidRendererError, renderMermaid } from '../renderer/mermaid-renderer';
 
 const previewDebounceMs = 120;
+const minZoom = 0.2;
+const maxZoom = 3;
 type EditorStatusState = 'loading' | 'empty' | 'error' | 'unsupported' | 'unknown' | 'source-only' | 'ready';
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -84,6 +86,8 @@ export function createMermaidVisualEditor(
   const onSelectionChange = options.onSelectionChange;
   const onError = options.onError;
   const onSave = options.onSave;
+  let saving = false;
+  let saveButton: HTMLButtonElement | undefined;
   const onReset = options.onReset;
   const onRemove = options.onRemove;
   if (typeof initialValue !== 'string') throw new TypeError('options.value must be a string.');
@@ -197,12 +201,27 @@ export function createMermaidVisualEditor(
       setStatus('source-only', 'Save is unavailable until the host provides an onSave callback.');
       return;
     }
+    if (saving) return;
+    saving = true;
+    if (saveButton) {
+      saveButton.disabled = true;
+      saveButton.textContent = 'Saving…';
+      saveButton.setAttribute('aria-label', 'Saving diagram');
+    }
+    setStatus('loading', 'Saving diagram…');
     try {
       await onSave(value);
       setStatus('ready', 'Save request completed.');
     } catch (cause) {
       setStatus('error', cause instanceof Error ? `Save failed: ${cause.message}` : 'Save failed.');
       notifyError(onError, { code: 'save', message: cause instanceof Error ? cause.message : 'Save failed.', cause });
+    } finally {
+      saving = false;
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save';
+        saveButton.setAttribute('aria-label', 'Save diagram');
+      }
     }
   }
 
@@ -261,6 +280,8 @@ export function createMermaidVisualEditor(
     closeEditorDialog();
   });
   dialogHeader.append(dialogTitle, dialogClose);
+  const dialogBody = container.ownerDocument.createElement('div');
+  dialogBody.className = 'mve-dialog-body';
   const editFields = container.ownerDocument.createElement('div');
   editFields.className = 'mve-edit-fields';
   const dialogFieldValues = new WeakMap<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, string>();
@@ -291,7 +312,8 @@ export function createMermaidVisualEditor(
     setStatus('ready', 'Element changes cancelled.');
     closeEditorDialog();
   });
-  editDialog.append(dialogHeader, editFields, dialogActions);
+  dialogBody.append(editFields);
+  editDialog.append(dialogHeader, dialogBody, dialogActions);
 
   const workspace = container.ownerDocument.createElement('div');
   workspace.className = 'mve-workspace';
@@ -357,9 +379,13 @@ export function createMermaidVisualEditor(
   zoomLabel.className = 'mve-zoom-label';
   zoomLabel.setAttribute('aria-label', 'Zoom level');
   let zoom = 1;
+  let zoomInButton: HTMLButtonElement | undefined;
+  let zoomOutButton: HTMLButtonElement | undefined;
   const updateZoom = (): void => {
     zoomLabel.value = `${Math.round(zoom * 100)}%`;
     zoomLabel.textContent = zoomLabel.value;
+    if (zoomInButton) zoomInButton.disabled = zoom >= maxZoom;
+    if (zoomOutButton) zoomOutButton.disabled = zoom <= minZoom;
     const svg = preview.querySelector('svg');
     if (!svg) return;
     const viewBox = svg.getAttribute('viewBox')?.trim().split(/[ ,]+/).map(Number);
@@ -379,7 +405,7 @@ export function createMermaidVisualEditor(
     const svg = preview.querySelector('svg');
     const viewBox = svg?.getAttribute('viewBox')?.trim().split(/[ ,]+/).map(Number);
     if (viewBox?.length === 4 && viewBox[2]! > 0 && viewBox[3]! > 0 && previewStage.clientWidth && previewStage.clientHeight) {
-      zoom = Math.max(0.2, Math.min(3, Math.min(
+      zoom = Math.max(minZoom, Math.min(maxZoom, Math.min(
         (previewStage.clientWidth - 32) / viewBox[2]!,
         (previewStage.clientHeight - 32) / viewBox[3]!,
       )));
@@ -388,13 +414,16 @@ export function createMermaidVisualEditor(
     previewStage.scrollTo({ top: 0, left: 0 });
   };
   canvasToolbar.append(
-    canvasButton('+', 'Zoom in', () => { zoom = Math.min(zoom + 0.1, 3); updateZoom(); }), zoomLabel,
-    canvasButton('−', 'Zoom out', () => { zoom = Math.max(zoom - 0.1, 0.2); updateZoom(); }),
+    (zoomInButton = canvasButton('+', 'Zoom in', () => { zoom = Math.min(zoom + 0.1, maxZoom); updateZoom(); })), zoomLabel,
+    (zoomOutButton = canvasButton('−', 'Zoom out', () => { zoom = Math.max(zoom - 0.1, minZoom); updateZoom(); })),
     canvasButton('Fit', 'Fit diagram', fitCanvas),
     canvasButton('Center', 'Center diagram', () => { previewStage.scrollTo({ top: (previewStage.scrollHeight - previewStage.clientHeight) / 2, left: (previewStage.scrollWidth - previewStage.clientWidth) / 2 }); }),
-    canvasButton('Save', 'Save diagram', () => { void save(); }),
-    canvasButton('Reset', 'Reset diagram', () => reset()),
   );
+  if (onSave) {
+    saveButton = canvasButton('Save', 'Save diagram', () => { void save(); });
+    canvasToolbar.append(saveButton);
+  }
+  canvasToolbar.append(canvasButton('Reset', 'Reset diagram', () => reset()));
 
   const sourcePanel = container.ownerDocument.createElement('section');
   sourcePanel.className = 'mve-source-panel';
@@ -816,8 +845,9 @@ export function createMermaidVisualEditor(
   });
   previewStage.addEventListener('pointerup', () => { panStart = undefined; });
   previewStage.addEventListener('wheel', (event) => {
+    if (!event.ctrlKey && !event.metaKey) return;
     event.preventDefault();
-    zoom = Math.max(0.2, Math.min(3, zoom * (event.deltaY < 0 ? 1.1 : 0.9)));
+    zoom = Math.max(minZoom, Math.min(maxZoom, zoom * (event.deltaY < 0 ? 1.1 : 0.9)));
     updateZoom();
   }, { passive: false });
   previewStage.addEventListener('dragover', (event) => {

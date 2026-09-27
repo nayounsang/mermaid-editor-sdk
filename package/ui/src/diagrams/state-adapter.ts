@@ -310,7 +310,6 @@ export const stateAdapter: DiagramAdapter = {
       svg.removeEventListener('drop', drop);
       toolbar.replaceChildren();
       selected = null;
-      context.setSelection(null);
     };
   },
 };
