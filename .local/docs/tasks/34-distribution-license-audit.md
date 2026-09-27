@@ -22,7 +22,7 @@
 
 ## 결과 저장 위치
 
-문서: docs/validation/distribution-license-audit.md 및 package license notice 파일
+문서: .local/docs/validation/distribution-license-audit.md 및 package license notice 파일
 
 ## 선행 작업
 

@@ -49,8 +49,8 @@ The page writes a JSON result to `#result` and sets `data-result="pass"` only wh
 
 Fixture files:
 
-- `docs/validation/csp-browser.html` loads the generated IIFE and stylesheet.
-- `docs/validation/csp-browser.js` creates the editor, checks the initial render, simulates source editing, and checks external value synchronization.
+- `.local/docs/validation/csp-browser.html` loads the generated IIFE and stylesheet.
+- `.local/docs/validation/csp-browser.js` creates the editor, checks the initial render, simulates source editing, and checks external value synchronization.
 - `scripts/serve-csp-fixture.mjs` serves the fixture and applies the selected CSP as an HTTP response header.
 
 ## Comparison with the baseline and design

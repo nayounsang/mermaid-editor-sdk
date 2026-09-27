@@ -16,7 +16,7 @@
 
 ## 결과 저장 위치
 
-문서: [docs/react-design.md](../react-design.md)
+문서: [.local/docs/react-design.md](../react-design.md)
 
 ## 선행 작업
 
@@ -27,5 +27,5 @@
 - `MermaidCodeBlock`과 Node/Edge 기반 `RendererModel`을 양방향으로 연결하는 `DiagramSession`, CRUD adapter, React UI 구조를 설계했다.
 - React component를 package root로 두고 `./react` alias와 `./legacy` imperative compatibility entry를 제공한다.
 - React와 ReactDOM은 peer dependencies로 둔다. Zustand, Zod, Base UI, es-toolkit을 React UI와 state/action 경계에서 사용한다.
-- upstream 단일 HTML 및 Extension host 기능과 현재 SDK package 경계의 차이를 `docs/react-design.md`에 기록했다.
+- upstream 단일 HTML 및 Extension host 기능과 현재 SDK package 경계의 차이를 `.local/docs/react-design.md`에 기록했다.
 - 이 task는 설계 기록으로 완료됐다. 구현 범위는 [task 38](38-react-migration.md)에서 진행한다.

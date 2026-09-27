@@ -36,7 +36,7 @@ git -C mermaid-visual-editor rev-parse HEAD
 
 ## 현재 대상 저장소
 
-현재 작업 디렉터리는 `mermaid-editor-sdk`이며, 조사 시점에는 `docs/`의 설계·task 문서만 있고 앱 소스, `package.json`, 테스트 또는 build 설정이 없다. 따라서 task 08은 기존 target 코드를 추출하는 작업이 아니라, 새 SDK package의 구조를 정하는 설계 결정이다.
+현재 작업 디렉터리는 `mermaid-editor-sdk`이며, 조사 시점에는 `.local/docs/`의 설계·task 문서만 있고 앱 소스, `package.json`, 테스트 또는 build 설정이 없다. 따라서 task 08은 기존 target 코드를 추출하는 작업이 아니라, 새 SDK package의 구조를 정하는 설계 결정이다.
 
 ## 경계 결론
 

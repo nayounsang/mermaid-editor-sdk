@@ -107,4 +107,4 @@ pnpm lint
 pnpm test
 ```
 
-See [the monorepo design](docs/monorepo-design.md) and [development guide](docs/development.md) for package boundaries, exports, and workflow.
+See [the monorepo design](.local/docs/monorepo-design.md) and [development guide](.local/docs/development.md) for package boundaries, exports, and workflow.

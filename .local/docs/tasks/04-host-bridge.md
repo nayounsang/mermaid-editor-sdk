@@ -16,7 +16,7 @@
 
 ## 결과 저장 위치
 
-문서: docs/research/host-bridge.md
+문서: .local/docs/research/host-bridge.md
 
 ## 선행 작업
 

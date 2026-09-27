@@ -16,7 +16,7 @@ buildEditorHtml()의 문자열 설정 주입과 소비 위치를 조사한다.
 
 ## 결과 저장 위치
 
-문서: docs/research/injected-options.md
+문서: .local/docs/research/injected-options.md
 
 ## 선행 작업
 

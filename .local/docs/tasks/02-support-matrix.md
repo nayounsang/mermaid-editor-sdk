@@ -16,7 +16,7 @@ README와 코드에서 12종 diagram별 실제 GUI 편집 동작을 조사한다
 
 ## 결과 저장 위치
 
-문서: docs/research/support-matrix.md
+문서: .local/docs/research/support-matrix.md
 
 ## 선행 작업
 

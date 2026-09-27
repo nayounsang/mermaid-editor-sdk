@@ -165,4 +165,4 @@ SDK 구현은 기존 HTML을 불투명 산출물로 내장하지 않는다. Fram
 
 ## 12. 사용자 화면 와이어프레임
 
-화면 배치, palette 항목, 사용자 조작과 상태 피드백의 기준은 [Mermaid 편집기 UI/UX 와이어프레임](docs/ux-ui/UI-UX-WIREFRAME.md) 및 [다이어그램 팔레트 카탈로그](docs/ux-ui/UI-UX-WIREFRAME.md)를 따른다. 이 문서는 사용자가 보게 될 화면과 동작을 설명하며 SDK props/API, 내부 UI 구현, 파일 저장 방식을 정하지 않는다. SDK 한 인스턴스의 범위는 Mermaid 문자열 하나이며 multi-sheet와 여러 block 선택 UI는 포함하지 않는다.
+화면 배치, palette 항목, 사용자 조작과 상태 피드백의 기준은 [Mermaid 편집기 UI/UX 와이어프레임](../ux-ui/UI-UX-WIREFRAME.md) 및 [다이어그램 팔레트 카탈로그](../ux-ui/PALETTE-CATALOG.md)를 따른다. 이 문서는 사용자가 보게 될 화면과 동작을 설명하며 SDK props/API, 내부 UI 구현, 파일 저장 방식을 정하지 않는다. SDK 한 인스턴스의 범위는 Mermaid 문자열 하나이며 multi-sheet와 여러 block 선택 UI는 포함하지 않는다.

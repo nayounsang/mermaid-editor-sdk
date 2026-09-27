@@ -16,7 +16,7 @@ API, 단일 source 경계, host 저장 책임, 오류 상태, CSP를 안내한�
 
 ## 결과 저장 위치
 
-문서: docs/consumer-guide.md. 실행 가능한 예제는 examples/ 코드
+문서: .local/docs/consumer-guide.md. 실행 가능한 예제는 examples/ 코드
 
 ## 선행 작업
 

@@ -40,7 +40,7 @@ Turbo 구성 근거는 [package/task graph](https://turborepo.dev/docs/core-conc
 ├── package/
 │   ├── headless/                # UI/React 없는 session, model, adapters, source 로직
 │   └── ui/                      # full SDK와 조합 가능한 React UI component
-├── docs/
+├── .local/docs/
 ├── turbo.json                   # task graph, cache outputs, persistent dev tasks
 ├── pnpm-workspace.yaml          # app/** 및 package/** workspace 검색
 ├── package.json                 # private workspace root, turbo scripts/dev dependency

@@ -8,7 +8,7 @@
 
 ## 목적
 
-`docs/react-design.md`의 source/model session, React UI, package 구조를 현재 SDK 전체에 구현한다. 별도 하위 프로젝트를 추가하지 않고 package root를 React editor entry로 만든다. 기존 imperative API와 browser IIFE는 호환 경계로 유지한다.
+`.local/docs/react-design.md`의 source/model session, React UI, package 구조를 현재 SDK 전체에 구현한다. 별도 하위 프로젝트를 추가하지 않고 package root를 React editor entry로 만든다. 기존 imperative API와 browser IIFE는 호환 경계로 유지한다.
 
 ## 완료 조건
 

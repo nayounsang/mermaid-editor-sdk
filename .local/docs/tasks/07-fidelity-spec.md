@@ -16,7 +16,7 @@ frontmatter, 주석, directive, 미지원 문법을 포함한 fixture/비교 명
 
 ## 결과 저장 위치
 
-문서: docs/decisions/source-fidelity.md. 실행 가능한 fixture는 코드 저장소의 test fixtures에 둔다.
+문서: .local/docs/decisions/source-fidelity.md. 실행 가능한 fixture는 코드 저장소의 test fixtures에 둔다.
 
 ## 선행 작업
 

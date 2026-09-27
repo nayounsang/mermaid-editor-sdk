@@ -16,7 +16,7 @@
 
 ## 결과 저장 위치
 
-문서: docs/research/provenance-license.md
+문서: .local/docs/research/provenance-license.md
 
 ## 선행 작업
 

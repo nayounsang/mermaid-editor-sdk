@@ -16,7 +16,7 @@
 
 ## 결과 저장 위치
 
-문서: docs/decisions/build-architecture.md
+문서: .local/docs/decisions/build-architecture.md
 
 ## 선행 작업
 

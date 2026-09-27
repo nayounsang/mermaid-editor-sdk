@@ -16,7 +16,7 @@ container 수명, callback 시점, 입력·오류·option 타입 등 초안의 �
 
 ## 결과 저장 위치
 
-문서: docs/decisions/sdk-contract.md. 확정된 계약은 DESIGN.md에도 반영한다.
+문서: .local/docs/decisions/sdk-contract.md. 확정된 계약은 DESIGN.md에도 반영한다.
 
 ## 선행 작업
 

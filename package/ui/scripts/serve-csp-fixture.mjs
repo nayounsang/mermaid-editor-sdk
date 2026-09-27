@@ -13,9 +13,9 @@ const contentTypes = {
   '.js': 'text/javascript; charset=utf-8',
 };
 const assets = new Map([
-  ['/', 'docs/validation/csp-browser.html'],
-  ['/docs/validation/csp-browser.html', 'docs/validation/csp-browser.html'],
-  ['/docs/validation/csp-browser.js', 'docs/validation/csp-browser.js'],
+  ['/', '../../.local/docs/validation/csp-browser.html'],
+  ['/docs/validation/csp-browser.html', '../../.local/docs/validation/csp-browser.html'],
+  ['/docs/validation/csp-browser.js', '../../.local/docs/validation/csp-browser.js'],
   ['/dist/style.css', 'dist/style.css'],
   ['/dist/mermaid-visual-editor.iife.js', 'dist/mermaid-visual-editor.iife.js'],
 ]);

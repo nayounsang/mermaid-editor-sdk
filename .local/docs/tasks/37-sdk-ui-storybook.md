@@ -33,12 +33,12 @@ SDK 편집 UI의 레이아웃과 시각 언어를 [Mermaid NG Screenshots](https
 
 ## 결과 저장 위치
 
-`storybook.html`, `src/storybook.ts`, `src/styles/storybook.css`, `src/styles/dev.css`, `src/dev.ts`, `docs/development.md`
+`storybook.html`, `src/storybook.ts`, `src/styles/storybook.css`, `src/styles/dev.css`, `src/dev.ts`, `.local/docs/development.md`
 
 ## UX/UI 기준 문서
 
-- [편집기 UI/UX 와이어프레임](../mermaid-editor-sdk/UI-UX-WIREFRAME.md): 사용자가 보는 단일 다이어그램 화면과 조작 흐름
-- [팔레트 카탈로그](../mermaid-editor-sdk/PALETTE-CATALOG.md): Mermaid Visual Editor v2.5.0 기준 12개 종류의 그룹·항목·아이콘·순서
+- [편집기 UI/UX 와이어프레임](../ux-ui/UI-UX-WIREFRAME.md): 사용자가 보는 단일 다이어그램 화면과 조작 흐름
+- [팔레트 카탈로그](../ux-ui/PALETTE-CATALOG.md): Mermaid Visual Editor v2.5.0 기준 12개 종류의 그룹·항목·아이콘·순서
 
 위 문서들은 구현 접근이나 SDK API를 정하지 않는 사용자 화면 명세다. Storybook reference 화면을 검토할 때 함께 참조한다.
 

@@ -16,14 +16,14 @@
 
 | 작업            | 결과 위치                                                                                                                        |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| 01–05         | 각각 `docs/research/baseline-source.md`, `support-matrix.md`, `injected-options.md`, `host-bridge.md`, `provenance-license.md` |
-| 06–08         | 각각 `docs/decisions/sdk-contract.md`, `source-fidelity.md`, `build-architecture.md`                                           |
+| 01–05         | 각각 `.local/docs/research/baseline-source.md`, `support-matrix.md`, `injected-options.md`, `host-bridge.md`, `provenance-license.md` |
+| 06–08         | 각각 `.local/docs/decisions/sdk-contract.md`, `source-fidelity.md`, `build-architecture.md`                                           |
 | 09–29, 31, 37–39 | 코드 (카드에 테스트·fixture가 명시된 경우 함께 추가)                                                                                         |
-| 32            | `docs/validation/csp-browser.md` 및 필요한 재현 코드                                                                                 |
-| 34            | `docs/validation/distribution-license-audit.md` 및 package license notice                                                     |
-| 35            | `docs/react-design.md`                                                                                                       |
-| 36            | `docs/validation/release-validation.md`                                                                                      |
-| 33            | `docs/consumer-guide.md` 및 실행 가능한 예제 코드                                                                                      |
+| 32            | `.local/docs/validation/csp-browser.md` 및 필요한 재현 코드                                                                                 |
+| 34            | `.local/docs/validation/distribution-license-audit.md` 및 package license notice                                                     |
+| 35            | `.local/docs/react-design.md`                                                                                                       |
+| 36            | `.local/docs/validation/release-validation.md`                                                                                      |
+| 33            | `.local/docs/consumer-guide.md` 및 실행 가능한 예제 코드                                                                                      |
 
 
 

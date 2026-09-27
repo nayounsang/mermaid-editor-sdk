@@ -29,7 +29,7 @@ React Mermaid editor SDK를 Turbo workspace로 구성하고, full UI SDK와 조�
 
 ## 현재 진행
 
-- `docs/monorepo-design.md`에 broad React SDK research, package responsibilities, dependency direction, API entrypoints, package manager choice, high-level procedure와 완료 증거를 기록했다.
+- `.local/docs/monorepo-design.md`에 broad React SDK research, package responsibilities, dependency direction, API entrypoints, package manager choice, high-level procedure와 완료 증거를 기록했다.
 - `app/example`, `package/ui`, `package/headless`로 workspace를 분리하고 Turbo task graph와 pnpm lockfile을 구성했다.
 - public UI/headless CJS exports smoke check, frozen install, build, typecheck, lint, 전체 335개 test, 브라우저 HMR 및 배포 license audit를 확인했다.
 - HMR은 `EditorShell` source의 임시 문구 변경이 브라우저에 새로고침 없이 반영되는 것을 확인한 뒤 원복했다.
