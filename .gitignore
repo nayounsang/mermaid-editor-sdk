@@ -1,5 +1,6 @@
 node_modules/
 dist/
+storybook-static/
 coverage/
 .turbo/
 mermaid-visual-editor-1.1.0.vsix
