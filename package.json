@@ -1,79 +1,17 @@
 {
-  "name": "mermaid-visual-editor-sdk",
-  "version": "0.1.0",
-  "description": "React Mermaid visual editor SDK",
-  "license": "MIT",
-  "type": "module",
-  "files": [
-    "dist",
-    "LICENSE",
-    "THIRD-PARTY-LICENSES"
-  ],
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "browser": "./dist/mermaid-visual-editor.iife.js",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./react": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./legacy": {
-      "types": "./dist/legacy.d.ts",
-      "import": "./dist/legacy.js",
-      "require": "./dist/legacy.cjs"
-    },
-    "./style.css": "./dist/style.css"
-  },
-  "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0"
-  },
-  "sideEffects": [
-    "**/*.css"
-  ],
+  "name": "mermaid-editor-sdk-workspace",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "build": "vite build && vite build --config vite.legacy.config.ts && tsc -p tsconfig.types.json && node scripts/generate-third-party-licenses.mjs",
-    "csp:fixture": "node scripts/serve-csp-fixture.mjs",
-    "audit:distribution": "node scripts/audit-distribution-licenses.mjs",
-    "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
-  },
-  "dependencies": {
-    "@base-ui/react": "^1.8.0",
-    "@codemirror/view": "^6.43.13",
-    "@dnd-kit/react": "^0.5.0",
-    "@hookform/resolvers": "^5.9.1",
-    "@uiw/react-codemirror": "^4.25.12",
-    "diff": "^9.0.0",
-    "es-toolkit": "^1.52.0",
-    "mermaid": "11.17.2",
-    "nanoid": "^6.0.1",
-    "p-queue": "^9.3.3",
-    "react-hook-form": "^7.89.0",
-    "zod": "^4.6.5",
-    "zustand": "^5.0.15"
+    "dev": "turbo run dev --filter=@mermaid-editor/example",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "audit:distribution": "turbo run audit:distribution --filter=mermaid-visual-editor-sdk",
+    "csp:fixture": "pnpm --filter mermaid-visual-editor-sdk csp:fixture"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^22.0.0",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "eslint": "^10.11.0",
-    "jsdom": "^26.0.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "typescript": "^5.8.0",
-    "typescript-eslint": "^8.70.1",
-    "vite": "^6.2.0",
-    "vitest": "^5.0.1"
+    "turbo": "2.11.4"
   }
 }

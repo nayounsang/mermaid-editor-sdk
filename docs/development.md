@@ -1,13 +1,24 @@
-# React playground
+# Monorepo development
 
-Start the browser playground from the repository root:
+Install the pinned workspace dependencies and start the Vite example from the repository root:
 
 ```sh
-npm run dev
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
-Vite opens the local page at `http://127.0.0.1:5173` with a Flowchart sample. The playground mounts one Mermaid code block in the React editor. Source and palette edits stay in memory until Save; Save stores the current source in local storage for that browser session.
+Turbo runs `app/example` at `http://127.0.0.1:5173`. Vite resolves the public `mermaid-visual-editor-sdk` and `@mermaid-editor/headless` workspace exports to their TypeScript sources in development, so UI and headless changes trigger HMR. The example mounts one Mermaid code block in the React editor. Source and palette edits stay in memory until Save; Save stores the current source in local storage for that browser session.
 
-The playground mounts the package's React `MermaidEditor` under `StrictMode`. It supports source edits, Mermaid preview, diagram palettes, selection editing, history, zoom controls, and host-provided save behavior.
+Useful root commands:
 
-The static visual reference in [`/storybook.html`](../storybook.html) remains disconnected from the SDK runtime; only modal preview/close controls are interactive. See [task 37](tasks/37-sdk-ui-storybook.md) and the ongoing [React migration](tasks/38-react-migration.md).
+```sh
+pnpm build
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm audit:distribution
+```
+
+Turbo builds `@mermaid-editor/headless` before `mermaid-visual-editor-sdk`, then builds the example consumer. The playground mounts the SDK's React `MermaidEditor` under `StrictMode`. It supports source edits, Mermaid preview, diagram palettes, selection editing, history, zoom controls, and host-provided save behavior.
+
+See the [monorepo design](monorepo-design.md), [task 37](tasks/37-sdk-ui-storybook.md), [React migration](tasks/38-react-migration.md), and [monorepo migration](tasks/39-turbo-monorepo.md).

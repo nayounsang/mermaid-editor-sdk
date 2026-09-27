@@ -1,0 +1,42 @@
+{
+  "name": "@mermaid-editor/headless",
+  "version": "0.1.0",
+  "description": "UI-independent Mermaid editor session and source editing logic",
+  "license": "MIT",
+  "type": "module",
+  "files": ["dist", "LICENSE", "THIRD-PARTY-LICENSES"],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.types.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "diff": "^9.0.0",
+    "nanoid": "^6.0.1",
+    "zod": "^4.6.5",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.0.0",
+    "eslint": "^10.11.0",
+    "jsdom": "^26.0.0",
+    "mermaid": "11.17.2",
+    "typescript": "^5.8.0",
+    "vite": "^6.2.0",
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^5.0.1"
+  }
+}
