@@ -115,8 +115,26 @@ try {
   if (archiveEntries.some((entry) => entry.endsWith('.map'))) {
     throw new Error('npm tarball unexpectedly includes JavaScript source maps.');
   }
+  const packageJson = JSON.parse(fs.readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
+  const exportTargets = new Set();
+  const collectExportTargets = (entry) => {
+    if (typeof entry === 'string' && entry.startsWith('./')) exportTargets.add(entry);
+    else if (entry && typeof entry === 'object') Object.values(entry).forEach(collectExportTargets);
+  };
+  collectExportTargets(packageJson.exports);
+  for (const target of exportTargets) {
+    const archiveTarget = `package/${target.replace(/^\.\//, '')}`;
+    if (!archiveEntrySet.has(archiveTarget)) {
+      throw new Error(`npm tarball is missing export target ${target}.`);
+    }
+  }
+  const archivedPackageJson = JSON.parse(run('tar', ['-xOf', archivePath, 'package/package.json']));
+  const headlessPackageJson = JSON.parse(fs.readFileSync(path.resolve(projectRoot, '../headless/package.json'), 'utf8'));
+  if (archivedPackageJson.dependencies?.['@mermaid-editor/headless'] !== headlessPackageJson.version) {
+    throw new Error('npm tarball did not rewrite @mermaid-editor/headless workspace dependency to its published version.');
+  }
   const unexpectedTopLevel = [...new Set(archiveEntries.map((entry) => entry.split('/')[1]).filter(Boolean))]
-    .filter((entry) => !['LICENSE', 'README.md', 'THIRD-PARTY-LICENSES', 'dist', 'package.json'].includes(entry));
+    .filter((entry) => !['LICENSE', 'README.md', 'THIRD-PARTY-LICENSES', 'dist', 'package.json', 'src'].includes(entry));
   if (unexpectedTopLevel.length) {
     throw new Error(`npm tarball contains files outside package.json files boundary: ${unexpectedTopLevel.join(', ')}.`);
   }
@@ -141,6 +159,8 @@ try {
     tarballBytes: archiveBytes.length,
     tarballSha256: digest,
     includedSourceMaps: archiveEntries.filter((entry) => entry.endsWith('.map')).length,
+    exportTargets: exportTargets.size,
+    internalWorkspaceDependencyRewritten: true,
     licenseNoticeFilesPresentAndExact: true,
     result: 'PASS',
   }, null, 2));

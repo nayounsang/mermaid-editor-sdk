@@ -337,6 +337,7 @@ export const erAdapter: DiagramAdapter = {
       svg.removeEventListener('dragover', dragOver);
       svg.removeEventListener('drop', drop);
       toolbar.replaceChildren();
+      if (selected) context.setSelection(null);
       selected = null;
     };
   },

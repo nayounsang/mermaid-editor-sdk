@@ -4,7 +4,7 @@
   "description": "UI-independent Mermaid editor session and source editing logic",
   "license": "MIT",
   "type": "module",
-  "files": ["dist", "LICENSE", "THIRD-PARTY-LICENSES"],
+  "files": ["dist", "src", "LICENSE", "THIRD-PARTY-LICENSES"],
   "publishConfig": {
     "access": "public"
   },

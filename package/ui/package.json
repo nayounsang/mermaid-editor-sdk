@@ -4,7 +4,7 @@
   "description": "Composable React UI and full Mermaid visual editor SDK",
   "license": "MIT",
   "type": "module",
-  "files": ["dist", "LICENSE", "THIRD-PARTY-LICENSES"],
+  "files": ["dist", "src", "LICENSE", "THIRD-PARTY-LICENSES"],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
