@@ -10,10 +10,14 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && pnpm changeset publish",
     "audit:distribution": "turbo run audit:distribution --filter=mermaid-visual-editor-sdk",
     "csp:fixture": "pnpm --filter mermaid-visual-editor-sdk csp:fixture"
   },
   "devDependencies": {
+    "@changesets/cli": "^3.0.3",
     "turbo": "2.11.4"
   }
 }
