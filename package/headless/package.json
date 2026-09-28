@@ -1,6 +1,6 @@
 {
   "name": "@mermaid-editor-sdk/headless",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "UI-independent Mermaid editor session and source editing logic",
   "license": "MIT",
   "repository": {
