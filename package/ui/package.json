@@ -1,6 +1,6 @@
 {
   "name": "@mermaid-editor-sdk/ui",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Composable React UI and full Mermaid visual editor SDK",
   "license": "MIT",
   "repository": {

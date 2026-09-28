@@ -1,5 +1,11 @@
 # @mermaid-editor-sdk/ui
 
+## 0.0.2
+
+### Patch Changes
+
+- 20cd034: Polish the diagram type selector and align the state tool's state selector.
+
 ## 0.0.1
 
 ### Minor Changes
