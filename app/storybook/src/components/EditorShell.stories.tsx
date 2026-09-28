@@ -14,10 +14,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const FlowchartWorkspace: Story = {
-  args: {
-    title: 'Release workflow',
-    sidebar: <ToolSidebar model={fixtureModel} dispatch={() => undefined} onArmConnection={() => undefined} />,
-    canvas: <MermaidCanvas
+  render: () => <EditorShell title="Release workflow">
+    <EditorShell.Sidebar><ToolSidebar model={fixtureModel} dispatch={() => undefined} onArmConnection={() => undefined} /></EditorShell.Sidebar>
+    <EditorShell.Canvas><MermaidCanvas
       source={flowchartSource}
       model={fixtureModel}
       onSelection={() => undefined}
@@ -28,9 +27,8 @@ export const FlowchartWorkspace: Story = {
       onSave={() => undefined}
       onReset={() => undefined}
       onEditSelection={() => undefined}
-    />,
-    source: <SourceEditor value={flowchartSource} onChange={() => undefined} />,
-    selection: null,
-    status: <EditorStatus state="ready" message="Diagram ready." />,
-  },
+    /></EditorShell.Canvas>
+    <EditorShell.Source><SourceEditor value={flowchartSource} onChange={() => undefined} /></EditorShell.Source>
+    <EditorShell.Status><EditorStatus state="ready" message="Diagram ready." /></EditorShell.Status>
+  </EditorShell>,
 };
