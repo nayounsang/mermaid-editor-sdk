@@ -106,7 +106,7 @@ export function DiagramPalette({ model, dispatch, pendingConnection, onArmConnec
             return <div className="mve-palette-action" key={entry.label}>
               <DraggablePaletteButton id={`graph:${diagramType}:${group}:${entry.label}`} label={entry.label} icon={entry.icon}
                 action={action} disabled={actionDisabled} dragDisabled={Boolean(edgeAction)} active={isArmed} toggle={Boolean(edgeAction)} onClick={chooseAction} />
-              {statePaletteAction && ['start-transition', 'end-transition'].includes(statePaletteAction.item) && <label>State
+              {statePaletteAction && ['start-transition', 'end-transition'].includes(statePaletteAction.item) && <label className="mve-state-target-select">State
                 <select aria-label={`${entry.label} state`} value={defaultStateId} onChange={(event) => setSelectedStateId(event.currentTarget.value)}>
                   {stateIds.map((id) => <option key={id} value={id}>{id}</option>)}
                 </select>
