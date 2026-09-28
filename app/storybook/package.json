@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "@dnd-kit/react": "^0.5.0",
-    "@mermaid-editor/headless": "workspace:*",
-    "mermaid-visual-editor-sdk": "workspace:*",
+    "@mermaid-editor-sdk/headless": "workspace:*",
+    "@mermaid-editor-sdk/ui": "workspace:*",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },

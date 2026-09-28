@@ -1,5 +1,5 @@
 import type { DiagramAdapter } from './adapter';
-import { addGanttPaletteItem, ganttPalette, type GanttPaletteItemId } from '@mermaid-editor/headless';
+import { addGanttPaletteItem, ganttPalette, type GanttPaletteItemId } from '@mermaid-editor-sdk/headless';
 
 const DRAG_TYPE = 'application/x-mve-gantt-palette';
 

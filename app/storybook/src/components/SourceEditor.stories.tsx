@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SourceEditor } from 'mermaid-visual-editor-sdk';
+import { SourceEditor } from '@mermaid-editor-sdk/ui';
 import { flowchartSource, StoryFrame } from '../fixtures';
 
 const meta = { title: 'Components/SourceEditor', component: SourceEditor, decorators: [(Story) => <StoryFrame><Story /></StoryFrame>] } satisfies Meta<typeof SourceEditor>;

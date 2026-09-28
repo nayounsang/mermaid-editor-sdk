@@ -3,10 +3,10 @@ import { Button } from '@base-ui/react/button';
 import { Input } from '@base-ui/react/input';
 import { groupBy } from 'es-toolkit';
 import { useDraggable } from '@dnd-kit/react';
-import type { DiagramAction, RendererModel } from '@mermaid-editor/headless';
-import { diagramTypes, paletteCatalog, type EditableDiagramType } from '@mermaid-editor/headless';
+import type { DiagramAction, RendererModel } from '@mermaid-editor-sdk/headless';
+import { diagramTypes, paletteCatalog, type EditableDiagramType } from '@mermaid-editor-sdk/headless';
 import { sequencePalette } from '../../diagrams/sequence-adapter';
-import { ganttPalette } from '@mermaid-editor/headless';
+import { ganttPalette } from '@mermaid-editor-sdk/headless';
 import { graphPalettes } from '../diagrams/registry';
 import { sourcePaletteItemId } from '../diagrams/source-palette-items';
 

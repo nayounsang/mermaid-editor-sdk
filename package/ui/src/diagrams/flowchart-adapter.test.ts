@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { flowchartAdapter } from './flowchart-adapter';
 import type { DiagramAdapterContext } from './adapter';
-import { SourceDocument } from '@mermaid-editor/headless';
+import { SourceDocument } from '@mermaid-editor-sdk/headless';
 
 function makeContext(source: string, svgMarkup: string): { context: DiagramAdapterContext; getSource: () => string; selection: () => unknown } {
   const toolbar = document.createElement('div');

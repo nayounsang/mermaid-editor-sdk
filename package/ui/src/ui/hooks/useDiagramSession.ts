@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useStore } from 'zustand';
-import type { DiagramAction, ChangeOrigin } from '@mermaid-editor/headless';
+import type { DiagramAction, ChangeOrigin } from '@mermaid-editor-sdk/headless';
 import { useEditorController } from '../context/editor-session-context';
 
 export function useDiagramSession() {

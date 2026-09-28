@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SourceDocument } from '@mermaid-editor/headless';
+import { SourceDocument } from '@mermaid-editor-sdk/headless';
 import { sequenceAdapter } from './sequence-adapter';
 import type { DiagramAdapterContext } from './adapter';
 

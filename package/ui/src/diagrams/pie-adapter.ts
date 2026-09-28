@@ -1,5 +1,5 @@
 import type { DiagramAdapter } from './adapter';
-import { addPiePaletteItem, piePalette, type PiePaletteItemId } from '@mermaid-editor/headless';
+import { addPiePaletteItem, piePalette, type PiePaletteItemId } from '@mermaid-editor-sdk/headless';
 
 const DRAG_TYPE = 'application/x-mve-pie-palette';
 

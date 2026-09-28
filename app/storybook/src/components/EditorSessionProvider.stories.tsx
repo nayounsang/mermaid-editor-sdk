@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { EditorSessionProvider, useDiagramSession, useEditorController } from 'mermaid-visual-editor-sdk';
-import { EditorController } from '@mermaid-editor/headless';
+import { EditorSessionProvider, useDiagramSession, useEditorController } from '@mermaid-editor-sdk/ui';
+import { EditorController } from '@mermaid-editor-sdk/headless';
 import { flowchartSource, StoryFrame } from '../fixtures';
 
 function SessionPreview() {

@@ -130,8 +130,8 @@ try {
   }
   const archivedPackageJson = JSON.parse(run('tar', ['-xOf', archivePath, 'package/package.json']));
   const headlessPackageJson = JSON.parse(fs.readFileSync(path.resolve(projectRoot, '../headless/package.json'), 'utf8'));
-  if (archivedPackageJson.dependencies?.['@mermaid-editor/headless'] !== headlessPackageJson.version) {
-    throw new Error('npm tarball did not rewrite @mermaid-editor/headless workspace dependency to its published version.');
+  if (archivedPackageJson.dependencies?.['@mermaid-editor-sdk/headless'] !== headlessPackageJson.version) {
+    throw new Error('npm tarball did not rewrite @mermaid-editor-sdk/headless workspace dependency to its published version.');
   }
   const unexpectedTopLevel = [...new Set(archiveEntries.map((entry) => entry.split('/')[1]).filter(Boolean))]
     .filter((entry) => !['LICENSE', 'README.md', 'THIRD-PARTY-LICENSES', 'dist', 'package.json', 'src'].includes(entry));

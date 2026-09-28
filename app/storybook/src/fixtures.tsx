@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { EditorController } from '@mermaid-editor/headless';
-import type { EditorSelection } from 'mermaid-visual-editor-sdk';
-import { EditorSessionProvider } from 'mermaid-visual-editor-sdk';
+import { EditorController } from '@mermaid-editor-sdk/headless';
+import type { EditorSelection } from '@mermaid-editor-sdk/ui';
+import { EditorSessionProvider } from '@mermaid-editor-sdk/ui';
 
 export const flowchartSource = `flowchart LR
   start([Start]) --> review{Review request}

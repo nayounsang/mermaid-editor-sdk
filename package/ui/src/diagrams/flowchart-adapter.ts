@@ -25,7 +25,7 @@ import {
   type FlowchartNode,
   type FlowchartNodeShape,
   type FlowchartSubgraph,
-} from '@mermaid-editor/headless';
+} from '@mermaid-editor-sdk/headless';
 import type { EditorSelection } from '../runtime/types';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';

@@ -17,7 +17,7 @@ import {
   type ERAttribute,
   type ERCardinality,
   type ERRelationship,
-} from '@mermaid-editor/headless';
+} from '@mermaid-editor-sdk/headless';
 import type { EditorSelection } from '../runtime/types';
 import { installPointerConnections } from './pointer-connections';
 

@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MermaidEditor } from 'mermaid-visual-editor-sdk';
+import { MermaidEditor } from '@mermaid-editor-sdk/ui';
 import './dev.css';
 
 const initialSource = `flowchart TD

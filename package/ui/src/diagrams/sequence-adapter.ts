@@ -1,5 +1,5 @@
 import type { DiagramAdapter, DiagramAdapterContext } from './adapter';
-import { addSequencePaletteItem, type SequencePaletteItemId } from '@mermaid-editor/headless';
+import { addSequencePaletteItem, type SequencePaletteItemId } from '@mermaid-editor-sdk/headless';
 
 interface SequencePaletteItem {
   id: SequencePaletteItemId;

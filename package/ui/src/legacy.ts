@@ -7,4 +7,4 @@ export type {
   MermaidVisualEditor,
   MermaidVisualEditorOptions,
 } from './runtime/types';
-export type { DiagramType } from '@mermaid-editor/headless';
+export type { DiagramType } from '@mermaid-editor-sdk/headless';

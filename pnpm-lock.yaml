@@ -17,7 +17,7 @@ importers:
 
   app/example:
     dependencies:
-      mermaid-visual-editor-sdk:
+      '@mermaid-editor-sdk/ui':
         specifier: workspace:*
         version: link:../../package/ui
       react:
@@ -57,10 +57,10 @@ importers:
       '@dnd-kit/react':
         specifier: ^0.5.0
         version: 0.5.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@mermaid-editor/headless':
+      '@mermaid-editor-sdk/headless':
         specifier: workspace:*
         version: link:../../package/headless
-      mermaid-visual-editor-sdk:
+      '@mermaid-editor-sdk/ui':
         specifier: workspace:*
         version: link:../../package/ui
       react:
@@ -140,7 +140,7 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.9.1
         version: 5.9.1(react-hook-form@7.89.0(@types/react@19.3.0)(react@19.3.0))(zod@4.6.5)
-      '@mermaid-editor/headless':
+      '@mermaid-editor-sdk/headless':
         specifier: workspace:*
         version: link:../headless
       '@uiw/react-codemirror':

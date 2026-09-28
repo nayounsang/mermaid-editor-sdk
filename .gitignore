@@ -6,3 +6,6 @@ coverage/
 .turbo/
 mermaid-visual-editor-1.1.0.vsix
 complex-prompt/
+app/storybook/storybook-static/
+.agents/skills/ui-ux-pro-max/scripts/__pycache__/
+.local

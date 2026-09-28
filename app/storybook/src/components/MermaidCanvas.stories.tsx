@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DragDropProvider } from '@dnd-kit/react';
-import { MermaidCanvas } from 'mermaid-visual-editor-sdk';
+import { MermaidCanvas } from '@mermaid-editor-sdk/ui';
 import { fixtureModel, flowchartSource, StoryFrame } from '../fixtures';
 
 const meta = { title: 'Components/MermaidCanvas', component: MermaidCanvas, decorators: [(Story) => <DragDropProvider><StoryFrame><Story /></StoryFrame></DragDropProvider>] } satisfies Meta<typeof MermaidCanvas>;

@@ -9,7 +9,7 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "mermaid-visual-editor-sdk": "workspace:*",
+    "@mermaid-editor-sdk/ui": "workspace:*",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },

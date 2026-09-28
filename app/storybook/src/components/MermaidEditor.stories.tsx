@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MermaidEditor } from 'mermaid-visual-editor-sdk';
+import { MermaidEditor } from '@mermaid-editor-sdk/ui';
 import { flowchartSource, StoryFrame } from '../fixtures';
 
 const meta = {

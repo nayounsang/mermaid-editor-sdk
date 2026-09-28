@@ -1,4 +1,4 @@
-import type { EditableDiagramType } from '@mermaid-editor/headless';
+import type { EditableDiagramType } from '@mermaid-editor-sdk/headless';
 
 const sourcePaletteItemIds: Partial<Record<EditableDiagramType, Record<string, string>>> = {
   pie: { Title: 'title', Slice: 'slice' },

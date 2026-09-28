@@ -1,8 +1,13 @@
 {
-  "name": "@mermaid-editor/headless",
+  "name": "@mermaid-editor-sdk/headless",
   "version": "0.1.0",
   "description": "UI-independent Mermaid editor session and source editing logic",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nayounsang/mermaid-editor-sdk.git",
+    "directory": "package/headless"
+  },
   "type": "module",
   "files": ["dist", "src", "LICENSE", "THIRD-PARTY-LICENSES"],
   "publishConfig": {

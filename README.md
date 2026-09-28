@@ -1,110 +1,93 @@
-# Mermaid Visual Editor SDK
+# Mermaid Editor SDK
 
-The SDK ships as two packages: `mermaid-visual-editor-sdk` provides a complete React editor and composable React UI parts; `@mermaid-editor/headless` provides the session, diagram model, and Mermaid source editing logic without a UI. The Vite example under `app/example` consumes the UI package through its public package entry.
+Build Mermaid editors with the React UI package or compose your own interface from the headless editing logic.
 
-## Full React editor
+| Package | Use it for | Docs |
+|---|---|---|
+| `@mermaid-editor-sdk/ui` | A ready-to-use React editor with customizable components and full SDK. | [UI guide](docs/ui.md) |
+| `@mermaid-editor-sdk/headless` | Headless APIs for building a Mermaid editor from scratch. | [Headless guide](docs/headless.md) |
+
+## Quick start
+
+### Install
 
 ```sh
-pnpm add mermaid-visual-editor-sdk react react-dom
+pnpm add @mermaid-editor-sdk/ui
 ```
+
+```sh
+pnpm add @mermaid-editor-sdk/headless
+```
+
+### Use full SDK
 
 ```tsx
 import { useState } from 'react';
-import { MermaidEditor } from 'mermaid-visual-editor-sdk';
-import 'mermaid-visual-editor-sdk/style.css';
+import { MermaidEditor } from '@mermaid-editor-sdk/ui';
+import '@mermaid-editor-sdk/ui/style.css';
 
-const initialValue = `flowchart TD
-  Start --> Review
-  Review --> Done`;
-
-export function DiagramPage() {
-  const [value, setValue] = useState(initialValue);
-  return <MermaidEditor value={value} onChange={setValue} />;
+export function App() {
+  const [source, setSource] = useState('flowchart LR\n  Start --> Done');
+  return <MermaidEditor value={source} onChange={setSource} />;
 }
 ```
 
-`value` is one complete Mermaid code block. Host updates apply without calling `onChange`; source edits and diagram actions call it with the new source. Pass `onSave` to enable the Save action. `onError`, `onSelectionChange`, `onReset`, and `onRemove` are also available.
-
-The React editor renders its initial shell during server rendering and starts Mermaid rendering after it mounts in a browser. Import the stylesheet once in the application entry point.
-
-## Compose the UI parts
-
-The Provider and state hook are available from `mermaid-visual-editor-sdk/provider`. UI parts can also be imported independently from `/toolbar`, `/source`, `/renderer`, or `/components`.
+### Custom UI
 
 ```tsx
 import { useState } from 'react';
-import { EditorController } from '@mermaid-editor/headless';
 import {
-  EditorSessionProvider,
-  useDiagramSession,
-} from 'mermaid-visual-editor-sdk/provider';
-import { ToolSidebar } from 'mermaid-visual-editor-sdk/toolbar';
-import { SourceEditor } from 'mermaid-visual-editor-sdk/source';
-import 'mermaid-visual-editor-sdk/style.css';
+  DiagramTypeSelect,
+  EditorShell,
+  EditorStatus,
+  MermaidCanvas,
+  MermaidEditor,
+  SelectionEditor,
+  ToolSidebar,
+  type SourceEditorProps,
+  useMermaidEditorParts,
+} from '@mermaid-editor-sdk/ui';
+import '@mermaid-editor-sdk/ui/style.css';
 
-function CustomControls() {
-  const { snapshot, dispatch } = useDiagramSession();
-  // Place SDK controls in your own React layout and style the surrounding app.
-  return <ToolSidebar
-    model={snapshot.model}
-    dispatch={dispatch}
-    onArmConnection={() => {}}
-  />;
+function CustomSource({ value, onChange }: SourceEditorProps) {
+  return <textarea aria-label="Mermaid source" value={value}
+    onChange={(event) => onChange(event.currentTarget.value)} />;
 }
 
-function CustomPanels() {
-  const { snapshot, setSource } = useDiagramSession();
-  return <SourceEditor
-    value={snapshot.codeBlock.source}
-    onChange={(source) => setSource(source, 'source-editor')}
-  />;
+function EditorLayout() {
+  const parts = useMermaidEditorParts();
+  return <EditorShell {...parts.shell}>
+    <EditorShell.Sidebar><ToolSidebar {...parts.toolbar} /></EditorShell.Sidebar>
+    <EditorShell.HeaderControls><DiagramTypeSelect {...parts.diagramTypeSelect} /></EditorShell.HeaderControls>
+    <EditorShell.Canvas><MermaidCanvas {...parts.canvas} /></EditorShell.Canvas>
+    <EditorShell.Selection><SelectionEditor {...parts.selectionEditor} /></EditorShell.Selection>
+    <EditorShell.Source><CustomSource {...parts.sourceEditor} /></EditorShell.Source>
+    <EditorShell.Status><EditorStatus {...parts.status} /></EditorShell.Status>
+  </EditorShell>;
 }
 
-export function CustomEditor({ value }: { value: string }) {
-  const [controller] = useState(() => new EditorController(value));
-  return <EditorSessionProvider controller={controller}>
-    <CustomControls />
-    <CustomPanels />
-  </EditorSessionProvider>;
+export function App() {
+  const [source, setSource] = useState('flowchart LR\n  Start --> Done');
+  return <MermaidEditor value={source} onChange={setSource}>
+    <EditorLayout />
+  </MermaidEditor>;
 }
 ```
 
-The component subpath exports include the full typed props for `MermaidCanvas`, `ToolSidebar`, `DiagramPalette`, `SourceEditor`, `SelectionEditor`, status, and diagram type controls. The canvas uses the SDK's Mermaid SVG renderer and adapter interaction layer.
+### Build with headless APIs
 
-## Build a custom headless editor
-
-Install only the logic package to provide your own view and styles:
-
-```sh
-pnpm add @mermaid-editor/headless
-```
 
 ```ts
-import { DiagramSession } from '@mermaid-editor/headless';
+import { DiagramSession } from '@mermaid-editor-sdk/headless';
 
-const session = new DiagramSession('flowchart TD\n  Start --> Done');
-const stopListening = session.subscribe(() => {
-  const { codeBlock, model } = session.getSnapshot();
-  // Render these values with your own framework, components, and stylesheet.
-});
+const session = new DiagramSession('flowchart LR\n  Start --> Done');
+session.dispatch({ type: 'create-node', label: 'Review' });
 
-session.dispatch({ type: 'create-node', id: 'Review', label: 'Review' });
-stopListening();
+const { codeBlock, model } = session.getSnapshot();
 ```
 
-The headless package has no React, ReactDOM, CSS, or browser DOM dependency. Its exports include session and controller contracts, diagram models, source document safety utilities, templates, and source mutation functions.
+See the [Headless guide](docs/headless.md) for a custom component example and API reference.
 
-## Compatibility and development
+## Development
 
-The existing imperative API remains available from the package root and `mermaid-visual-editor-sdk/legacy`. The browser IIFE continues to expose `MermaidVisualEditor.createMermaidVisualEditor`.
-
-```sh
-pnpm install --frozen-lockfile
-pnpm dev          # Vite app with HMR for workspace package source
-pnpm build        # Turbo build graph: headless -> UI -> example
-pnpm typecheck
-pnpm lint
-pnpm test
-```
-
-See [the monorepo design](.local/docs/monorepo-design.md) and [development guide](.local/docs/development.md) for package boundaries, exports, and workflow.
+See [Development Guide](docs/development.md)

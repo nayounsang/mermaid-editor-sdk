@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { createMermaidVisualEditor } from 'mermaid-visual-editor-sdk';
+import { createMermaidVisualEditor } from '@mermaid-editor-sdk/ui';
 import { StoryFrame } from '../fixtures';
 
 function RuntimeEditorPreview({ value }: { readonly value: string }) {

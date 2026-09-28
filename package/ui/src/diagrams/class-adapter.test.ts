@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import mermaid from 'mermaid';
-import { SourceDocument } from '@mermaid-editor/headless';
+import { SourceDocument } from '@mermaid-editor-sdk/headless';
 import { classAdapter } from './class-adapter';
 import type { DiagramAdapterContext } from './adapter';
 

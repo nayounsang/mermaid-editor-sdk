@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DragDropProvider } from '@dnd-kit/react';
-import { DiagramPalette } from 'mermaid-visual-editor-sdk';
+import { DiagramPalette } from '@mermaid-editor-sdk/ui';
 import { fixtureModel, StoryFrame } from '../fixtures';
 
 const meta = { title: 'Components/DiagramPalette', component: DiagramPalette, decorators: [(Story) => <DragDropProvider><StoryFrame><Story /></StoryFrame></DragDropProvider>] } satisfies Meta<typeof DiagramPalette>;

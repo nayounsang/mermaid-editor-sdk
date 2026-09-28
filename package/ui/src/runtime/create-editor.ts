@@ -1,12 +1,12 @@
 import { getDiagramAdapter } from '../diagrams/adapter';
 import { registerBuiltInAdapters } from '../diagrams/register-built-in-adapters';
-import { classifyDiagram, withParseResult, withPreviewResult } from '@mermaid-editor/headless';
-import type { DiagramType } from '@mermaid-editor/headless';
+import { classifyDiagram, withParseResult, withPreviewResult } from '@mermaid-editor-sdk/headless';
+import type { DiagramType } from '@mermaid-editor-sdk/headless';
 import type { AdapterDiagramType, DiagramAdapterContext } from '../diagrams/adapter';
-import { SourceDocument } from '@mermaid-editor/headless';
+import { SourceDocument } from '@mermaid-editor-sdk/headless';
 import type { EditorError, EditorSelection, MermaidVisualEditor, MermaidVisualEditorOptions } from './types';
 import { DestroyedEditorError } from './types';
-import { appendPaletteEntry, diagramTypeFromSource, diagramTypes, paletteCatalog, templates, type EditableDiagramType } from '@mermaid-editor/headless';
+import { appendPaletteEntry, diagramTypeFromSource, diagramTypes, paletteCatalog, templates, type EditableDiagramType } from '@mermaid-editor-sdk/headless';
 import { MermaidRendererError, renderMermaid } from '../renderer/mermaid-renderer';
 
 const previewDebounceMs = 120;

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SelectionEditor } from 'mermaid-visual-editor-sdk';
+import { SelectionEditor } from '@mermaid-editor-sdk/ui';
 import { fixtureModel, fixtureSelection, StoryFrame } from '../fixtures';
 
 const meta = { title: 'Components/SelectionEditor', component: SelectionEditor, parameters: { layout: 'fullscreen' } } satisfies Meta<typeof SelectionEditor>;

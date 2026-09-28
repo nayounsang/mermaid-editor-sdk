@@ -6,10 +6,10 @@ import { Button } from '@base-ui/react/button';
 import { Dialog } from '@base-ui/react/dialog';
 import { Input } from '@base-ui/react/input';
 import type { Control } from 'react-hook-form';
-import type { DiagramAction, DiagramSemanticElement, RendererModel } from '@mermaid-editor/headless';
-import { getDiagramElementIdForSelection } from '@mermaid-editor/headless';
+import type { DiagramAction, DiagramSemanticElement, RendererModel } from '@mermaid-editor-sdk/headless';
+import { getDiagramElementIdForSelection } from '@mermaid-editor-sdk/headless';
 import type { EditorSelection } from '../../runtime/types';
-import type { ERCardinality } from '@mermaid-editor/headless';
+import type { ERCardinality } from '@mermaid-editor-sdk/headless';
 
 const editorFormSchema = z.object({
   kind: z.enum(['node', 'edge', 'subgraph']),

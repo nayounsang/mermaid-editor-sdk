@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SourceDocument } from '@mermaid-editor/headless';
+import { SourceDocument } from '@mermaid-editor-sdk/headless';
 import { quadrantAdapter } from './quadrant-adapter';
 import { getDiagramAdapter, type DiagramAdapterContext } from './adapter';
 import { registerBuiltInAdapters } from './register-built-in-adapters';

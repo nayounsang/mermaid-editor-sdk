@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@base-ui/react/button';
 import { useDroppable } from '@dnd-kit/react';
-import type { RendererModel } from '@mermaid-editor/headless';
+import type { RendererModel } from '@mermaid-editor-sdk/headless';
 import { getDiagramAdapter } from '../../diagrams/adapter';
 import type { AdapterDiagramType } from '../../diagrams/adapter';
 import { registerBuiltInAdapters } from '../../diagrams/register-built-in-adapters';
-import { SourceDocument } from '@mermaid-editor/headless';
+import { SourceDocument } from '@mermaid-editor-sdk/headless';
 import type { EditorSelection } from '../../runtime/types';
-import type { EditableDiagramType } from '@mermaid-editor/headless';
+import type { EditableDiagramType } from '@mermaid-editor-sdk/headless';
 import { MermaidRendererError, renderMermaid } from '../../renderer/mermaid-renderer';
 import type { EditorStatusState } from './EditorStatus';
 

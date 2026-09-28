@@ -1,6 +1,6 @@
 import type { EditorSelection } from '../runtime/types';
-import type { SourceDocument } from '@mermaid-editor/headless';
-import type { DiagramType } from '@mermaid-editor/headless';
+import type { SourceDocument } from '@mermaid-editor-sdk/headless';
+import type { DiagramType } from '@mermaid-editor-sdk/headless';
 
 export type AdapterDiagramType = Exclude<DiagramType, 'unknown' | 'unsupported'>;
 

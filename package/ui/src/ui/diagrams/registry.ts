@@ -1,4 +1,4 @@
-import type { EditableDiagramType } from '@mermaid-editor/headless';
+import type { EditableDiagramType } from '@mermaid-editor-sdk/headless';
 import type { GraphPaletteEntry } from './types';
 import { flowchartPalette } from './flowchart/palette';
 import { classPalette } from './class/palette';

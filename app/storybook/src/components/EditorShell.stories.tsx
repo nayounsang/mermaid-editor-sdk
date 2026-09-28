@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { EditorShell } from 'mermaid-visual-editor-sdk/components';
-import { EditorStatus, MermaidCanvas, SourceEditor, ToolSidebar } from 'mermaid-visual-editor-sdk';
+import { EditorShell } from '@mermaid-editor-sdk/ui/components';
+import { EditorStatus, MermaidCanvas, SourceEditor, ToolSidebar } from '@mermaid-editor-sdk/ui';
 import { DragDropProvider } from '@dnd-kit/react';
 import { fixtureModel, flowchartSource, StoryFrame } from '../fixtures';
 

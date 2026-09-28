@@ -1,8 +1,13 @@
 {
-  "name": "mermaid-visual-editor-sdk",
+  "name": "@mermaid-editor-sdk/ui",
   "version": "0.1.0",
   "description": "Composable React UI and full Mermaid visual editor SDK",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nayounsang/mermaid-editor-sdk.git",
+    "directory": "package/ui"
+  },
   "type": "module",
   "files": ["dist", "src", "LICENSE", "THIRD-PARTY-LICENSES"],
   "main": "./dist/index.cjs",
@@ -82,7 +87,7 @@
     "@codemirror/view": "^6.43.13",
     "@dnd-kit/react": "^0.5.0",
     "@hookform/resolvers": "^5.9.1",
-    "@mermaid-editor/headless": "workspace:*",
+    "@mermaid-editor-sdk/headless": "workspace:*",
     "@uiw/react-codemirror": "^4.25.12",
     "es-toolkit": "^1.52.0",
     "mermaid": "11.17.2",

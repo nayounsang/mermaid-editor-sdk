@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { EditorStatus } from 'mermaid-visual-editor-sdk';
+import { EditorStatus } from '@mermaid-editor-sdk/ui';
 import { StoryFrame } from '../fixtures';
 
 const meta = { title: 'Components/EditorStatus', component: EditorStatus, decorators: [(Story) => <StoryFrame><Story /></StoryFrame>] } satisfies Meta<typeof EditorStatus>;

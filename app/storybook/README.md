@@ -1,6 +1,6 @@
 # SDK UI Storybook
 
-An isolated Storybook workspace for inspecting the React UI exported by `mermaid-visual-editor-sdk`.
+An isolated Storybook workspace for inspecting the React UI exported by `@mermaid-editor-sdk/ui`.
 
 ```sh
 pnpm storybook

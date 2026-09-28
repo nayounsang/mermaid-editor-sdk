@@ -1,7 +1,7 @@
 import { Select } from '@base-ui/react/select';
-import type { DiagramType } from '@mermaid-editor/headless';
-import type { RendererModel } from '@mermaid-editor/headless';
-import { diagramTypes } from '@mermaid-editor/headless';
+import type { DiagramType } from '@mermaid-editor-sdk/headless';
+import type { RendererModel } from '@mermaid-editor-sdk/headless';
+import { diagramTypes } from '@mermaid-editor-sdk/headless';
 
 export interface DiagramTypeSelectProps {
   readonly model: RendererModel;

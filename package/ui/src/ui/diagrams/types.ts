@@ -1,4 +1,4 @@
-import type { DiagramAction } from '@mermaid-editor/headless';
+import type { DiagramAction } from '@mermaid-editor-sdk/headless';
 
 export interface GraphPaletteEntry {
   readonly group: string;

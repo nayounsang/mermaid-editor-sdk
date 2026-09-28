@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { DragDropProvider } from '@dnd-kit/react';
 import type { MermaidVisualEditorOptions, EditorError, EditorSelection } from '../runtime/types';
-import { EditorController } from '@mermaid-editor/headless';
-import type { DiagramAction } from '@mermaid-editor/headless';
-import { SourceDocument } from '@mermaid-editor/headless';
-import { getDiagramElementIdForSelection } from '@mermaid-editor/headless';
+import { EditorController } from '@mermaid-editor-sdk/headless';
+import type { DiagramAction } from '@mermaid-editor-sdk/headless';
+import { SourceDocument } from '@mermaid-editor-sdk/headless';
+import { getDiagramElementIdForSelection } from '@mermaid-editor-sdk/headless';
 import { MermaidRendererError } from '../renderer/mermaid-renderer';
-import { templates, type EditableDiagramType } from '@mermaid-editor/headless';
+import { templates, type EditableDiagramType } from '@mermaid-editor-sdk/headless';
 import { useDiagramSession } from './hooks/useDiagramSession';
 import { EditorSessionProvider, useEditorController } from './context/editor-session-context';
 import { EditorShell } from './components/EditorShell';
@@ -16,7 +17,14 @@ import { SourceEditor } from './components/SourceEditor';
 import { SelectionEditor } from './components/SelectionEditor';
 import { EditorStatus, type EditorStatusState } from './components/EditorStatus';
 import { DiagramTypeSelect } from './components/DiagramTypeSelect';
-import type { EdgeConnectionOptions } from './components/DiagramPalette';
+import { DiagramPalette, type DiagramPaletteProps, type EdgeConnectionOptions } from './components/DiagramPalette';
+import type { EditorShellProps } from './components/EditorShell';
+import type { ToolSidebarProps } from './components/ToolSidebar';
+import type { MermaidCanvasProps } from './components/MermaidCanvas';
+import type { SourceEditorProps } from './components/SourceEditor';
+import type { SelectionEditorProps } from './components/SelectionEditor';
+import type { EditorStatusProps } from './components/EditorStatus';
+import type { DiagramTypeSelectProps } from './components/DiagramTypeSelect';
 
 interface PendingConnection {
   readonly diagramType: EditableDiagramType;
@@ -28,6 +36,26 @@ export interface MermaidEditorProps extends Omit<MermaidVisualEditorOptions, 'va
   readonly value: string;
   readonly className?: string;
   readonly title?: string;
+  readonly children?: ReactNode;
+}
+
+export interface MermaidEditorParts {
+  readonly shell: Omit<EditorShellProps, 'children'>;
+  readonly toolbar: ToolSidebarProps;
+  readonly diagramPalette: DiagramPaletteProps;
+  readonly canvas: MermaidCanvasProps;
+  readonly sourceEditor: SourceEditorProps;
+  readonly selectionEditor: SelectionEditorProps;
+  readonly status: EditorStatusProps;
+  readonly diagramTypeSelect: DiagramTypeSelectProps;
+}
+
+const MermaidEditorPartsContext = createContext<MermaidEditorParts | null>(null);
+
+export function useMermaidEditorParts(): MermaidEditorParts {
+  const parts = useContext(MermaidEditorPartsContext);
+  if (!parts) throw new Error('useMermaidEditorParts must be used inside MermaidEditor.');
+  return parts;
 }
 
 export function MermaidEditor(props: MermaidEditorProps) {
@@ -39,24 +67,21 @@ export function MermaidEditor(props: MermaidEditorProps) {
   );
 }
 
-function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onSave, onReset, onRemove, className, title }: MermaidEditorProps) {
+function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onSave, onReset, onRemove, className, title, children }: MermaidEditorProps) {
   const controller = useEditorController();
   const session = controller.session;
   const { snapshot, dispatch, undo, redo, setSource } = useDiagramSession();
   const [selection, setSelection] = useState<EditorSelection | null>(null);
   const [editingSelection, setEditingSelection] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [pendingConnection, setPendingConnection] = useState<PendingConnection | null>(null);
   const [status, setStatus] = useState<{ state: EditorStatusState; message: string }>({ state: 'loading', message: 'Preparing diagram…' });
   const callbacks = useRef({ onChange, onSelectionChange, onError, onSave, onReset, onRemove });
   callbacks.current = { onChange, onSelectionChange, onError, onSave, onReset, onRemove };
   const selectionRef = useRef<EditorSelection | null>(null);
   const pendingConnectionRef = useRef<PendingConnection | null>(null);
-  const savingRef = useRef(false);
   const currentTemplate = snapshot.model.diagramType === 'unknown' || snapshot.model.diagramType === 'unsupported'
     ? undefined : templates[snapshot.model.diagramType];
   const wouldDiscardSource = Boolean(snapshot.codeBlock.source.trim()) && snapshot.codeBlock.source !== currentTemplate;
-
   const reportError = useCallback((error: EditorError) => {
     try { callbacks.current.onError?.(error); } catch { /* Host error handlers must not interrupt editor state updates. */ }
   }, []);
@@ -105,10 +130,10 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
     session.setParseResult(sourceRevision, valid);
   }, [session]);
 
-  const dispatchAction = useCallback((action: DiagramAction, preserveSelection = false): string | undefined => {
+  const dispatchAction = useCallback((action: DiagramAction): string | undefined => {
     try {
       const next = dispatch(action);
-      if (next && !preserveSelection) clearSelection();
+      if (next) clearSelection();
       return next;
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : 'The diagram edit could not be applied.';
@@ -117,8 +142,6 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
       return undefined;
     }
   }, [clearSelection, dispatch, reportError]);
-
-  const dispatchPreservingSelection = useCallback((action: DiagramAction): string | undefined => dispatchAction(action, true), [dispatchAction]);
 
   const armConnection = useCallback((options: EdgeConnectionOptions | null) => {
     const type = snapshot.model.diagramType;
@@ -211,15 +234,11 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
       setStatus({ state: 'source-only', message: 'Save is unavailable until the host provides an onSave callback.' });
       return;
     }
-    if (savingRef.current) return;
-    savingRef.current = true;
-    setIsSaving(true);
-    setStatus({ state: 'loading', message: 'Saving diagram…' });
     void Promise.resolve().then(() => callback(snapshot.codeBlock.source)).then(() => setStatus({ state: 'ready', message: 'Save request completed.' })).catch((cause: unknown) => {
       const message = cause instanceof Error ? cause.message : 'Save failed.';
       setStatus({ state: 'error', message: `Save failed: ${message}` });
       reportError({ code: 'save', message, cause });
-    }).finally(() => { savingRef.current = false; setIsSaving(false); });
+    });
   }, [reportError, snapshot.codeBlock.source]);
 
   const notifyRemove = useCallback((item: NonNullable<EditorSelection>, nextSource: string) => {
@@ -263,6 +282,58 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
     else undo();
   }, [clearSelection, dispatchAction, editingSelection, notifyRemove, redo, save, snapshot.model.elements, undo]);
 
+  const pending = pendingConnection
+    ? { diagramType: pendingConnection.diagramType, ...(pendingConnection.source ? { source: pendingConnection.source } : {}) }
+    : undefined;
+  const diagramPaletteProps: DiagramPaletteProps = {
+    model: snapshot.model,
+    dispatch: dispatchAction,
+    ...(pending ? { pendingConnection: pending } : {}),
+    onArmConnection: armConnection,
+  };
+  const parts: MermaidEditorParts = {
+    shell: { title, className, onKeyDown: handleEditorKeyDown },
+    toolbar: diagramPaletteProps,
+    diagramPalette: diagramPaletteProps,
+    canvas: {
+      source: snapshot.codeBlock.source,
+      sourceRevision: snapshot.codeBlock.revision,
+      model: snapshot.model,
+      onSelection: handleCanvasSelection,
+      onRenderState: renderState,
+      onSourceMutation: applySourceMutation,
+      onParseResult: applyParseResult,
+      onSave: save,
+      onReset: resetDiagram,
+      onEditSelection: () => { if (selectionRef.current) setEditingSelection(true); },
+      ...(pending ? { pendingConnection: pending } : {}),
+    },
+    sourceEditor: {
+      value: snapshot.codeBlock.source,
+      onChange: (source) => { setSource(source, 'source-editor'); clearSelection(); },
+    },
+    selectionEditor: {
+      open: editingSelection,
+      onClose: () => setEditingSelection(false),
+      selection,
+      model: snapshot.model,
+      dispatch: dispatchAction,
+      onDelete: notifyRemove,
+    },
+    status: { state: status.state, message: status.message },
+    diagramTypeSelect: { model: snapshot.model, onChange: changeDiagramType },
+  };
+  const defaultComposition = (
+    <EditorShell {...parts.shell}>
+      <EditorShell.Sidebar><ToolSidebar {...parts.toolbar} paletteComponent={DiagramPalette} /></EditorShell.Sidebar>
+      <EditorShell.HeaderControls><DiagramTypeSelect {...parts.diagramTypeSelect} /></EditorShell.HeaderControls>
+      <EditorShell.Canvas><MermaidCanvas {...parts.canvas} /></EditorShell.Canvas>
+      <EditorShell.Selection><SelectionEditor {...parts.selectionEditor} /></EditorShell.Selection>
+      <EditorShell.Source><SourceEditor {...parts.sourceEditor} /></EditorShell.Source>
+      <EditorShell.Status><EditorStatus {...parts.status} /></EditorShell.Status>
+    </EditorShell>
+  );
+
   return (
     <DragDropProvider onDragEnd={(event) => {
       if (event.canceled) return;
@@ -294,14 +365,9 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
         dispatchAction(action);
       }
     }}>
-      <EditorShell title={title} className={className} onKeyDown={handleEditorKeyDown}
-        sidebar={<ToolSidebar model={snapshot.model} dispatch={dispatchAction} {...(pendingConnection ? { pendingConnection } : {})} onArmConnection={armConnection} />}
-        headerControls={<DiagramTypeSelect model={snapshot.model} onChange={changeDiagramType} />}
-        canvas={<MermaidCanvas source={snapshot.codeBlock.source} sourceRevision={snapshot.codeBlock.revision} model={snapshot.model} onSelection={handleCanvasSelection} onRenderState={renderState} onSourceMutation={applySourceMutation} onParseResult={applyParseResult} {...(onSave ? { onSave: save } : {})} isSaving={isSaving} onReset={resetDiagram} onEditSelection={() => { if (selectionRef.current) setEditingSelection(true); }} {...(pendingConnection ? { pendingConnection } : {})} />}
-        selection={<SelectionEditor open={editingSelection} onClose={() => setEditingSelection(false)} selection={selection} model={snapshot.model} dispatch={dispatchAction} dispatchPreservingSelection={dispatchPreservingSelection} onDelete={notifyRemove} />}
-        source={<SourceEditor value={snapshot.codeBlock.source} onChange={(source) => { setSource(source, 'source-editor'); clearSelection(); }} />}
-        status={<EditorStatus state={status.state} message={status.message} />}
-        />
+      <MermaidEditorPartsContext.Provider value={parts}>
+        {children === undefined ? defaultComposition : children}
+      </MermaidEditorPartsContext.Provider>
     </DragDropProvider>
   );
 }

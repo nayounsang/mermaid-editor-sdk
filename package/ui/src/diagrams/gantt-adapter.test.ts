@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SourceDocument } from '@mermaid-editor/headless';
+import { SourceDocument } from '@mermaid-editor-sdk/headless';
 import { ganttAdapter } from './gantt-adapter';
 import type { DiagramAdapterContext } from './adapter';
 

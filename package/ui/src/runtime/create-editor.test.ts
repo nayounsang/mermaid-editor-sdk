@@ -11,7 +11,7 @@ vi.mock('mermaid', () => ({ default: mermaidMock }));
 import { createMermaidVisualEditor } from './create-editor';
 import { createMermaidVisualEditor as createFromPublicEntry } from '../index';
 import { registerDiagramAdapter, type DiagramAdapterContext } from '../diagrams/adapter';
-import { templates } from '@mermaid-editor/headless';
+import { templates } from '@mermaid-editor-sdk/headless';
 
 describe('createMermaidVisualEditor', () => {
   afterEach(() => vi.useRealTimers());

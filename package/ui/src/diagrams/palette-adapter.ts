@@ -1,6 +1,6 @@
 import type { AdapterDiagramType, DiagramAdapter } from './adapter';
 
-import type { PaletteGroup } from '@mermaid-editor/headless';
+import type { PaletteGroup } from '@mermaid-editor-sdk/headless';
 
 /** Shared click/drop lifecycle for diagrams whose baseline UI is a snippet palette. */
 export function createPaletteAdapter<Id extends string>(

@@ -1,5 +1,5 @@
-import type { EditorSelection } from '@mermaid-editor/headless';
-export type { EditorSelection } from '@mermaid-editor/headless';
+import type { EditorSelection } from '@mermaid-editor-sdk/headless';
+export type { EditorSelection } from '@mermaid-editor-sdk/headless';
 
 export interface EditorError {
   code: 'parse' | 'render' | 'mutation' | 'save' | 'destroyed';
@@ -13,7 +13,7 @@ export interface MermaidVisualEditorOptions {
   onSelectionChange?: (selection: EditorSelection | null) => void;
   onError?: (error: EditorError) => void;
   onSave?: (currentSource: string) => void | Promise<void>;
-  onReset?: (currentSource: string) => void | Promise<void>;
+  onReset?: (nextSource: string) => void | Promise<void>;
   onRemove?: (selection: EditorSelection, nextSource: string) => void | Promise<void>;
 }
 
