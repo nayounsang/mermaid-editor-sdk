@@ -93,7 +93,8 @@
     "mermaid": "11.17.2",
     "p-queue": "^9.3.3",
     "react-hook-form": "^7.89.0",
-    "zustand": "^5.0.15"
+    "zustand": "^5.0.15",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

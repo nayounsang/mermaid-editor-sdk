@@ -1,6 +1,12 @@
 import { defineConfig } from 'vite';
+import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@mermaid-editor-sdk/headless': fileURLToPath(new URL('../headless/src/index.ts', import.meta.url)),
+    },
+  },
   build: {
     emptyOutDir: false,
     lib: {

@@ -292,7 +292,11 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
     onArmConnection: armConnection,
   };
   const parts: MermaidEditorParts = {
-    shell: { title, className, onKeyDown: handleEditorKeyDown },
+    shell: {
+      ...(title === undefined ? {} : { title }),
+      ...(className === undefined ? {} : { className }),
+      onKeyDown: handleEditorKeyDown,
+    },
     toolbar: diagramPaletteProps,
     diagramPalette: diagramPaletteProps,
     canvas: {
