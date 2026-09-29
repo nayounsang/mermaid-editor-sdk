@@ -1,5 +1,7 @@
 # Mermaid Editor SDK
 
+> This project is developed with reference to [mermaid-visual-editor](https://github.com/NextGenPowerToys/mermaid-visual-editor)
+
 Build Mermaid editors with the React UI package or compose your own interface from the headless editing logic.
 
 | Package | Use it for | Docs |
