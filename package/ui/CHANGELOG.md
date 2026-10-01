@@ -1,5 +1,11 @@
 # @mermaid-editor-sdk/ui
 
+## 0.1.0
+
+### Minor Changes
+
+- e2e0fb8: Add a `MermaidCanvas` ref handle for fitting, centering, and controlling zoom, plus an `autoFit` option for resize-aware previews.
+
 ## 0.0.2
 
 ### Patch Changes
