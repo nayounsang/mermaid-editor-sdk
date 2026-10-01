@@ -110,7 +110,11 @@ import type {
   RendererModel,
   SessionSnapshot,
 } from '@mermaid-editor-sdk/ui';
+```
 
+For standalone UI components, import from `@mermaid-editor-sdk/ui/components`. Use this entry point instead of the root imports when importing `MermaidCanvas` and its types.
+
+```tsx
 import {
   DiagramPalette,
   DiagramTypeSelect,
@@ -135,7 +139,11 @@ import type {
   SourceEditorProps,
   ToolSidebarProps,
 } from '@mermaid-editor-sdk/ui/components';
+```
 
+For the session provider, import from `@mermaid-editor-sdk/ui/provider`:
+
+```tsx
 import { EditorSessionProvider } from '@mermaid-editor-sdk/ui/provider';
 import type { EditorSessionProviderProps } from '@mermaid-editor-sdk/ui/provider';
 ```
