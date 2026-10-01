@@ -282,6 +282,7 @@
 }
 
 .mve-preview .mve-selected path,
+.mve-preview path.mve-selected,
 .mve-preview .mve-selected rect,
 .mve-preview .mve-selected polygon,
 .mve-preview .mve-selected circle {
