@@ -114,7 +114,10 @@ export function DiagramPalette({ model, dispatch, pendingConnection, onArmConnec
               {edgeAction && <div className="mve-palette-edge-fields">
                 {relationOptions[diagramType] && <label>{diagramType === 'er' ? 'Cardinality' : 'Relationship type'}
                   <select aria-label={diagramType === 'er' ? 'New relationship cardinality' : 'New relationship type'} value={operator} disabled={isArmed}
-                    onChange={(event) => setEdgeOptions((current) => ({ ...current, [diagramType]: event.currentTarget.value }))}>
+                    onChange={(event) => {
+                      const value = event.currentTarget.value;
+                      setEdgeOptions((current) => ({ ...current, [diagramType]: value }));
+                    }}>
                     {relationOptions[diagramType]?.map((option) => <option key={option} value={option}>{option}</option>)}
                   </select>
                 </label>}
