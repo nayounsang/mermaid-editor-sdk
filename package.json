@@ -14,7 +14,8 @@
     "version-packages": "changeset version",
     "release": "pnpm build && pnpm changeset publish",
     "audit:distribution": "turbo run audit:distribution --filter=@mermaid-editor-sdk/ui",
-    "csp:fixture": "pnpm --filter @mermaid-editor-sdk/ui csp:fixture"
+    "csp:fixture": "pnpm --filter @mermaid-editor-sdk/ui csp:fixture",
+    "update-codex-plugin": "node scripts/update-codex-plugin.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",

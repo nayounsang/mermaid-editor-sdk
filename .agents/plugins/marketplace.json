@@ -1,0 +1,21 @@
+{
+  "name": "younsang-codex-plugins",
+  "interface": {
+    "displayName": "Younsang Codex Plugins"
+  },
+  "plugins": [
+    {
+      "name": "younsang-codex-plugin",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/nayounsang/younsang-codex-plugin.git",
+        "sha": "9d6def027f5709c2844dea71b66e0fc54db281d5"
+      },
+      "policy": {
+        "installation": "INSTALLED_BY_DEFAULT",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
