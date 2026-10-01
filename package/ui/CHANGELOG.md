@@ -1,5 +1,12 @@
 # @mermaid-editor-sdk/ui
 
+## 0.1.1
+
+### Patch Changes
+
+- 2d56544: Fix flowchart edge selection for unlabeled edges.
+- 95c603c: Fix changing the relationship type in the flowchart palette.
+
 ## 0.1.0
 
 ### Minor Changes
