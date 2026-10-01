@@ -7,7 +7,7 @@ export type { EditorShellComponent, EditorShellProps } from './EditorShell';
 export { EditorStatus } from './EditorStatus';
 export type { EditorStatusProps, EditorStatusState } from './EditorStatus';
 export { MermaidCanvas } from './MermaidCanvas';
-export type { MermaidCanvasProps } from './MermaidCanvas';
+export type { MermaidCanvasHandle, MermaidCanvasProps } from './MermaidCanvas';
 export { SelectionEditor } from './SelectionEditor';
 export type { SelectionEditorProps } from './SelectionEditor';
 export { SourceEditor } from './SourceEditor';

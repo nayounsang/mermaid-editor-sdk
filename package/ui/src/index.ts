@@ -36,7 +36,7 @@ export type { EditorShellComponent, EditorShellProps } from './ui/components/Edi
 export { EditorStatus } from './ui/components/EditorStatus';
 export type { EditorStatusProps, EditorStatusState } from './ui/components/EditorStatus';
 export { MermaidCanvas } from './ui/components/MermaidCanvas';
-export type { MermaidCanvasProps } from './ui/components/MermaidCanvas';
+export type { MermaidCanvasHandle, MermaidCanvasProps } from './ui/components/MermaidCanvas';
 export { SelectionEditor } from './ui/components/SelectionEditor';
 export type { SelectionEditorProps } from './ui/components/SelectionEditor';
 export { SourceEditor } from './ui/components/SourceEditor';
