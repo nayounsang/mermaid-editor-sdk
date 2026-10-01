@@ -2,7 +2,7 @@
 
 ## Setup
 
-Use the package manager version declared in `package.json`.
+Use Node.js 24 LTS from `.nvmrc` and the package manager version declared in `package.json`.
 
 ```sh
 pnpm install --frozen-lockfile
