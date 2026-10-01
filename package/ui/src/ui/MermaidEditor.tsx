@@ -36,6 +36,8 @@ export interface MermaidEditorProps extends Omit<MermaidVisualEditorOptions, 'va
   readonly value: string;
   readonly className?: string;
   readonly title?: string;
+  /** Fit on first render and resize, clamping the resulting zoom to 0.1–4. */
+  readonly autoFit?: boolean;
   readonly children?: ReactNode;
 }
 
@@ -67,7 +69,7 @@ export function MermaidEditor(props: MermaidEditorProps) {
   );
 }
 
-function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onSave, onReset, onRemove, className, title, children }: MermaidEditorProps) {
+function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onSave, onReset, onRemove, className, title, autoFit = false, children }: MermaidEditorProps) {
   const controller = useEditorController();
   const session = controller.session;
   const { snapshot, dispatch, undo, redo, setSource } = useDiagramSession();
@@ -310,6 +312,7 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
       onSave: save,
       onReset: resetDiagram,
       onEditSelection: () => { if (selectionRef.current) setEditingSelection(true); },
+      autoFit,
       ...(pending ? { pendingConnection: pending } : {}),
     },
     sourceEditor: {

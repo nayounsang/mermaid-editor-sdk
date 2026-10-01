@@ -103,12 +103,18 @@ import type {
   FlowchartNodeShape,
   MermaidEditorParts,
   MermaidEditorProps,
+  MermaidCanvasHandle,
+  MermaidCanvasProps,
   MermaidVisualEditor,
   MermaidVisualEditorOptions,
   RendererModel,
   SessionSnapshot,
 } from '@mermaid-editor-sdk/ui';
+```
 
+For standalone UI components, import from `@mermaid-editor-sdk/ui/components`. Use this entry point instead of the root imports when importing `MermaidCanvas` and its types.
+
+```tsx
 import {
   DiagramPalette,
   DiagramTypeSelect,
@@ -128,11 +134,16 @@ import type {
   EditorStatusProps,
   EditorStatusState,
   MermaidCanvasProps,
+  MermaidCanvasHandle,
   SelectionEditorProps,
   SourceEditorProps,
   ToolSidebarProps,
 } from '@mermaid-editor-sdk/ui/components';
+```
 
+For the session provider, import from `@mermaid-editor-sdk/ui/provider`:
+
+```tsx
 import { EditorSessionProvider } from '@mermaid-editor-sdk/ui/provider';
 import type { EditorSessionProviderProps } from '@mermaid-editor-sdk/ui/provider';
 ```
@@ -207,6 +218,7 @@ Call inside `EditorSessionProvider` or `MermaidEditor`.
 | `onRemove?` | Called after removal with the selection and resulting source. | `(selection: EditorSelection, nextSource: string) => void \| Promise<void>` | — |
 | `className?` | Class added to the default shell root. | `string` | `""` |
 | `title?` | Default shell heading. | `string` | `"Diagram"` |
+| `autoFit?` | Fits the diagram to the canvas after rendering and when the canvas resizes. | `boolean` | `false` |
 | `children?` | Custom composition; replaces the default UI when provided. | `ReactNode` | Default composition |
 
 ```ts
@@ -309,6 +321,32 @@ export type EditorStatusState =
 
 ### `MermaidCanvas`
 
+```tsx
+import { useRef } from 'react';
+import { MermaidCanvas, useMermaidEditorParts, type MermaidCanvasHandle } from '@mermaid-editor-sdk/ui';
+
+function CanvasArea() {
+  const parts = useMermaidEditorParts();
+  const canvasRef = useRef<MermaidCanvasHandle>(null);
+  return <>
+    <button onClick={() => canvasRef.current?.fit()}>Fit</button>
+    <MermaidCanvas {...parts.canvas} ref={canvasRef} />
+  </>;
+}
+```
+
+#### Ref handle (`MermaidCanvasHandle`)
+
+| Method | Description | Type |
+|---|---|---|
+| `fit()` | Scales the rendered diagram to fit the viewport and resets its scroll position. | `() => void` |
+| `center()` | Centers the diagram in the viewport without changing zoom. | `() => void` |
+| `zoomIn()` | Increases zoom by one toolbar step (`0.1`), up to `4`. | `() => void` |
+| `zoomOut()` | Decreases zoom by one toolbar step (`0.1`), down to `0.1`. | `() => void` |
+| `setZoom(scale)` | Sets zoom, clamped to `0.1`–`4`. | `(scale: number) => void` |
+
+#### Props
+
 | Prop name | Description | Type | Default value |
 |---|---|---|---|
 | `source` | Mermaid source to render. | `string` | — |
@@ -319,8 +357,10 @@ export type EditorStatusState =
 | `onSourceMutation` | Applies a source-preserving mutation; `remove` marks a removal operation. | `(mutate: (source: SourceDocument) => string, remove?: boolean) => boolean` | — |
 | `onParseResult` | Reports whether a source revision parsed successfully. | `(sourceRevision: number, valid: boolean) => void` | — |
 | `onSave` | Handles the canvas Save action. | `() => void` | — |
+| `isSaving?` | Disables the Save action and shows its pending state. | `boolean` | `false` |
 | `onReset` | Handles the canvas Reset action. | `() => void` | — |
 | `onEditSelection` | Opens the selection editor. | `() => void` | — |
+| `autoFit?` | Fits the rendered diagram after rendering and when the viewport resizes. | `boolean` | `false` |
 | `pendingConnection?` | Active relationship creation, with an optional selected source node. | `{ diagramType: EditableDiagramType; source?: string }` | — |
 
 ### `SourceEditor`

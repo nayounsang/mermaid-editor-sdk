@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Button } from '@base-ui/react/button';
 import { useDroppable } from '@dnd-kit/react';
+import { useResizeDetector } from 'react-resize-detector';
 import type { RendererModel } from '@mermaid-editor-sdk/headless';
 import { getDiagramAdapter } from '../../diagrams/adapter';
 import type { AdapterDiagramType } from '../../diagrams/adapter';
@@ -23,16 +24,33 @@ export interface MermaidCanvasProps {
   readonly isSaving?: boolean;
   readonly onReset: () => void;
   readonly onEditSelection: () => void;
+  /** Fits after rendering and resizing; the resulting zoom is clamped to 0.1–4. */
+  readonly autoFit?: boolean;
   readonly pendingConnection?: { readonly diagramType: EditableDiagramType; readonly source?: string };
 }
-const MIN_ZOOM = 0.2;
-const MAX_ZOOM = 3;
 
-export function MermaidCanvas({ source, model, onSelection, onRenderState, onSourceMutation, sourceRevision, onParseResult, onSave, isSaving = false, onReset, onEditSelection, pendingConnection }: MermaidCanvasProps) {
+export interface MermaidCanvasHandle {
+  /** Scales the rendered diagram to fit the viewport, clamps zoom to 0.1–4, and resets scroll. */
+  fit(): void;
+  /** Centers the diagram in the viewport without changing its zoom. */
+  center(): void;
+  /** Increases zoom by one toolbar step (0.1), up to 4. */
+  zoomIn(): void;
+  /** Decreases zoom by one toolbar step (0.1), down to 0.1. */
+  zoomOut(): void;
+  /** Sets zoom, clamped to the supported range of 0.1–4. */
+  setZoom(scale: number): void;
+}
+
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 4;
+const ZOOM_STEP = 0.1;
+
+export const MermaidCanvas = forwardRef<MermaidCanvasHandle, MermaidCanvasProps>(function MermaidCanvas({ source, model, onSelection, onRenderState, onSourceMutation, sourceRevision, onParseResult, onSave, isSaving = false, onReset, onEditSelection, autoFit = false, pendingConnection }: MermaidCanvasProps, ref) {
   const [svg, setSvg] = useState('');
   const [renderedSource, setRenderedSource] = useState('');
   const [binder, setBinder] = useState<((element: Element) => void) | undefined>();
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoomState] = useState(1);
   const [errorBanner, setErrorBanner] = useState('');
   const previewRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -42,6 +60,7 @@ export function MermaidCanvas({ source, model, onSelection, onRenderState, onSou
   const lastClickedNodeRef = useRef<Element | null>(null);
   const pendingConnectionRef = useRef(pendingConnection);
   pendingConnectionRef.current = pendingConnection;
+  const canAutoFit = autoFit && renderedSource === source && Boolean(svg);
   const { ref: dropRef, isDropTarget } = useDroppable({
     id: 'mermaid-editor-canvas',
     data: { kind: 'diagram-canvas' },
@@ -56,7 +75,7 @@ export function MermaidCanvas({ source, model, onSelection, onRenderState, onSou
   }, [onSelection]);
 
   useEffect(() => {
-    setZoom(1);
+    setZoomState(1);
   }, [model.diagramType]);
 
   useEffect(() => {
@@ -65,7 +84,7 @@ export function MermaidCanvas({ source, model, onSelection, onRenderState, onSou
     const handleWheel = (event: WheelEvent): void => {
       if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
-      setZoom((value) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value * (event.deltaY < 0 ? 1.1 : 0.9))));
+      setZoomState((value) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value * (event.deltaY < 0 ? 1.1 : 0.9))));
     };
     stage.addEventListener('wheel', handleWheel, { passive: false });
     return () => stage.removeEventListener('wheel', handleWheel);
@@ -145,19 +164,35 @@ export function MermaidCanvas({ source, model, onSelection, onRenderState, onSou
     };
   }, [pendingConnection, renderedSource, svg]);
 
-  const fitCanvas = (): void => {
+  const fitCanvas = useCallback((): void => {
     const stage = stageRef.current;
     const svgElement = previewRef.current?.querySelector('svg');
     const viewBox = svgElement?.getAttribute('viewBox')?.trim().split(/[ ,]+/).map(Number);
     if (stage && viewBox?.length === 4 && viewBox[2]! > 0 && viewBox[3]! > 0 && stage.clientWidth > 0 && stage.clientHeight > 0) {
-      setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min((stage.clientWidth - 32) / viewBox[2]!, (stage.clientHeight - 32) / viewBox[3]!))));
+      setZoomState(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min((stage.clientWidth - 32) / viewBox[2]!, (stage.clientHeight - 32) / viewBox[3]!))));
       stage.scrollTo({ top: 0, left: 0 });
       return;
     }
-    setZoom(1);
-  };
+    setZoomState(1);
+  }, []);
 
-  const centerCanvas = (): void => {
+  const fitCanvasOnResize = useCallback((): void => {
+    if (canAutoFit) fitCanvas();
+  }, [canAutoFit, fitCanvas]);
+  const { ref: resizeObserverRef } = useResizeDetector({
+    ...(canAutoFit ? { onResize: fitCanvasOnResize } : {}),
+    disableRerender: true,
+  });
+  const setStageRef = useCallback((stage: HTMLDivElement | null): void => {
+    stageRef.current = stage;
+    resizeObserverRef(canAutoFit ? stage : null);
+  }, [canAutoFit, resizeObserverRef]);
+
+  useEffect(() => {
+    if (autoFit && renderedSource === source && svg) fitCanvas();
+  }, [autoFit, fitCanvas, renderedSource, source, svg]);
+
+  const centerCanvas = useCallback((): void => {
     const stage = stageRef.current;
     if (!stage) return;
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
@@ -166,23 +201,44 @@ export function MermaidCanvas({ source, model, onSelection, onRenderState, onSou
       left: Math.max(0, (stage.scrollWidth - stage.clientWidth) / 2),
       behavior: reduceMotion ? 'auto' : 'smooth',
     });
-  };
+  }, []);
+
+  const zoomIn = useCallback((): void => {
+    setZoomState((value) => Math.min(value + ZOOM_STEP, MAX_ZOOM));
+  }, []);
+
+  const zoomOut = useCallback((): void => {
+    setZoomState((value) => Math.max(value - ZOOM_STEP, MIN_ZOOM));
+  }, []);
+
+  const setZoom = useCallback((scale: number): void => {
+    if (Number.isNaN(scale)) return;
+    setZoomState(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale)));
+  }, []);
+
+  useImperativeHandle(ref, () => ({
+    fit: fitCanvas,
+    center: centerCanvas,
+    zoomIn,
+    zoomOut,
+    setZoom,
+  }), [centerCanvas, fitCanvas, setZoom, zoomIn, zoomOut]);
 
   return (
     <section ref={dropRef} className={`mve-gui${isDropTarget ? ' is-drop-target' : ''}`} aria-label="Diagram canvas">
       <header className="mve-canvas-heading">
         <span className="mve-canvas-label">Canvas</span>
         <div className="mve-canvas-toolbar">
-          <Button type="button" aria-label="Zoom in" disabled={zoom >= MAX_ZOOM} onClick={() => setZoom((value) => Math.min(value + 0.1, MAX_ZOOM))}>+</Button>
+          <Button type="button" aria-label="Zoom in" disabled={zoom >= MAX_ZOOM} onClick={zoomIn}>+</Button>
           <output className="mve-zoom-label" aria-label="Zoom level">{Math.round(zoom * 100)}%</output>
-          <Button type="button" aria-label="Zoom out" disabled={zoom <= MIN_ZOOM} onClick={() => setZoom((value) => Math.max(value - 0.1, MIN_ZOOM))}>−</Button>
+          <Button type="button" aria-label="Zoom out" disabled={zoom <= MIN_ZOOM} onClick={zoomOut}>−</Button>
           <Button type="button" onClick={fitCanvas}>Fit</Button>
           <Button type="button" onClick={centerCanvas}>Center</Button>
           {onSave ? <Button type="button" disabled={isSaving} onClick={onSave}>{isSaving ? 'Saving…' : 'Save'}</Button> : null}
           <Button type="button" onClick={onReset}>Reset</Button>
         </div>
       </header>
-      <div className="mve-preview-stage" ref={stageRef} onClickCapture={(event) => {
+      <div className="mve-preview-stage" ref={setStageRef} onClickCapture={(event) => {
         lastClickedNodeRef.current = event.target instanceof Element
           ? event.target.closest('svg g.node, svg g.classGroup, svg g.class, svg g.statediagram-state, svg g.stateGroup')
           : null;
@@ -224,4 +280,4 @@ export function MermaidCanvas({ source, model, onSelection, onRenderState, onSou
       </div>
     </section>
   );
-}
+});
