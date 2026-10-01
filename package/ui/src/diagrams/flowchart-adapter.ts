@@ -103,13 +103,17 @@ function getNodeId(group: Element, nodes: readonly FlowchartNode[], known: Reado
 }
 
 function getEdge(group: Element, edges: readonly FlowchartEdge[], index: number): FlowchartEdge | undefined {
-  const raw = group.getAttribute('id') ?? '';
+  /**
+   *  Mermaid's trailing edge ID number is not consistently the source-order index.
+   *  Match by rendered order first so links that share a renderer suffix cannot all resolve to the same source edge.
+   */
+  if (edges[index]) return edges[index];
+  const raw = group.getAttribute("id") ?? "";
   const rendererIndex = /[-_](\d+)$/.exec(raw);
   if (rendererIndex) {
     const indexed = edges[Number(rendererIndex[1])];
     if (indexed) return indexed;
   }
-  if (edges[index]) return edges[index];
   for (const edge of edges) {
     if (raw.includes(edge.source) && raw.includes(edge.target)) return edge;
     if (raw.includes(edge.target) && raw.includes(edge.source)) return edge;
@@ -191,7 +195,7 @@ export const flowchartAdapter: DiagramAdapter = {
         const group = nodeGroups.find((candidate) => nodeIds.get(candidate) === next.id);
         group?.classList.add('mve-selected');
       } else if (next.kind === 'edge') {
-        for (const selector of ['g.edgePath', 'g.edgeLabel']) {
+        for (const selector of ['g.edgePath', 'g.edgePaths path', 'g.edgeLabel']) {
           [...svg.querySelectorAll(selector)].forEach((group, index) => {
             const edge = getEdge(group, edgeList, index);
             if (edge?.source === next.source && edge.target === next.target
@@ -387,9 +391,10 @@ export const flowchartAdapter: DiagramAdapter = {
       }
       if (nodeId) { setSelected({ kind: 'node', diagramType: 'flowchart', id: nodeId }); return; }
       if (safeEdges) {
-        const group = groupIdElement(event.target, 'g.edgePath, g.edgeLabel', svg);
+        const group = groupIdElement(event.target, 'g.edgePath, g.edgePaths path, g.edgeLabel', svg);
         if (group) {
-          const selector = group.matches('g.edgePath') ? 'g.edgePath' : 'g.edgeLabel';
+          const selector = group.matches('g.edgeLabel') ? 'g.edgeLabel'
+            : group.matches('g.edgePath') ? 'g.edgePath' : 'g.edgePaths path';
           const groups = [...svg.querySelectorAll(selector)];
           const edge = getEdge(group, listFlowchartEdges(context.sourceDocument.source), groups.indexOf(group));
           if (edge) setSelected({ kind: 'edge', diagramType: 'flowchart', source: edge.source, target: edge.target, occurrence: edge.occurrence });
@@ -417,10 +422,11 @@ export const flowchartAdapter: DiagramAdapter = {
         return;
       }
       if (!safeEdges) return;
-      const edgeGroup = groupIdElement(event.target, 'g.edgePath', svg);
-      const path = edgeGroup?.querySelector<SVGPathElement>('path');
+      const edgeGroup = groupIdElement(event.target, 'g.edgePath, g.edgePaths path', svg);
+      const path = edgeGroup?.matches('path') ? edgeGroup as SVGPathElement : edgeGroup?.querySelector<SVGPathElement>('path');
       if (!edgeGroup || !path || typeof path.getTotalLength !== 'function') return;
-      const edge = getEdge(edgeGroup, edgeList, [...svg.querySelectorAll('g.edgePath')].indexOf(edgeGroup));
+      const selector = edgeGroup.matches('g.edgePath') ? 'g.edgePath' : 'g.edgePaths path';
+      const edge = getEdge(edgeGroup, edgeList, [...svg.querySelectorAll(selector)].indexOf(edgeGroup));
       if (!edge) return;
       try {
         const length = path.getTotalLength();
