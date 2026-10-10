@@ -70,45 +70,6 @@ describe('Flowchart adapter', () => {
     cleanup();
   });
 
-  it('adds a connected node with the plus button and removes it during cleanup', () => {
-    const fixture = makeContext('flowchart LR\nA[Alpha]\n', '<svg><g class="node" data-id="A"></g></svg>');
-    const node = fixture.context.svg.querySelector<SVGGElement>('g.node')!;
-    Object.defineProperty(node, 'getBBox', { value: () => ({ x: 0, y: 0, width: 20, height: 20 }) });
-    const cleanup = flowchartAdapter.mount(fixture.context);
-    const plus = fixture.context.svg.querySelector<SVGGElement>('.mve-node-plus')!;
-    expect(plus.parentElement?.parentElement).toBe(fixture.context.svg);
-
-    plus.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    expect(fixture.getSource()).toBe('flowchart LR\nA[Alpha]\n');
-    fixture.context.svg.querySelector<SVGGElement>('[aria-label="Add rounded node connected to A"]')!
-      .dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    expect(fixture.getSource()).toContain('A --> N1');
-    expect(fixture.getSource()).toContain('N1(Rounded)');
-    expect(fixture.context.svg.querySelectorAll('.mve-node-plus')).toHaveLength(1);
-
-    cleanup();
-    expect(fixture.context.svg.querySelectorAll('.mve-node-plus')).toHaveLength(0);
-    plus.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    expect(fixture.getSource()).toContain('A --> N1');
-  });
-
-  it('offers all four plus shapes and supports Enter and Space keyboard selection', () => {
-    for (const [shape, delimiter] of [['process', 'N1["Process box"]'], ['rounded', 'N1(Rounded)'],
-      ['circle', 'N1((Circle))'], ['decision', 'N1{Decision}']] as const) {
-      const fixture = makeContext('flowchart LR\nA[Alpha]\n', '<svg><g class="node" data-id="A"></g></svg>');
-      const node = fixture.context.svg.querySelector<SVGGElement>('g.node')!;
-      Object.defineProperty(node, 'getBBox', { value: () => ({ x: 0, y: 0, width: 20, height: 20 }) });
-      const cleanup = flowchartAdapter.mount(fixture.context);
-      const plus = fixture.context.svg.querySelector<SVGGElement>('.mve-node-plus')!;
-      plus.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-      const choice = fixture.context.svg.querySelector<SVGGElement>(`[aria-label="Add ${shape} node connected to A"]`)!;
-      choice.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
-      expect(fixture.getSource()).toContain('A --> N1');
-      expect(fixture.getSource()).toContain(delimiter);
-      cleanup();
-    }
-  });
-
   it('applies the selected connector to the next pair of nodes then returns to the arrow default', () => {
     const fixture = makeContext('flowchart LR\nA[Alpha]\nB[Beta]\nC[Gamma]\n',
       '<svg><g class="node" data-id="A"></g><g class="node" data-id="B"></g><g class="node" data-id="C"></g></svg>');

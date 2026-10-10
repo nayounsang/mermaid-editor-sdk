@@ -227,60 +227,6 @@
   font-size: 0.75rem;
 }
 
-.mve-node-plus {
-  cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 120ms ease-out;
-}
-
-.mve-node-plus.mve-visible,
-.mve-node-plus:focus {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.mve-node-plus circle {
-  fill: #16a34a;
-  stroke: #fff;
-  stroke-width: 1.5px;
-}
-
-.mve-node-plus text {
-  fill: #fff;
-  font: 14px/1 sans-serif;
-  pointer-events: none;
-}
-
-.mve-node-shape-menu {
-  display: none;
-}
-
-.mve-node-shape-menu.mve-open {
-  display: inline;
-}
-
-.mve-node-shape-choice {
-  cursor: pointer;
-}
-
-.mve-node-shape-choice rect {
-  fill: #fff;
-  stroke: #64748b;
-}
-
-.mve-node-shape-choice:hover rect,
-.mve-node-shape-choice:focus rect {
-  fill: #e2f3e8;
-  stroke: #16803c;
-}
-
-.mve-node-shape-choice text {
-  fill: #172b1b;
-  font: 10px/1 sans-serif;
-  pointer-events: none;
-}
-
 .mve-preview .mve-selected path,
 .mve-preview path.mve-selected,
 .mve-preview .mve-selected rect,
