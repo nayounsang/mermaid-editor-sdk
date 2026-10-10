@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 import type { RefObject } from 'react';
 
-export type PortalContainer = HTMLElement | ShadowRoot | RefObject<HTMLElement | ShadowRoot | null> | null;
+export type PortalContainer = HTMLElement | RefObject<HTMLElement | null> | null;
 
 const PortalContainerContext = createContext<PortalContainer | undefined>(undefined);
 

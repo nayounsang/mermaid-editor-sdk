@@ -34,19 +34,6 @@ export function App() {
 }
 ```
 
-When embedding the editor in a host dialog, pass its overlay container so the selection editor and menus share its stacking layer:
-
-```tsx
-import { useRef } from 'react';
-
-function DiagramDialogContent({ source, setSource }: { source: string; setSource: (value: string) => void }) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  return <div ref={dialogRef} className="host-dialog-overlay">
-    <MermaidEditor value={source} onChange={setSource} portalContainer={dialogRef} />
-  </div>;
-}
-```
-
 ### Custom UI
 
 ```tsx
