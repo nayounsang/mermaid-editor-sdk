@@ -2,6 +2,7 @@ import { Select } from '@base-ui/react/select';
 import type { DiagramType } from '@mermaid-editor-sdk/headless';
 import type { RendererModel } from '@mermaid-editor-sdk/headless';
 import { diagramTypes } from '@mermaid-editor-sdk/headless';
+import { usePortalContainer } from '../context/portal-container-context';
 
 export interface DiagramTypeSelectProps {
   readonly model: RendererModel;
@@ -9,6 +10,7 @@ export interface DiagramTypeSelectProps {
 }
 
 export function DiagramTypeSelect({ model, onChange }: DiagramTypeSelectProps) {
+  const portalContainer = usePortalContainer();
   const value = model.diagramType === 'unknown' || model.diagramType === 'unsupported'
     ? null
     : model.diagramType;
@@ -32,7 +34,7 @@ export function DiagramTypeSelect({ model, onChange }: DiagramTypeSelectProps) {
             <svg viewBox="0 0 16 16" fill="none"><path d="m4 6 4 4 4-4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" /></svg>
           </Select.Icon>
         </Select.Trigger>
-        <Select.Portal>
+        <Select.Portal container={portalContainer}>
           <Select.Positioner className="mve-select-positioner">
             <Select.Popup className="mve-select-popup">
               <Select.List>

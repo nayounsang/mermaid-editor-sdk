@@ -219,7 +219,10 @@ Call inside `EditorSessionProvider` or `MermaidEditor`.
 | `className?` | Class added to the default shell root. | `string` | `""` |
 | `title?` | Default shell heading. | `string` | `"Diagram"` |
 | `autoFit?` | Fits the diagram to the canvas after rendering and when the canvas resizes. | `boolean` | `false` |
+| `portalContainer?` | Container used by editor dialogs and popovers, including the selection editor and diagram type menu. Set this to an element inside a host modal to keep those surfaces in its stacking layer. | `HTMLElement \| ShadowRoot \| RefObject<HTMLElement \| ShadowRoot \| null> \| null` | `document.body` |
 | `children?` | Custom composition; replaces the default UI when provided. | `ReactNode` | Default composition |
+
+The selection editor uses layer `1000` and select menus use layer `1001` by default. Override `--mve-selection-layer`, `--mve-select-layer`, and `--mve-backdrop-layer` in your stylesheet when your host uses a different layer scale. Define the variables on `:root` or the `portalContainer` so portaled surfaces inherit them. The select layer should remain above the selection layer.
 
 ```ts
 export interface EditorError {

@@ -10,6 +10,8 @@ import { MermaidRendererError } from '../renderer/mermaid-renderer';
 import { templates, type EditableDiagramType } from '@mermaid-editor-sdk/headless';
 import { useDiagramSession } from './hooks/useDiagramSession';
 import { EditorSessionProvider, useEditorController } from './context/editor-session-context';
+import { PortalContainerProvider } from './context/portal-container-context';
+import type { PortalContainer } from './context/portal-container-context';
 import { EditorShell } from './components/EditorShell';
 import { ToolSidebar } from './components/ToolSidebar';
 import { MermaidCanvas } from './components/MermaidCanvas';
@@ -38,6 +40,8 @@ export interface MermaidEditorProps extends Omit<MermaidVisualEditorOptions, 'va
   readonly title?: string;
   /** Fit on first render and resize, clamping the resulting zoom to 0.1–4. */
   readonly autoFit?: boolean;
+  /** Parent container for editor dialogs and popovers. Defaults to document.body. */
+  readonly portalContainer?: PortalContainer;
   readonly children?: ReactNode;
 }
 
@@ -69,7 +73,7 @@ export function MermaidEditor(props: MermaidEditorProps) {
   );
 }
 
-function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onSave, onReset, onRemove, className, title, autoFit = false, children }: MermaidEditorProps) {
+function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onSave, onReset, onRemove, className, title, autoFit = false, portalContainer, children }: MermaidEditorProps) {
   const controller = useEditorController();
   const session = controller.session;
   const { snapshot, dispatch, undo, redo, setSource } = useDiagramSession();
@@ -373,7 +377,9 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
       }
     }}>
       <MermaidEditorPartsContext.Provider value={parts}>
-        {children === undefined ? defaultComposition : children}
+        <PortalContainerProvider value={portalContainer}>
+          {children === undefined ? defaultComposition : children}
+        </PortalContainerProvider>
       </MermaidEditorPartsContext.Provider>
     </DragDropProvider>
   );

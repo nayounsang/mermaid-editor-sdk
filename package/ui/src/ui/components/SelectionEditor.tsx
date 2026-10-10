@@ -10,6 +10,7 @@ import type { DiagramAction, DiagramSemanticElement, RendererModel } from '@merm
 import { getDiagramElementIdForSelection } from '@mermaid-editor-sdk/headless';
 import type { EditorSelection } from '../../runtime/types';
 import type { ERCardinality } from '@mermaid-editor-sdk/headless';
+import { usePortalContainer } from '../context/portal-container-context';
 
 const editorFormSchema = z.object({
   kind: z.enum(['node', 'edge', 'subgraph']),
@@ -72,6 +73,7 @@ export interface SelectionEditorProps {
 }
 
 export function SelectionEditor({ open, onClose, selection, model, dispatch, dispatchPreservingSelection = dispatch, onDelete }: SelectionEditorProps) {
+  const portalContainer = usePortalContainer();
   const [memberDrafts, setMemberDrafts] = useState<Record<string, string>>({});
   const [attributeDrafts, setAttributeDrafts] = useState<Record<string, { type: string; name: string; key: string; comment: string }>>({});
   const { control, handleSubmit, reset, formState: { errors } } = useForm<EditorForm>({
@@ -197,7 +199,7 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
 
   return (
     <Dialog.Root open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-      <Dialog.Portal>
+      <Dialog.Portal container={portalContainer}>
         <Dialog.Backdrop className="mve-edit-backdrop" />
         <Dialog.Popup className="mve-selection-editor mve-edit-dialog" aria-label="Selection editor" onKeyDown={(event) => {
           if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {

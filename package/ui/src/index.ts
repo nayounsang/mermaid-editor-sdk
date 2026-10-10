@@ -3,6 +3,7 @@ import './styles/editor.css';
 export { MermaidEditor } from './ui/MermaidEditor';
 export { useMermaidEditorParts } from './ui/MermaidEditor';
 export type { MermaidEditorParts, MermaidEditorProps } from './ui/MermaidEditor';
+export type { PortalContainer } from './ui/context/portal-container-context';
 export { createMermaidVisualEditor } from './runtime/create-editor';
 export type {
   EditorError,
