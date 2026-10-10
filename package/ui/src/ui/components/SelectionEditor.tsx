@@ -1,5 +1,6 @@
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { TinyColor } from '@ctrl/tinycolor';
 import { z } from 'zod';
 import { useEffect, useId, useMemo } from 'react';
 import { Button } from '@base-ui/react/button';
@@ -39,24 +40,8 @@ type EditorForm = z.infer<typeof editorFormSchema>;
 type TextFieldName = 'id' | 'label' | 'from' | 'to' | 'operator' | 'fill' | 'stroke' | 'title';
 
 function colorPickerValue(value: string): string {
-  const hex = value.trim().match(/^#([\da-f]{3}|[\da-f]{6})$/i)?.[1];
-  if (hex) return `#${hex.length === 3 ? [...hex].map((digit) => `${digit}${digit}`).join('') : hex}`;
-  const rgb = value.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*[\d.]+)?\s*\)$/i);
-  if (rgb) return `#${rgb.slice(1, 4).map((channel) => Math.min(255, Number(channel)).toString(16).padStart(2, '0')).join('')}`;
-  if (typeof document !== 'undefined') {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (context) {
-      context.fillStyle = '#010203';
-      context.fillStyle = value;
-      if (context.fillStyle !== '#010203') {
-        context.fillRect(0, 0, 1, 1);
-        const channels = Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3);
-        return `#${channels.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
-      }
-    }
-  }
-  return '#000000';
+  const color = new TinyColor(value);
+  return color.isValid ? color.toHexString() : '#000000';
 }
 
 interface TextFieldProps {
@@ -73,6 +58,14 @@ function TextField({ control, name, label, inputType = 'text', multiline = false
     multiline
       ? <textarea name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)} />
       : <Input className={inputType === 'color' ? 'mve-color-input' : undefined} type={inputType} name={field.name} ref={field.ref} value={inputType === 'color' ? colorPickerValue(field.value || emptyColor) : field.value} onBlur={field.onBlur} onValueChange={field.onChange} />
+  )} /></label>;
+}
+
+function BorderLineField({ control }: { readonly control: Control<EditorForm> }) {
+  return <label>Border line<Controller control={control} name="borderType" render={({ field }) => (
+    <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
+      <option value="default">Default</option><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option>
+    </select>
   )} /></label>;
 }
 
@@ -239,18 +232,17 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
         <form id={formId} className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
           {selection.diagramType === 'flowchart' && <TextField control={control} name="label" label="Label" />}
           <TextField control={control} name="id" label="Identifier" />
-          {selection.diagramType === 'flowchart' && <label>Shape<Controller control={control} name="shape" render={({ field }) => (
+          {selection.diagramType === 'flowchart' && <>
+            <label>Shape<Controller control={control} name="shape" render={({ field }) => (
             <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
               <option value="bare">Bare</option><option value="rect">Rectangle</option><option value="round">Rounded</option><option value="diamond">Diamond</option><option value="circle">Circle</option><option value="stadium">Stadium</option><option value="subroutine">Subroutine</option><option value="database">Database</option><option value="hexagon">Hexagon</option>
             </select>
-          )} /></label>}
+            )} /></label>
+            <BorderLineField control={control} />
+          </>}
           <TextField control={control} name="fill" label="Fill color" inputType="color" emptyColor="#ECECFF" />
           <TextField control={control} name="stroke" label="Border color" inputType="color" emptyColor="#9370DB" />
-          <label>Border line<Controller control={control} name="borderType" render={({ field }) => (
-            <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
-              <option value="default">Default</option><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option>
-            </select>
-          )} /></label>
+          {selection.diagramType !== 'flowchart' && <BorderLineField control={control} />}
           {errorMessage && <p role="alert">{errorMessage}</p>}
           {selection.diagramType === 'class' && <section className="mve-child-elements"><h3>Class members</h3>
             {memberFields.map((member, index) => <div className="mve-child-element mve-class-member" key={member.fieldId}>
