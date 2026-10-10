@@ -102,6 +102,7 @@
 .mve-dialog-body { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 0.15rem 0.15rem 0.5rem; }
 .mve-edit-dialog .mve-edit-fields { align-items: start; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
 .mve-edit-dialog .mve-edit-fields > label { min-width: 0; }
+.mve-edit-dialog .mve-edit-fields input.mve-color-input { height: 2.5rem; max-width: 5rem; padding: 0.25rem; width: 5rem; }
 .mve-edit-dialog .mve-edit-fields > label:has(textarea), .mve-edit-dialog .mve-edit-fields > [role='alert'], .mve-edit-dialog .mve-edit-fields > .mve-child-elements, .mve-edit-dialog .mve-edit-fields > div { grid-column: 1 / -1; }
 .mve-edit-dialog .mve-edit-fields input, .mve-edit-dialog .mve-edit-fields select, .mve-edit-dialog .mve-edit-fields textarea { max-width: 100%; min-width: 0; width: 100%; }
 .mve-edit-fields { display: grid; gap: 0.65rem; }
@@ -110,7 +111,9 @@
 .mve-edit-fields label { display: flex; flex-direction: column; gap: 0.2rem; }
 .mve-edit-fields input, .mve-edit-fields select, .mve-edit-fields textarea { font: inherit; max-width: none; min-height: 2rem; width: 100%; }
 .mve-edit-fields textarea { min-height: 5rem; resize: vertical; }
-.mve-edit-dialog-actions { display: flex; justify-content: flex-end; margin-top: 0.85rem; }
+.mve-edit-dialog > footer.mve-edit-dialog-actions { align-items: center; display: flex; justify-content: space-between; margin-top: 0.85rem; }
+.mve-edit-dialog-actions > div { display: flex; gap: 0.5rem; }
+.mve-edit-dialog .mve-color-input { cursor: pointer; }
 .mve-flowchart-palette,
 .mve-flowchart-selection,
 .mve-class-palette,

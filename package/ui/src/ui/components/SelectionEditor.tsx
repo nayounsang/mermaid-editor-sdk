@@ -1,7 +1,7 @@
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Button } from '@base-ui/react/button';
 import { Dialog } from '@base-ui/react/dialog';
 import { Input } from '@base-ui/react/input';
@@ -36,17 +36,41 @@ const editorFormSchema = z.object({
 type EditorForm = z.infer<typeof editorFormSchema>;
 type TextFieldName = 'id' | 'label' | 'from' | 'to' | 'operator' | 'fill' | 'stroke' | 'title';
 
+function colorPickerValue(value: string): string {
+  const hex = value.trim().match(/^#([\da-f]{3}|[\da-f]{6})$/i)?.[1];
+  if (hex) return `#${hex.length === 3 ? [...hex].map((digit) => `${digit}${digit}`).join('') : hex}`;
+  const rgb = value.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*[\d.]+)?\s*\)$/i);
+  if (rgb) return `#${rgb.slice(1, 4).map((channel) => Math.min(255, Number(channel)).toString(16).padStart(2, '0')).join('')}`;
+  if (typeof document !== 'undefined') {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (context) {
+      context.fillStyle = '#010203';
+      context.fillStyle = value;
+      if (context.fillStyle !== '#010203') {
+        context.fillRect(0, 0, 1, 1);
+        const channels = Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3);
+        return `#${channels.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
+      }
+    }
+  }
+  return '#000000';
+}
+
 interface TextFieldProps {
   readonly control: Control<EditorForm>;
   readonly name: TextFieldName;
   readonly label: string;
+  readonly inputType?: 'text' | 'color';
+  readonly multiline?: boolean;
+  readonly emptyColor?: string;
 }
 
-function TextField({ control, name, label, multiline = false }: TextFieldProps & { readonly multiline?: boolean }) {
+function TextField({ control, name, label, inputType = 'text', multiline = false, emptyColor = '#000000' }: TextFieldProps) {
   return <label>{label}<Controller control={control} name={name} render={({ field }) => (
     multiline
       ? <textarea name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)} />
-      : <Input name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onValueChange={field.onChange} />
+      : <Input className={inputType === 'color' ? 'mve-color-input' : undefined} type={inputType} name={field.name} ref={field.ref} value={inputType === 'color' ? colorPickerValue(field.value || emptyColor) : field.value} onBlur={field.onBlur} onValueChange={field.onChange} />
   )} /></label>;
 }
 
@@ -74,6 +98,7 @@ export interface SelectionEditorProps {
 export function SelectionEditor({ open, onClose, selection, model, dispatch, dispatchPreservingSelection = dispatch, onDelete }: SelectionEditorProps) {
   const [memberDrafts, setMemberDrafts] = useState<Record<string, string>>({});
   const [attributeDrafts, setAttributeDrafts] = useState<Record<string, { type: string; name: string; key: string; comment: string }>>({});
+  const formId = useId();
   const { control, handleSubmit, reset, formState: { errors } } = useForm<EditorForm>({
     resolver: zodResolver(editorFormSchema),
     defaultValues: { kind: 'node', id: '', label: '', from: '', to: '', operator: '', shape: 'rect', fill: '', stroke: '', borderType: 'default', title: '', identifying: true },
@@ -208,23 +233,22 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
       <header><Dialog.Title>{dialogTitle}</Dialog.Title><Dialog.Close render={<Button type="button" aria-label="Close selection editor">×</Button>} /></header>
       <div className="mve-dialog-body">
       {!selection ? <p>Select a supported node or relationship to edit its properties.</p> : selection.kind === 'node' ? (
-        <form className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
-          {selection.diagramType === 'flowchart' && <TextField control={control} name="label" label="Label" multiline />}
+        <form id={formId} className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
+          {selection.diagramType === 'flowchart' && <TextField control={control} name="label" label="Label" />}
           <TextField control={control} name="id" label="Identifier" />
           {selection.diagramType === 'flowchart' && <label>Shape<Controller control={control} name="shape" render={({ field }) => (
             <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
               <option value="bare">Bare</option><option value="rect">Rectangle</option><option value="round">Rounded</option><option value="diamond">Diamond</option><option value="circle">Circle</option><option value="stadium">Stadium</option><option value="subroutine">Subroutine</option><option value="database">Database</option><option value="hexagon">Hexagon</option>
             </select>
           )} /></label>}
-          <TextField control={control} name="fill" label="Fill color" />
-          <TextField control={control} name="stroke" label="Border color" />
+          <TextField control={control} name="fill" label="Fill color" inputType="color" emptyColor="#ECECFF" />
+          <TextField control={control} name="stroke" label="Border color" inputType="color" emptyColor="#9370DB" />
           <label>Border line<Controller control={control} name="borderType" render={({ field }) => (
             <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
               <option value="default">Default</option><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option>
             </select>
           )} /></label>
           {errorMessage && <p role="alert">{errorMessage}</p>}
-          <div><Button type="submit">Apply</Button> <Button type="button" aria-label={`Delete ${selection.diagramType} node ${selection.id}`} onClick={remove}>Delete</Button></div>
           {selection.diagramType === 'class' && <section className="mve-child-elements"><h3>Class members</h3>
             {members.map((member) => <div className="mve-child-element mve-class-member" key={member.id}>
               <label className="mve-child-field">Member<Input aria-label="Class member" value={memberDrafts[member.id] ?? member.statement} onValueChange={(value) => setMemberDrafts((current) => ({ ...current, [member.id]: value }))} /></label>
@@ -252,11 +276,11 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
           </section>}
         </form>
       ) : selection.kind === 'edge' ? (
-        <form className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
+        <form id={formId} className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
           <TextField control={control} name="from" label="From" />
           <TextField control={control} name="to" label="To" />
-          {selection.diagramType !== 'class' && <TextField control={control} name="label" label="Label" multiline />}
-          {selection.diagramType === 'flowchart' && <TextField control={control} name="stroke" label="Line color" />}
+          {selection.diagramType !== 'class' && <TextField control={control} name="label" label="Label" />}
+          {selection.diagramType === 'flowchart' && <TextField control={control} name="stroke" label="Line color" inputType="color" emptyColor="#333333" />}
           {selection.diagramType === 'er' ? <>
             <label>Cardinality<Controller control={control} name="operator" render={({ field }) => (
               <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
@@ -275,25 +299,32 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
             </select>;
           }} /></label> : null}
           {errorMessage && <p role="alert">{errorMessage}</p>}
-          <div><Button type="submit">Apply</Button> <Button type="button" aria-label={`Delete ${selection.diagramType} relationship from ${selection.source} to ${selection.target}`} onClick={remove}>Delete</Button></div>
         </form>
       ) : (
-        <form className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
+        <form id={formId} className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
           <TextField control={control} name="id" label="Identifier" />
           <TextField control={control} name="title" label="Title" multiline />
-          <TextField control={control} name="fill" label="Fill color" />
-          <TextField control={control} name="stroke" label="Border color" />
+          <TextField control={control} name="fill" label="Fill color" inputType="color" emptyColor="#ECECFF" />
+          <TextField control={control} name="stroke" label="Border color" inputType="color" emptyColor="#9370DB" />
           <label>Border line<Controller control={control} name="borderType" render={({ field }) => (
             <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
               <option value="default">Default</option><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option>
             </select>
           )} /></label>
           {errorMessage && <p role="alert">{errorMessage}</p>}
-          <div><Button type="submit">Apply</Button> <Button type="button" aria-label={`Delete flowchart subgraph ${selection.id}`} onClick={remove}>Delete</Button></div>
         </form>
       )}
       </div>
-      <footer className="mve-edit-dialog-actions"><Dialog.Close render={<Button type="button">Cancel</Button>} /></footer>
+      <footer className="mve-edit-dialog-actions">
+        <div>{selection && <Button type="button" aria-label={selection.kind === 'edge'
+          ? `Delete ${selection.diagramType} relationship from ${selection.source} to ${selection.target}`
+          : selection.kind === 'node' ? `Delete ${selection.diagramType} node ${selection.id}`
+            : `Delete flowchart subgraph ${selection.id}`} onClick={remove}>Delete</Button>}</div>
+        <div>
+          <Dialog.Close render={<Button type="button">Cancel</Button>} />
+          {selection && <Button type="submit" form={formId}>Apply</Button>}
+        </div>
+      </footer>
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
