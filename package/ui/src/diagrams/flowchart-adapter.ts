@@ -170,9 +170,6 @@ export const flowchartAdapter: DiagramAdapter = {
       | undefined;
     let dragLine: SVGLineElement | undefined;
     let dropTarget: Element | undefined;
-    let disposed = false;
-    const injected: SVGGElement[] = [];
-    const hoverHandlers: Array<{ group: SVGGElement; enter: () => void; leave: (event: PointerEvent) => void }> = [];
     const nodeList = listFlowchartNodes(context.sourceDocument.source);
     const nodeKeys = new Set(nodeList.map((node) => node.id));
     const nodeGroups = [...svg.querySelectorAll<SVGGElement>('g.node, g.nodes .node')];
@@ -500,90 +497,6 @@ export const flowchartAdapter: DiagramAdapter = {
       }
     };
 
-    for (const group of nodeGroups) {
-      const id = nodeIds.get(group);
-      if (!id) continue;
-      try {
-        const box = group.getBBox();
-        const overlay = document.createElementNS(SVG_NS, 'g');
-        overlay.classList.add('mve-node-plus-overlay');
-        const plus = document.createElementNS(SVG_NS, 'g');
-        plus.classList.add('mve-node-plus');
-        plus.setAttribute('tabindex', '0');
-        plus.setAttribute('role', 'button');
-        plus.setAttribute('aria-label', `Choose shape for node connected to ${id}`);
-        const circle = document.createElementNS(SVG_NS, 'circle');
-        circle.setAttribute('cx', String(box.x + box.width / 2));
-        circle.setAttribute('cy', String(box.y + box.height + 16));
-        circle.setAttribute('r', '10');
-        const text = document.createElementNS(SVG_NS, 'text');
-        text.setAttribute('x', String(box.x + box.width / 2));
-        text.setAttribute('y', String(box.y + box.height + 21));
-        text.setAttribute('text-anchor', 'middle');
-        text.textContent = '+';
-        plus.append(circle, text);
-        const menu = document.createElementNS(SVG_NS, 'g');
-        menu.classList.add('mve-node-shape-menu');
-        menu.setAttribute('aria-label', `Choose shape connected to ${id}`);
-        menu.setAttribute('transform', `translate(${box.x + box.width / 2 - 134} ${box.y + box.height + 34})`);
-        const choices: Array<[string, FlowchartNodeShape]> = [['Process', 'rect'], ['Rounded', 'round'], ['Circle', 'circle'], ['Decision', 'diamond']];
-        choices.forEach(([label, shape], index) => {
-          const choice = document.createElementNS(SVG_NS, 'g');
-          choice.classList.add('mve-node-shape-choice');
-          choice.setAttribute('tabindex', '0');
-          choice.setAttribute('role', 'button');
-          choice.setAttribute('aria-label', `Add ${label.toLowerCase()} node connected to ${id}`);
-          choice.setAttribute('transform', `translate(${index * 68} 0)`);
-          const background = document.createElementNS(SVG_NS, 'rect');
-          background.setAttribute('width', '64');
-          background.setAttribute('height', '26');
-          background.setAttribute('rx', '4');
-          const caption = document.createElementNS(SVG_NS, 'text');
-          caption.setAttribute('x', '32');
-          caption.setAttribute('y', '17');
-          caption.setAttribute('text-anchor', 'middle');
-          caption.textContent = label;
-          choice.append(background, caption);
-          const selectShape = (event: Event): void => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (disposed) return;
-            const node = listFlowchartNodes(context.sourceDocument.source).find((candidate) => candidate.id === id);
-            const parent = node ? flowchartSubgraphAt(context.sourceDocument.source, node.lineStart)?.id : undefined;
-            addNode(shape, id, parent);
-          };
-          choice.addEventListener('click', selectShape);
-          choice.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') selectShape(event); });
-          menu.append(choice);
-        });
-        const toggleMenu = (event: Event): void => {
-          event.preventDefault();
-          event.stopPropagation();
-          const opening = !menu.classList.contains('mve-open');
-          svg.querySelectorAll('.mve-node-shape-menu.mve-open').forEach((element) => element.classList.remove('mve-open'));
-          if (opening) menu.classList.add('mve-open');
-        };
-        plus.addEventListener('click', toggleMenu);
-        plus.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') toggleMenu(event); });
-        const enter = (): void => plus.classList.add('mve-visible');
-        const leave = (event: PointerEvent): void => {
-          if (event.relatedTarget instanceof Node && overlay.contains(event.relatedTarget)) return;
-          plus.classList.remove('mve-visible');
-        };
-        group.addEventListener('pointerenter', enter);
-        group.addEventListener('pointerleave', leave);
-        hoverHandlers.push({ group, enter, leave });
-        overlay.append(plus, menu);
-        overlay.addEventListener('pointerenter', enter);
-        overlay.addEventListener('pointerleave', leave);
-        hoverHandlers.push({ group: overlay, enter, leave });
-        svg.append(overlay);
-        injected.push(overlay);
-      } catch {
-        // jsdom and some SVG implementations do not expose getBBox; selection still works.
-      }
-    }
-
     svg.addEventListener('click', click);
     svg.addEventListener('dblclick', doubleClick);
     svg.addEventListener('pointerdown', pointerDown);
@@ -593,7 +506,6 @@ export const flowchartAdapter: DiagramAdapter = {
     svg.addEventListener('keydown', keyDown);
     canvas.addEventListener('keydown', keyDown);
     return () => {
-      disposed = true;
       svg.removeEventListener('click', click);
       svg.removeEventListener('dblclick', doubleClick);
       svg.removeEventListener('pointerdown', pointerDown);
@@ -605,12 +517,6 @@ export const flowchartAdapter: DiagramAdapter = {
       svg.removeEventListener('drop', drop);
       svg.removeEventListener('keydown', keyDown);
       canvas.removeEventListener('keydown', keyDown);
-      for (const handlers of hoverHandlers) {
-        handlers.group.removeEventListener('pointerenter', handlers.enter);
-        handlers.group.removeEventListener('pointerleave', handlers.leave);
-      }
-      for (const plus of injected) plus.remove();
-      injected.length = 0;
     };
   },
 };
