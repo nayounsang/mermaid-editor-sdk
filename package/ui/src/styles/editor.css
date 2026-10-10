@@ -102,11 +102,8 @@
 .mve-dialog-body { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 0.15rem 0.15rem 0.5rem; }
 .mve-edit-dialog .mve-edit-fields { align-items: start; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
 .mve-edit-dialog .mve-edit-fields > label { min-width: 0; }
-.mve-edit-dialog .mve-clearable-color-field { align-items: end; display: flex; gap: 0.4rem; grid-column: auto; min-width: 0; }
-.mve-edit-dialog .mve-clearable-color-field > label { flex: 1 1 auto; min-width: 0; }
 .mve-edit-dialog .mve-edit-fields input.mve-color-input { height: 2.5rem; max-width: 5rem; padding: 0.25rem; width: 5rem; }
 .mve-edit-dialog .mve-edit-fields > label:has(textarea), .mve-edit-dialog .mve-edit-fields > [role='alert'], .mve-edit-dialog .mve-edit-fields > .mve-child-elements, .mve-edit-dialog .mve-edit-fields > div { grid-column: 1 / -1; }
-.mve-edit-dialog .mve-edit-fields > .mve-clearable-color-field { grid-column: auto; }
 .mve-edit-dialog .mve-edit-fields input, .mve-edit-dialog .mve-edit-fields select, .mve-edit-dialog .mve-edit-fields textarea { max-width: 100%; min-width: 0; width: 100%; }
 .mve-edit-fields { display: grid; gap: 0.65rem; }
 .mve-edit-fields > [hidden] { display: none; }
