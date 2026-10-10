@@ -18,7 +18,7 @@
 .mve-header-actions button:disabled, .mve-palette-edge-fields button:disabled { cursor: not-allowed; opacity: 0.5; }
 .mve-diagram-picker { align-items: center; display: flex; gap: 0.55rem; }
 .mve-diagram-picker-label { color: #64748b; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.055em; text-transform: uppercase; white-space: nowrap; }
-.mve-select-positioner { outline: none; z-index: 20; }
+.mve-select-positioner { outline: none; z-index: var(--mve-select-layer, 1001); }
 .mve-select-popup { background: #fff; border: 1px solid #d8dee8; border-radius: 0.7rem; box-shadow: 0 14px 36px #15233a24, 0 2px 6px #15233a0a; max-height: min(22rem, 65vh); min-width: 14rem; overflow: auto; padding: 0.35rem; }
 .mve-select-popup [role="listbox"] { display: grid; gap: 0.15rem; }
 .mve-select-item { align-items: center; border-radius: 0.45rem; color: #263247; cursor: pointer; display: flex; font-size: 0.9rem; justify-content: space-between; min-height: 2.35rem; outline: none; padding: 0.45rem 0.65rem; }
@@ -90,13 +90,15 @@
 .mve-edit-dialog { border: 1px solid #cbd3df; border-radius: 0.65rem; box-shadow: 0 18px 55px #0f172a33; box-sizing: border-box; color: #202124; display: flex; flex-direction: column; font: 14px/1.45 system-ui, sans-serif; max-height: min(85dvh, 48rem); max-width: min(42rem, calc(100vw - 2rem)); overflow: hidden; padding: 1rem; width: 100%; }
 .mve-edit-dialog *, .mve-edit-dialog *::before, .mve-edit-dialog *::after { box-sizing: border-box; }
 .mve-edit-dialog :is(button, input, select, textarea, [tabindex]):focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
-.mve-edit-dialog::backdrop, .mve-edit-backdrop { background: #0f172a66; inset: 0; position: fixed; }
-.mve-selection-editor { left: 50%; max-height: min(85dvh, 48rem); max-width: min(42rem, calc(100vw - 2rem)); position: fixed; top: 50%; transform: translate(-50%, -50%); width: 100%; z-index: 21; }
+.mve-edit-dialog::backdrop, .mve-edit-backdrop { background: #0f172a66; inset: 0; position: fixed; z-index: var(--mve-backdrop-layer, 999); }
+.mve-selection-editor { left: 50%; max-height: min(85dvh, 48rem); max-width: min(42rem, calc(100vw - 2rem)); position: fixed; top: 50%; transform: translate(-50%, -50%); width: 100%; z-index: var(--mve-selection-layer, 1000); }
 .mve-edit-dialog > header { align-items: center; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; margin: -0.15rem 0 0.75rem; padding-bottom: 0.65rem; }
 .mve-edit-dialog h2 { font-size: 1rem; margin: 0; }
 .mve-edit-dialog > header, .mve-edit-dialog > footer { flex: 0 0 auto; }
 .mve-edit-dialog > header button { min-height: 2.75rem; min-width: 2.75rem; }
 .mve-edit-dialog button { background: #fff; border: 1px solid #cbd3df; border-radius: 0.35rem; cursor: pointer; font: inherit; min-height: 2.5rem; padding: 0.45rem 0.75rem; }
+.mve-edit-dialog .mve-edit-dialog-actions button[type='submit'] { background: #2563eb; border-color: #2563eb; color: #fff; }
+.mve-edit-dialog .mve-edit-dialog-actions button[type='submit']:hover:not(:disabled) { background: #1d4ed8; border-color: #1d4ed8; }
 .mve-edit-dialog button[aria-label^='Delete'] { border-color: #fca5a5; color: #b42318; }
 .mve-edit-dialog > footer { border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; margin-top: 0.85rem; padding-top: 0.75rem; }
 .mve-dialog-body { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 0.15rem 0.15rem 0.5rem; }
@@ -228,60 +230,6 @@
 .mve-er-help {
   color: #5f6368;
   font-size: 0.75rem;
-}
-
-.mve-node-plus {
-  cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 120ms ease-out;
-}
-
-.mve-node-plus.mve-visible,
-.mve-node-plus:focus {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.mve-node-plus circle {
-  fill: #16a34a;
-  stroke: #fff;
-  stroke-width: 1.5px;
-}
-
-.mve-node-plus text {
-  fill: #fff;
-  font: 14px/1 sans-serif;
-  pointer-events: none;
-}
-
-.mve-node-shape-menu {
-  display: none;
-}
-
-.mve-node-shape-menu.mve-open {
-  display: inline;
-}
-
-.mve-node-shape-choice {
-  cursor: pointer;
-}
-
-.mve-node-shape-choice rect {
-  fill: #fff;
-  stroke: #64748b;
-}
-
-.mve-node-shape-choice:hover rect,
-.mve-node-shape-choice:focus rect {
-  fill: #e2f3e8;
-  stroke: #16803c;
-}
-
-.mve-node-shape-choice text {
-  fill: #172b1b;
-  font: 10px/1 sans-serif;
-  pointer-events: none;
 }
 
 .mve-preview .mve-selected path,

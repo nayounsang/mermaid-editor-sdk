@@ -11,6 +11,7 @@ import type { DiagramAction, DiagramSemanticElement, RendererModel } from '@merm
 import { getDiagramElementIdForSelection } from '@mermaid-editor-sdk/headless';
 import type { EditorSelection } from '../../runtime/types';
 import type { ERCardinality } from '@mermaid-editor-sdk/headless';
+import { usePortalContainer } from '../context/portal-container-context';
 
 const editorFormSchema = z.object({
   kind: z.enum(['node', 'edge', 'subgraph']),
@@ -92,12 +93,13 @@ export interface SelectionEditorProps {
 
 export function SelectionEditor({ open, onClose, selection, model, dispatch, dispatchPreservingSelection = dispatch, onDelete }: SelectionEditorProps) {
   const formId = useId();
+  const portalContainer = usePortalContainer();
   const { control, getValues, handleSubmit, reset, formState: { errors } } = useForm<EditorForm>({
     resolver: zodResolver(editorFormSchema),
     defaultValues: { kind: 'node', id: '', label: '', from: '', to: '', operator: '', shape: 'rect', fill: '', stroke: '', borderType: 'default', title: '', identifying: true, members: [], attributes: [] },
   });
-  const { fields: memberFields } = useFieldArray({ control, name: 'members', keyName: 'fieldId' });
-  const { fields: attributeFields } = useFieldArray({ control, name: 'attributes', keyName: 'fieldId' });
+  const { fields: memberFields, replace: replaceMembers } = useFieldArray({ control, name: 'members', keyName: 'fieldId' });
+  const { fields: attributeFields, replace: replaceAttributes } = useFieldArray({ control, name: 'attributes', keyName: 'fieldId' });
   const nodeId = selection?.kind === 'node' ? selection.id : '';
   const selectedElementId = selection ? getDiagramElementIdForSelection(model.elements, selection) : undefined;
   const selectedNode = selection?.kind === 'node' ? model.elements.find((item) => item.kind === 'node' && item.id === selectedElementId) : undefined;
@@ -139,15 +141,20 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
 
   useEffect(() => {
     if (selection?.kind === 'node') {
-      reset({ kind: 'node', id: selection.id, label: nodeLabel, from: '', to: '', operator: '', shape: nodeShape, fill: nodeFill, stroke: nodeStroke, borderType: nodeBorderType, title: '', identifying: true, ...childDefaults });
+      reset({ kind: 'node', id: selection.id, label: nodeLabel, from: '', to: '', operator: '', shape: nodeShape, fill: nodeFill, stroke: nodeStroke, borderType: nodeBorderType, title: '', identifying: true, members: [], attributes: [] });
     } else if (selection?.kind === 'edge') {
-      reset({ kind: 'edge', id: '', label: edgeLabel, from: selection.source, to: selection.target, operator: edgeOperator, shape: 'rect', fill: '', stroke: edgeStroke, borderType: 'default', title: '', identifying: edgeIdentifying, ...childDefaults });
+      reset({ kind: 'edge', id: '', label: edgeLabel, from: selection.source, to: selection.target, operator: edgeOperator, shape: 'rect', fill: '', stroke: edgeStroke, borderType: 'default', title: '', identifying: edgeIdentifying, members: [], attributes: [] });
     } else if (selection?.kind === 'subgraph') {
-      reset({ kind: 'subgraph', id: selection.id, label: '', from: '', to: '', operator: '', shape: 'rect', fill: subgraphFill, stroke: subgraphStroke, borderType: subgraphBorderType, title: subgraphLabel, identifying: true, ...childDefaults });
+      reset({ kind: 'subgraph', id: selection.id, label: '', from: '', to: '', operator: '', shape: 'rect', fill: subgraphFill, stroke: subgraphStroke, borderType: subgraphBorderType, title: subgraphLabel, identifying: true, members: [], attributes: [] });
     } else {
-      reset({ kind: 'node', id: '', label: '', from: '', to: '', operator: '', shape: 'rect', fill: '', stroke: '', borderType: 'default', title: '', identifying: true, ...childDefaults });
+      reset({ kind: 'node', id: '', label: '', from: '', to: '', operator: '', shape: 'rect', fill: '', stroke: '', borderType: 'default', title: '', identifying: true, members: [], attributes: [] });
     }
-  }, [open, selection, nodeLabel, nodeShape, nodeFill, nodeStroke, nodeBorderType, edgeLabel, edgeOperator, edgeStroke, edgeIdentifying, subgraphLabel, subgraphFill, subgraphStroke, subgraphBorderType, childDefaults, reset]);
+  }, [open, selection, nodeLabel, nodeShape, nodeFill, nodeStroke, nodeBorderType, edgeLabel, edgeOperator, edgeStroke, edgeIdentifying, subgraphLabel, subgraphFill, subgraphStroke, subgraphBorderType, reset]);
+
+  useEffect(() => {
+    replaceMembers(childDefaults.members);
+    replaceAttributes(childDefaults.attributes);
+  }, [childDefaults, replaceAttributes, replaceMembers]);
 
   const remove = (): void => {
     if (!selection) return;
@@ -218,7 +225,7 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
 
   return (
     <Dialog.Root open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-      <Dialog.Portal>
+      <Dialog.Portal container={portalContainer}>
         <Dialog.Backdrop className="mve-edit-backdrop" />
         <Dialog.Popup className="mve-selection-editor mve-edit-dialog" aria-label="Selection editor" onKeyDown={(event) => {
           if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
