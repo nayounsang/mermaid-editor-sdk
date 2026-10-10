@@ -92,7 +92,7 @@ export interface SelectionEditorProps {
 
 export function SelectionEditor({ open, onClose, selection, model, dispatch, dispatchPreservingSelection = dispatch, onDelete }: SelectionEditorProps) {
   const formId = useId();
-  const { control, getValues, handleSubmit, reset, formState: { errors } } = useForm<EditorForm>({
+  const { control, getValues, handleSubmit, reset, setValue, formState: { errors } } = useForm<EditorForm>({
     resolver: zodResolver(editorFormSchema),
     defaultValues: { kind: 'node', id: '', label: '', from: '', to: '', operator: '', shape: 'rect', fill: '', stroke: '', borderType: 'default', title: '', identifying: true, members: [], attributes: [] },
   });
@@ -292,7 +292,10 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
           <TextField control={control} name="from" label="From" />
           <TextField control={control} name="to" label="To" />
           {selection.diagramType !== 'class' && <TextField control={control} name="label" label="Label" />}
-          {selection.diagramType === 'flowchart' && <TextField control={control} name="stroke" label="Line color" inputType="color" emptyColor="#333333" />}
+          {selection.diagramType === 'flowchart' && <div className="mve-clearable-color-field">
+            <TextField control={control} name="stroke" label="Line color" inputType="color" emptyColor="#333333" />
+            <Button type="button" aria-label="Clear edge line color" onClick={() => setValue('stroke', '', { shouldDirty: true })}>Clear</Button>
+          </div>}
           {selection.diagramType === 'er' ? <>
             <label>Cardinality<Controller control={control} name="operator" render={({ field }) => (
               <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
