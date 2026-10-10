@@ -1,5 +1,13 @@
 # @mermaid-editor-sdk/ui
 
+## 0.1.2
+
+### Patch Changes
+
+- d05b520: Allow editor dialogs and menus to render inside a host container and expose configurable overlay layers.
+- 124e9af: Remove the flowchart node hover button that was difficult to reach and appeared clipped.
+- fa70a4d: Improve the selection editor with single-line labels, CSS color conversion, native color pickers, aligned actions, and a highlighted Apply button.
+
 ## 0.1.1
 
 ### Patch Changes
