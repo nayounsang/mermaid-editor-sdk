@@ -1,7 +1,8 @@
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { TinyColor } from '@ctrl/tinycolor';
 import { z } from 'zod';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useMemo } from 'react';
 import { Button } from '@base-ui/react/button';
 import { Dialog } from '@base-ui/react/dialog';
 import { Input } from '@base-ui/react/input';
@@ -25,6 +26,8 @@ const editorFormSchema = z.object({
   borderType: z.enum(['default', 'solid', 'dashed', 'dotted']),
   title: z.string(),
   identifying: z.boolean(),
+  members: z.array(z.object({ id: z.string(), originalStatement: z.string(), statement: z.string() })),
+  attributes: z.array(z.object({ id: z.string(), sourceName: z.string(), occurrence: z.number(), type: z.string(), name: z.string(), key: z.string(), comment: z.string() })),
 }).superRefine((value, context) => {
   if (value.kind === 'node' && !value.id.trim()) context.addIssue({ code: 'custom', path: ['id'], message: 'Identifier is required.' });
   if (value.kind === 'edge') {
@@ -37,17 +40,33 @@ const editorFormSchema = z.object({
 type EditorForm = z.infer<typeof editorFormSchema>;
 type TextFieldName = 'id' | 'label' | 'from' | 'to' | 'operator' | 'fill' | 'stroke' | 'title';
 
+function colorPickerValue(value: string): string {
+  const color = new TinyColor(value);
+  return color.isValid ? color.toHexString() : '#000000';
+}
+
 interface TextFieldProps {
   readonly control: Control<EditorForm>;
   readonly name: TextFieldName;
   readonly label: string;
+  readonly inputType?: 'text' | 'color';
+  readonly multiline?: boolean;
+  readonly emptyColor?: string;
 }
 
-function TextField({ control, name, label, multiline = false }: TextFieldProps & { readonly multiline?: boolean }) {
+function TextField({ control, name, label, inputType = 'text', multiline = false, emptyColor = '#000000' }: TextFieldProps) {
   return <label>{label}<Controller control={control} name={name} render={({ field }) => (
     multiline
       ? <textarea name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)} />
-      : <Input name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onValueChange={field.onChange} />
+      : <Input className={inputType === 'color' ? 'mve-color-input' : undefined} type={inputType} name={field.name} ref={field.ref} value={inputType === 'color' ? colorPickerValue(field.value || emptyColor) : field.value} onBlur={field.onBlur} onValueChange={field.onChange} />
+  )} /></label>;
+}
+
+function BorderLineField({ control }: { readonly control: Control<EditorForm> }) {
+  return <label>Border line<Controller control={control} name="borderType" render={({ field }) => (
+    <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
+      <option value="default">Default</option><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option>
+    </select>
   )} /></label>;
 }
 
@@ -73,24 +92,27 @@ export interface SelectionEditorProps {
 }
 
 export function SelectionEditor({ open, onClose, selection, model, dispatch, dispatchPreservingSelection = dispatch, onDelete }: SelectionEditorProps) {
+  const formId = useId();
   const portalContainer = usePortalContainer();
-  const [memberDrafts, setMemberDrafts] = useState<Record<string, string>>({});
-  const [attributeDrafts, setAttributeDrafts] = useState<Record<string, { type: string; name: string; key: string; comment: string }>>({});
-  const { control, handleSubmit, reset, formState: { errors } } = useForm<EditorForm>({
+  const { control, getValues, handleSubmit, reset, formState: { errors } } = useForm<EditorForm>({
     resolver: zodResolver(editorFormSchema),
-    defaultValues: { kind: 'node', id: '', label: '', from: '', to: '', operator: '', shape: 'rect', fill: '', stroke: '', borderType: 'default', title: '', identifying: true },
+    defaultValues: { kind: 'node', id: '', label: '', from: '', to: '', operator: '', shape: 'rect', fill: '', stroke: '', borderType: 'default', title: '', identifying: true, members: [], attributes: [] },
   });
+  const { fields: memberFields, replace: replaceMembers } = useFieldArray({ control, name: 'members', keyName: 'fieldId' });
+  const { fields: attributeFields, replace: replaceAttributes } = useFieldArray({ control, name: 'attributes', keyName: 'fieldId' });
   const nodeId = selection?.kind === 'node' ? selection.id : '';
   const selectedElementId = selection ? getDiagramElementIdForSelection(model.elements, selection) : undefined;
   const selectedNode = selection?.kind === 'node' ? model.elements.find((item) => item.kind === 'node' && item.id === selectedElementId) : undefined;
   const selectedEdge = selection?.kind === 'edge' ? model.elements.find((item) => item.kind === 'edge' && item.id === selectedElementId) : undefined;
   const selectedSubgraph = selection?.kind === 'subgraph' ? model.elements.find((item) => item.kind === 'subgraph' && item.id === selectedElementId) : undefined;
-  const members = selection?.kind === 'node' && selection.diagramType === 'class'
-    ? model.elements.filter((item): item is DiagramSemanticElement => item.kind === 'semantic' && item.semanticType === 'member' && item.attributes.owner === selection.id)
-    : [];
-  const attributes = selection?.kind === 'node' && selection.diagramType === 'er'
-    ? model.elements.filter((item): item is DiagramSemanticElement => item.kind === 'semantic' && item.semanticType === 'attribute' && item.attributes.entity === selection.id)
-    : [];
+  const classId = selection?.kind === 'node' && selection.diagramType === 'class' ? selection.id : undefined;
+  const erEntityId = selection?.kind === 'node' && selection.diagramType === 'er' ? selection.id : undefined;
+  const members = useMemo(() => classId
+    ? model.elements.filter((item): item is DiagramSemanticElement => item.kind === 'semantic' && item.semanticType === 'member' && item.attributes.owner === classId)
+    : [], [classId, model.elements]);
+  const attributes = useMemo(() => erEntityId
+    ? model.elements.filter((item): item is DiagramSemanticElement => item.kind === 'semantic' && item.semanticType === 'attribute' && item.attributes.entity === erEntityId)
+    : [], [erEntityId, model.elements]);
   const nodeLabel = selectedNode?.kind === 'node' ? selectedNode.label : '';
   const nodeShape = selectedNode?.kind === 'node' ? selectedNode.shape ?? 'rect' : 'rect';
   const nodeFill = selectedNode?.kind === 'node' ? selectedNode.attributes.fill ?? '' : '';
@@ -104,31 +126,35 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
   const subgraphFill = selectedSubgraph?.kind === 'subgraph' ? selectedSubgraph.attributes.fill ?? '' : '';
   const subgraphStroke = selectedSubgraph?.kind === 'subgraph' ? selectedSubgraph.attributes.stroke ?? '' : '';
   const subgraphBorderType = borderTypeValue(selectedSubgraph?.kind === 'subgraph' ? selectedSubgraph.attributes.borderType : '');
-  const memberDraftSignature = JSON.stringify(members.map((member) => [member.id, member.statement]));
-  const attributeDraftSignature = JSON.stringify(attributes.map((attribute) => [attribute.id, {
-    type: attribute.attributes.type ?? 'string', name: attribute.attributes.name ?? '',
-    key: attribute.attributes.key ?? '', comment: attribute.attributes.comment ?? '',
-  }]));
+  const childDefaults = useMemo(() => ({
+    members: members.map((member) => ({ id: member.id, originalStatement: member.statement, statement: member.statement })),
+    attributes: attributes.map((attribute) => ({
+      id: attribute.id,
+      sourceName: attribute.attributes.name ?? '',
+      occurrence: Number(attribute.attributes.occurrence ?? 0),
+      type: attribute.attributes.type ?? 'string',
+      name: attribute.attributes.name ?? '',
+      key: attribute.attributes.key ?? '',
+      comment: attribute.attributes.comment ?? '',
+    })),
+  }), [attributes, members]);
 
   useEffect(() => {
     if (selection?.kind === 'node') {
-      reset({ kind: 'node', id: selection.id, label: nodeLabel, from: '', to: '', operator: '', shape: nodeShape, fill: nodeFill, stroke: nodeStroke, borderType: nodeBorderType, title: '', identifying: true });
+      reset({ kind: 'node', id: selection.id, label: nodeLabel, from: '', to: '', operator: '', shape: nodeShape, fill: nodeFill, stroke: nodeStroke, borderType: nodeBorderType, title: '', identifying: true, members: [], attributes: [] });
     } else if (selection?.kind === 'edge') {
-      reset({ kind: 'edge', id: '', label: edgeLabel, from: selection.source, to: selection.target, operator: edgeOperator, shape: 'rect', fill: '', stroke: edgeStroke, borderType: 'default', title: '', identifying: edgeIdentifying });
+      reset({ kind: 'edge', id: '', label: edgeLabel, from: selection.source, to: selection.target, operator: edgeOperator, shape: 'rect', fill: '', stroke: edgeStroke, borderType: 'default', title: '', identifying: edgeIdentifying, members: [], attributes: [] });
     } else if (selection?.kind === 'subgraph') {
-      reset({ kind: 'subgraph', id: selection.id, label: '', from: '', to: '', operator: '', shape: 'rect', fill: subgraphFill, stroke: subgraphStroke, borderType: subgraphBorderType, title: subgraphLabel, identifying: true });
+      reset({ kind: 'subgraph', id: selection.id, label: '', from: '', to: '', operator: '', shape: 'rect', fill: subgraphFill, stroke: subgraphStroke, borderType: subgraphBorderType, title: subgraphLabel, identifying: true, members: [], attributes: [] });
     } else {
-      reset({ kind: 'node', id: '', label: '', from: '', to: '', operator: '', shape: 'rect', fill: '', stroke: '', borderType: 'default', title: '', identifying: true });
+      reset({ kind: 'node', id: '', label: '', from: '', to: '', operator: '', shape: 'rect', fill: '', stroke: '', borderType: 'default', title: '', identifying: true, members: [], attributes: [] });
     }
   }, [open, selection, nodeLabel, nodeShape, nodeFill, nodeStroke, nodeBorderType, edgeLabel, edgeOperator, edgeStroke, edgeIdentifying, subgraphLabel, subgraphFill, subgraphStroke, subgraphBorderType, reset]);
 
   useEffect(() => {
-    setMemberDrafts(Object.fromEntries(JSON.parse(memberDraftSignature) as [string, string][]));
-  }, [memberDraftSignature]);
-
-  useEffect(() => {
-    setAttributeDrafts(Object.fromEntries(JSON.parse(attributeDraftSignature) as [string, { type: string; name: string; key: string; comment: string }][]));
-  }, [attributeDraftSignature]);
+    replaceMembers(childDefaults.members);
+    replaceAttributes(childDefaults.attributes);
+  }, [childDefaults, replaceAttributes, replaceMembers]);
 
   const remove = (): void => {
     if (!selection) return;
@@ -210,43 +236,58 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
       <header><Dialog.Title>{dialogTitle}</Dialog.Title><Dialog.Close render={<Button type="button" aria-label="Close selection editor">×</Button>} /></header>
       <div className="mve-dialog-body">
       {!selection ? <p>Select a supported node or relationship to edit its properties.</p> : selection.kind === 'node' ? (
-        <form className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
-          {selection.diagramType === 'flowchart' && <TextField control={control} name="label" label="Label" multiline />}
+        <form id={formId} className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
+          {selection.diagramType === 'flowchart' && <TextField control={control} name="label" label="Label" />}
           <TextField control={control} name="id" label="Identifier" />
-          {selection.diagramType === 'flowchart' && <label>Shape<Controller control={control} name="shape" render={({ field }) => (
+          {selection.diagramType === 'flowchart' && <>
+            <label>Shape<Controller control={control} name="shape" render={({ field }) => (
             <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
               <option value="bare">Bare</option><option value="rect">Rectangle</option><option value="round">Rounded</option><option value="diamond">Diamond</option><option value="circle">Circle</option><option value="stadium">Stadium</option><option value="subroutine">Subroutine</option><option value="database">Database</option><option value="hexagon">Hexagon</option>
             </select>
-          )} /></label>}
-          <TextField control={control} name="fill" label="Fill color" />
-          <TextField control={control} name="stroke" label="Border color" />
-          <label>Border line<Controller control={control} name="borderType" render={({ field }) => (
-            <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
-              <option value="default">Default</option><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option>
-            </select>
-          )} /></label>
+            )} /></label>
+            <BorderLineField control={control} />
+          </>}
+          <TextField control={control} name="fill" label="Fill color" inputType="color" emptyColor="#ECECFF" />
+          <TextField control={control} name="stroke" label="Border color" inputType="color" emptyColor="#9370DB" />
+          {selection.diagramType !== 'flowchart' && <BorderLineField control={control} />}
           {errorMessage && <p role="alert">{errorMessage}</p>}
-          <div><Button type="submit">Apply</Button> <Button type="button" aria-label={`Delete ${selection.diagramType} node ${selection.id}`} onClick={remove}>Delete</Button></div>
           {selection.diagramType === 'class' && <section className="mve-child-elements"><h3>Class members</h3>
-            {members.map((member) => <div className="mve-child-element mve-class-member" key={member.id}>
-              <label className="mve-child-field">Member<Input aria-label="Class member" value={memberDrafts[member.id] ?? member.statement} onValueChange={(value) => setMemberDrafts((current) => ({ ...current, [member.id]: value }))} /></label>
-              <Button type="button" onClick={() => dispatchPreservingSelection({ type: 'update-class-member', classId: selection.id, oldMember: member.statement, newMember: memberDrafts[member.id] ?? member.statement })}>Apply member</Button>
-              <Button type="button" aria-label={`Delete class member ${member.id}`} onClick={() => dispatchPreservingSelection({ type: 'delete-class-member', classId: selection.id, member: member.statement })}>Delete</Button>
+            {memberFields.map((member, index) => <div className="mve-child-element mve-class-member" key={member.fieldId}>
+              <label className="mve-child-field">Member<Controller control={control} name={`members.${index}.statement`} render={({ field }) => (
+                <Input aria-label="Class member" value={field.value} onBlur={field.onBlur} onValueChange={field.onChange} />
+              )} /></label>
+              <Button type="button" onClick={() => dispatchPreservingSelection({ type: 'update-class-member', classId: selection.id, oldMember: member.originalStatement, newMember: getValues(`members.${index}.statement`) })}>Apply member</Button>
+              <Button type="button" aria-label={`Delete class member ${member.id}`} onClick={() => dispatchPreservingSelection({ type: 'delete-class-member', classId: selection.id, member: member.originalStatement })}>Delete</Button>
             </div>)}
             <Button type="button" onClick={() => dispatchPreservingSelection({ type: 'create-class-member', classId: selection.id })}>Add member</Button>
           </section>}
           {selection.diagramType === 'er' && <section className="mve-child-elements"><h3>Entity attributes</h3>
-            {attributes.map((attribute) => {
-              const draft = attributeDrafts[attribute.id] ?? { type: 'string', name: '', key: '', comment: '' };
-              const occurrence = Number(attribute.attributes.occurrence ?? 0);
-              return <div className="mve-child-element mve-er-attribute" key={attribute.id}>
-                <label className="mve-child-field">Type<Input aria-label="Attribute type" value={draft.type} onValueChange={(type) => setAttributeDrafts((current) => ({ ...current, [attribute.id]: { ...draft, type } }))} /></label>
-                <label className="mve-child-field">Name<Input aria-label="Attribute name" value={draft.name} onValueChange={(name) => setAttributeDrafts((current) => ({ ...current, [attribute.id]: { ...draft, name } }))} /></label>
-                <label className="mve-child-field">Key<Input aria-label="Attribute key" value={draft.key} onValueChange={(key) => setAttributeDrafts((current) => ({ ...current, [attribute.id]: { ...draft, key } }))} /></label>
-                <label className="mve-child-field">Comment<Input aria-label="Attribute comment" value={draft.comment} onValueChange={(comment) => setAttributeDrafts((current) => ({ ...current, [attribute.id]: { ...draft, comment } }))} /></label>
+            {attributeFields.map((attribute, index) => {
+              return <div className="mve-child-element mve-er-attribute" key={attribute.fieldId}>
+                <label className="mve-child-field">Type<Controller control={control} name={`attributes.${index}.type`} render={({ field }) => (
+                  <Input aria-label="Attribute type" value={field.value} onBlur={field.onBlur} onValueChange={field.onChange} />
+                )} /></label>
+                <label className="mve-child-field">Name<Controller control={control} name={`attributes.${index}.name`} render={({ field }) => (
+                  <Input aria-label="Attribute name" value={field.value} onBlur={field.onBlur} onValueChange={field.onChange} />
+                )} /></label>
+                <label className="mve-child-field">Key<Controller control={control} name={`attributes.${index}.key`} render={({ field }) => (
+                  <Input aria-label="Attribute key" value={field.value} onBlur={field.onBlur} onValueChange={field.onChange} />
+                )} /></label>
+                <label className="mve-child-field">Comment<Controller control={control} name={`attributes.${index}.comment`} render={({ field }) => (
+                  <Input aria-label="Attribute comment" value={field.value} onBlur={field.onBlur} onValueChange={field.onChange} />
+                )} /></label>
                 <div className="mve-child-actions">
-                  <Button type="button" onClick={() => dispatchPreservingSelection({ type: 'update-er-attribute', entity: selection.id, name: attribute.attributes.name ?? '', occurrence, patch: draft })}>Apply attribute</Button>
-                  <Button type="button" aria-label={`Delete ER attribute ${attribute.attributes.name ?? ''}`} onClick={() => dispatchPreservingSelection({ type: 'delete-er-attribute', entity: selection.id, name: attribute.attributes.name ?? '', occurrence })}>Delete</Button>
+                  <Button type="button" onClick={() => {
+                    const currentAttribute = getValues(`attributes.${index}`);
+                    const patch = {
+                      type: currentAttribute.type,
+                      name: currentAttribute.name,
+                      key: currentAttribute.key,
+                      comment: currentAttribute.comment,
+                    };
+                    dispatchPreservingSelection({ type: 'update-er-attribute', entity: selection.id, name: currentAttribute.sourceName, occurrence: currentAttribute.occurrence, patch });
+                  }}>Apply attribute</Button>
+                  <Button type="button" aria-label={`Delete ER attribute ${attribute.sourceName}`} onClick={() => dispatchPreservingSelection({ type: 'delete-er-attribute', entity: selection.id, name: attribute.sourceName, occurrence: attribute.occurrence })}>Delete</Button>
                 </div>
               </div>;
             })}
@@ -254,11 +295,11 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
           </section>}
         </form>
       ) : selection.kind === 'edge' ? (
-        <form className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
+        <form id={formId} className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
           <TextField control={control} name="from" label="From" />
           <TextField control={control} name="to" label="To" />
-          {selection.diagramType !== 'class' && <TextField control={control} name="label" label="Label" multiline />}
-          {selection.diagramType === 'flowchart' && <TextField control={control} name="stroke" label="Line color" />}
+          {selection.diagramType !== 'class' && <TextField control={control} name="label" label="Label" />}
+          {selection.diagramType === 'flowchart' && <TextField control={control} name="stroke" label="Line color" inputType="color" emptyColor="#333333" />}
           {selection.diagramType === 'er' ? <>
             <label>Cardinality<Controller control={control} name="operator" render={({ field }) => (
               <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
@@ -277,25 +318,32 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
             </select>;
           }} /></label> : null}
           {errorMessage && <p role="alert">{errorMessage}</p>}
-          <div><Button type="submit">Apply</Button> <Button type="button" aria-label={`Delete ${selection.diagramType} relationship from ${selection.source} to ${selection.target}`} onClick={remove}>Delete</Button></div>
         </form>
       ) : (
-        <form className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
+        <form id={formId} className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
           <TextField control={control} name="id" label="Identifier" />
           <TextField control={control} name="title" label="Title" multiline />
-          <TextField control={control} name="fill" label="Fill color" />
-          <TextField control={control} name="stroke" label="Border color" />
+          <TextField control={control} name="fill" label="Fill color" inputType="color" emptyColor="#ECECFF" />
+          <TextField control={control} name="stroke" label="Border color" inputType="color" emptyColor="#9370DB" />
           <label>Border line<Controller control={control} name="borderType" render={({ field }) => (
             <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
               <option value="default">Default</option><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option>
             </select>
           )} /></label>
           {errorMessage && <p role="alert">{errorMessage}</p>}
-          <div><Button type="submit">Apply</Button> <Button type="button" aria-label={`Delete flowchart subgraph ${selection.id}`} onClick={remove}>Delete</Button></div>
         </form>
       )}
       </div>
-      <footer className="mve-edit-dialog-actions"><Dialog.Close render={<Button type="button">Cancel</Button>} /></footer>
+      <footer className="mve-edit-dialog-actions">
+        <div>{selection && <Button type="button" aria-label={selection.kind === 'edge'
+          ? `Delete ${selection.diagramType} relationship from ${selection.source} to ${selection.target}`
+          : selection.kind === 'node' ? `Delete ${selection.diagramType} node ${selection.id}`
+            : `Delete flowchart subgraph ${selection.id}`} onClick={remove}>Delete</Button>}</div>
+        <div>
+          <Dialog.Close render={<Button type="button">Cancel</Button>} />
+          {selection && <Button type="submit" form={formId}>Apply</Button>}
+        </div>
+      </footer>
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
