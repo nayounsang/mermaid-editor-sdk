@@ -132,7 +132,7 @@ describe('State adapter', () => {
     const source = 'stateDiagram\nA --> B : first\nA --> B : second\n';
     const fixture = await makeRenderedContext(source, 'legacy-state-edge-adapter-test');
     const cleanup = stateAdapter.mount(fixture.context);
-    const transitions = fixture.context.svg.querySelectorAll<SVGPathElement>('path.transition, .edgePaths path, g.edgePath path');
+    const transitions = fixture.context.svg.querySelectorAll<SVGPathElement>('path.transition:not(.mve-edge-hit-area), .edgePaths path:not(.mve-edge-hit-area), g.edgePath path:not(.mve-edge-hit-area)');
     expect(transitions).toHaveLength(2);
     transitions[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(fixture.selection()).toEqual({ kind: 'edge', diagramType: 'state', source: 'A', target: 'B', occurrence: 0 });
@@ -145,7 +145,7 @@ describe('State adapter', () => {
     const source = 'stateDiagram-v2\nA --> B : first\nA --> B : second\n';
     const fixture = await makeRenderedContext(source, 'v2-state-edge-adapter-test');
     const cleanup = stateAdapter.mount(fixture.context);
-    const transitions = fixture.context.svg.querySelectorAll<SVGPathElement>('path.transition, .edgePaths path, g.edgePath path');
+    const transitions = fixture.context.svg.querySelectorAll<SVGPathElement>('path.transition:not(.mve-edge-hit-area), .edgePaths path:not(.mve-edge-hit-area), g.edgePath path:not(.mve-edge-hit-area)');
     expect(transitions).toHaveLength(2);
     transitions[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(fixture.selection()).toEqual({ kind: 'edge', diagramType: 'state', source: 'A', target: 'B', occurrence: 0 });

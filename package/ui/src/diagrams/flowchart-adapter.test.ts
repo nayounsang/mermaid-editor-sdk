@@ -3,7 +3,11 @@ import { flowchartAdapter } from './flowchart-adapter';
 import type { DiagramAdapterContext } from './adapter';
 import { SourceDocument } from '@mermaid-editor-sdk/headless';
 
-function makeContext(source: string, svgMarkup: string): { context: DiagramAdapterContext; getSource: () => string; selection: () => unknown } {
+function makeContext(
+  source: string,
+  svgMarkup: string,
+  edgeOptions: { readonly operator: string; readonly label: string } = { operator: '-->', label: '' },
+): { context: DiagramAdapterContext; getSource: () => string; selection: () => unknown } {
   const toolbar = document.createElement('div');
   const canvas = document.createElement('div');
   canvas.innerHTML = svgMarkup;
@@ -16,6 +20,7 @@ function makeContext(source: string, svgMarkup: string): { context: DiagramAdapt
     canvas,
     svg,
     sourceDocument: new SourceDocument(value, 'flowchart'),
+    getFlowchartEdgeOptions: () => edgeOptions,
     applySourceMutation(mutate) { value = mutate(new SourceDocument(value, 'flowchart')); return true; },
     setSelection(selection) { selected = selection; },
   };
@@ -25,16 +30,16 @@ function makeContext(source: string, svgMarkup: string): { context: DiagramAdapt
 afterEach(() => vi.restoreAllMocks());
 
 describe('Flowchart adapter', () => {
-  it('connects two selected nodes from the toolbar', () => {
+  it('selects a node on click without creating an edge', () => {
     const fixture = makeContext('flowchart LR\nA[Alpha]\nB[Beta]\n',
       '<svg><g class="node" data-id="A"></g><g class="node" data-id="B"></g></svg>');
     const cleanup = flowchartAdapter.mount(fixture.context);
 
-    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Use arrow connector"]')!.click();
     fixture.context.svg.querySelector<SVGGElement>('[data-id="A"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     fixture.context.svg.querySelector<SVGGElement>('[data-id="B"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-    expect(fixture.getSource()).toContain('A --> B');
+    expect(fixture.getSource()).not.toContain('A --> B');
+    expect(fixture.selection()).toEqual({ kind: 'node', diagramType: 'flowchart', id: 'B' });
     cleanup();
   });
 
@@ -70,37 +75,37 @@ describe('Flowchart adapter', () => {
     cleanup();
   });
 
-  it('applies the selected connector to the next pair of nodes then returns to the arrow default', () => {
+  it('uses the selected edge type and label on each node-to-node drag', () => {
     const fixture = makeContext('flowchart LR\nA[Alpha]\nB[Beta]\nC[Gamma]\n',
-      '<svg><g class="node" data-id="A"></g><g class="node" data-id="B"></g><g class="node" data-id="C"></g></svg>');
+      '<svg><g class="node" data-id="A"></g><g class="node" data-id="B"></g><g class="node" data-id="C"></g></svg>',
+      { operator: '-.->', label: 'review' });
     const cleanup = flowchartAdapter.mount(fixture.context);
-    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Use dashed connector"]')!.click();
-    fixture.context.svg.querySelector<SVGGElement>('[data-id="A"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    fixture.context.svg.querySelector<SVGGElement>('[data-id="B"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Use arrow connector"]')!.click();
-    fixture.context.svg.querySelector<SVGGElement>('[data-id="B"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    fixture.context.svg.querySelector<SVGGElement>('[data-id="C"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    expect(fixture.getSource()).toContain('A -.-> B');
-    expect(fixture.getSource()).toContain('B --> C');
+    const drag = (from: string, to: string): void => {
+      fixture.context.svg.querySelector<SVGGElement>(`[data-id="${from}"]`)!
+        .dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 0, clientY: 0 }));
+      fixture.context.svg.querySelector<SVGGElement>(`[data-id="${to}"]`)!
+        .dispatchEvent(new MouseEvent('pointerup', { bubbles: true, button: 0, clientX: 10, clientY: 0 }));
+    };
+    drag('A', 'B');
+    drag('B', 'C');
+    expect(fixture.getSource()).toContain('A -.->|review| B');
+    expect(fixture.getSource()).toContain('B -.->|review| C');
     cleanup();
   });
 
-  it('adds a labeled arrow from the palette', () => {
-    const fixture = makeContext('flowchart LR\nA[Alpha]\nB[Beta]\n',
-      '<svg><g class="node" data-id="A"></g><g class="node" data-id="B"></g></svg>');
-    const cleanup = flowchartAdapter.mount(fixture.context);
-    fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Use labeled arrow connector"]')!.click();
-    fixture.context.svg.querySelector<SVGGElement>('[data-id="A"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    fixture.context.svg.querySelector<SVGGElement>('[data-id="B"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    expect(fixture.getSource()).toContain('A -->|label| B');
-    cleanup();
-  });
-
-  it('keeps eight node tools and four connector tools and drops a node into its target subgraph', () => {
+  it('exposes node and subgraph tools without connector buttons', () => {
     const fixture = makeContext('flowchart LR\nsubgraph SG[Group]\nA[Alpha]\nend\n',
       '<svg><g class="cluster" id="subGraph-SG-0"><g class="node" data-id="A"></g></g></svg>');
     const cleanup = flowchartAdapter.mount(fixture.context);
-    expect(fixture.context.toolbar.querySelectorAll('[draggable="true"]')).toHaveLength(13);
+    expect(fixture.context.toolbar.querySelectorAll('[draggable="true"]')).toHaveLength(9);
+    expect(fixture.context.toolbar.querySelectorAll('[aria-label*="connector"]')).toHaveLength(0);
+    cleanup();
+  });
+
+  it('drops a new node into the target subgraph', () => {
+    const fixture = makeContext('flowchart LR\nsubgraph SG[Group]\nA[Alpha]\nend\n',
+      '<svg><g class="cluster" id="subGraph-SG-0"><g class="node" data-id="A"></g></g></svg>');
+    const cleanup = flowchartAdapter.mount(fixture.context);
     const item = fixture.context.toolbar.querySelector<HTMLButtonElement>('[aria-label="Add decision"]')!;
     let payload = '';
     const transfer = {

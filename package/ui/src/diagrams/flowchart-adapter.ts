@@ -186,7 +186,7 @@ export const flowchartAdapter: DiagramAdapter = {
     const edgePaths = [...svg.querySelectorAll<SVGPathElement>('g.edgePath path, g.edgePaths path')]
       .filter((path) => !path.classList.contains(EDGE_HIT_AREA_CLASS));
     const edgePathMappingSafe = safeEdges && edgePaths.length === edgeList.length;
-    const edgeByPath = new Map<SVGPathElement, FlowchartEdge>();
+    const edgeByPath = new Map<Element, FlowchartEdge>();
     if (edgePathMappingSafe) edgePaths.forEach((path, index) => { edgeByPath.set(path, edgeList[index]!); });
     const edgeHitTargets = attachEdgeHitTargets(edgePathMappingSafe ? edgePaths : []);
     for (const { hitPath, sourcePath } of edgeHitTargets.targets) {
@@ -373,7 +373,7 @@ export const flowchartAdapter: DiagramAdapter = {
       if (nodeId) { setSelected({ kind: 'node', diagramType: 'flowchart', id: nodeId }); return; }
       if (safeEdges) {
         const hitTarget = groupIdElement(event.target, EDGE_HIT_AREA_SELECTOR, svg);
-        if (hitTarget instanceof SVGPathElement) {
+        if (hitTarget) {
           const edge = edgeByPath.get(hitTarget);
           if (edge) setSelected({ kind: 'edge', diagramType: 'flowchart', source: edge.source, target: edge.target, occurrence: edge.occurrence });
           return;
@@ -411,8 +411,7 @@ export const flowchartAdapter: DiagramAdapter = {
       }
       if (!edgePathMappingSafe) return;
       const hitTarget = groupIdElement(event.target, EDGE_HIT_AREA_SELECTOR, svg);
-      const edgeGroup = hitTarget instanceof SVGPathElement
-        ? hitTarget : groupIdElement(event.target, 'g.edgePath, g.edgePaths path', svg);
+      const edgeGroup = hitTarget ?? groupIdElement(event.target, 'g.edgePath, g.edgePaths path', svg);
       const path = edgeGroup?.matches('path') ? edgeGroup as SVGPathElement : edgeGroup?.querySelector<SVGPathElement>(`path:not(${EDGE_HIT_AREA_SELECTOR})`);
       if (!edgeGroup || !path || typeof path.getTotalLength !== 'function') return;
       const edge = edgeByPath.get(path);
