@@ -34,6 +34,11 @@ interface PendingConnection {
   readonly options: EdgeConnectionOptions;
 }
 
+interface FlowchartEdgeOptions {
+  readonly operator: string;
+  readonly label: string;
+}
+
 export interface MermaidEditorProps extends Omit<MermaidVisualEditorOptions, 'value'> {
   readonly value: string;
   readonly className?: string;
@@ -80,6 +85,7 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
   const [selection, setSelection] = useState<EditorSelection | null>(null);
   const [editingSelection, setEditingSelection] = useState(false);
   const [pendingConnection, setPendingConnection] = useState<PendingConnection | null>(null);
+  const [flowchartEdgeOptions, setFlowchartEdgeOptions] = useState<FlowchartEdgeOptions>({ operator: '-->', label: '' });
   const [status, setStatus] = useState<{ state: EditorStatusState; message: string }>({ state: 'loading', message: 'Preparing diagram…' });
   const callbacks = useRef({ onChange, onSelectionChange, onError, onSave, onReset, onRemove });
   callbacks.current = { onChange, onSelectionChange, onError, onSave, onReset, onRemove };
@@ -296,6 +302,12 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
     dispatch: dispatchAction,
     ...(pending ? { pendingConnection: pending } : {}),
     onArmConnection: armConnection,
+    flowchartEdgeOptions,
+    onFlowchartEdgeOptionsChange: setFlowchartEdgeOptions,
+  };
+  const toolbarProps: ToolSidebarProps = {
+    ...diagramPaletteProps,
+    paletteComponent: DiagramPalette,
   };
   const parts: MermaidEditorParts = {
     shell: {
@@ -317,6 +329,7 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
       onReset: resetDiagram,
       onEditSelection: () => { if (selectionRef.current) setEditingSelection(true); },
       autoFit,
+      flowchartEdgeOptions,
       ...(pending ? { pendingConnection: pending } : {}),
     },
     sourceEditor: {
@@ -336,7 +349,7 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
   };
   const defaultComposition = (
     <EditorShell {...parts.shell}>
-      <EditorShell.Sidebar><ToolSidebar {...parts.toolbar} paletteComponent={DiagramPalette} /></EditorShell.Sidebar>
+      <EditorShell.Sidebar><ToolSidebar {...toolbarProps} /></EditorShell.Sidebar>
       <EditorShell.HeaderControls><DiagramTypeSelect {...parts.diagramTypeSelect} /></EditorShell.HeaderControls>
       <EditorShell.Canvas><MermaidCanvas {...parts.canvas} /></EditorShell.Canvas>
       <EditorShell.Selection><SelectionEditor {...parts.selectionEditor} /></EditorShell.Selection>

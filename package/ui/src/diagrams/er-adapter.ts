@@ -19,7 +19,11 @@ import {
   type ERRelationship,
 } from '@mermaid-editor-sdk/headless';
 import type { EditorSelection } from '../runtime/types';
-import { installPointerConnections } from './pointer-connections';
+import {
+  attachEdgeHitTargets,
+  EDGE_HIT_AREA_SELECTOR,
+  installPointerConnections,
+} from './pointer-connections';
 
 const cardinalities: ReadonlyArray<readonly [ERCardinality, string]> = [
   ['one-one', 'One to one  ||--||'],
@@ -104,11 +108,16 @@ export const erAdapter: DiagramAdapter = {
       if (id) nodeIds.set(group, id);
     }
     const relationships = listERRelationships(context.sourceDocument.source);
-    const edgeGroups = [...svg.querySelectorAll<SVGElement>('path.relationshipLine')];
+    const edgeGroups = [...svg.querySelectorAll<SVGPathElement>('path.relationshipLine')];
     const edgeMappingSafe = edgeGroups.length === relationships.length;
     const edgeByElement = new Map<Element, ERRelationship>();
     if (edgeMappingSafe) {
       edgeGroups.forEach((element, index) => { if (relationships[index]) edgeByElement.set(element, relationships[index]!); });
+    }
+    const edgeHitTargets = attachEdgeHitTargets(edgeMappingSafe ? edgeGroups : []);
+    for (const { hitPath, sourcePath } of edgeHitTargets.targets) {
+      const relationship = edgeByElement.get(sourcePath);
+      if (relationship) edgeByElement.set(hitPath, relationship);
     }
     let selected: EditorSelection | null = null;
     let connectionStart: string | undefined;
@@ -291,7 +300,7 @@ export const erAdapter: DiagramAdapter = {
         setSelected({ kind: 'node', diagramType: 'er', id });
         return;
       }
-      const edge = target.closest('path.relationshipLine');
+      const edge = target.closest(`path.relationshipLine, ${EDGE_HIT_AREA_SELECTOR}`);
       if (edge && svg.contains(edge)) {
         const relationship = edgeByElement.get(edge);
         if (!edgeMappingSafe) {
@@ -312,7 +321,7 @@ export const erAdapter: DiagramAdapter = {
       return id && element ? { id, element } : undefined;
     }, connectEntities, (target) => {
       if (!(target instanceof Element) || !edgeMappingSafe) return undefined;
-      const path = target.closest<SVGPathElement>('path.relationshipLine');
+      const path = target.closest<SVGPathElement>(`path.relationshipLine, ${EDGE_HIT_AREA_SELECTOR}`);
       const relationship = path && svg.contains(path) ? edgeByElement.get(path) : undefined;
       return path && relationship ? {
         path, source: relationship.source, target: relationship.target,
@@ -334,6 +343,7 @@ export const erAdapter: DiagramAdapter = {
     return () => {
       svg.removeEventListener('click', click);
       removePointerConnections();
+      edgeHitTargets.dispose();
       svg.removeEventListener('dragover', dragOver);
       svg.removeEventListener('drop', drop);
       toolbar.replaceChildren();

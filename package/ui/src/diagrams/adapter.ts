@@ -10,6 +10,7 @@ export interface DiagramAdapterContext {
   readonly canvas: HTMLElement;
   readonly svg: SVGSVGElement;
   readonly sourceDocument: SourceDocument;
+  readonly getFlowchartEdgeOptions?: () => { readonly operator: string; readonly label: string };
   applySourceMutation(mutate: (source: SourceDocument) => string): boolean | void;
   removeSourceMutation?(mutate: (source: SourceDocument) => string): boolean | void;
   setSelection(selection: EditorSelection | null): void;

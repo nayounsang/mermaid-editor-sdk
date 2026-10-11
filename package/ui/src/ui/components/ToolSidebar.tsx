@@ -8,13 +8,17 @@ export interface ToolSidebarProps {
   readonly dispatch: (action: DiagramAction) => string | undefined;
   readonly pendingConnection?: { readonly diagramType: EditableDiagramType; readonly source?: string };
   readonly onArmConnection: (options: EdgeConnectionOptions | null) => void;
+  readonly flowchartEdgeOptions?: DiagramPaletteProps['flowchartEdgeOptions'];
+  readonly onFlowchartEdgeOptionsChange?: DiagramPaletteProps['onFlowchartEdgeOptionsChange'];
   readonly paletteComponent?: ComponentType<DiagramPaletteProps>;
 }
 
-export function ToolSidebar({ model, dispatch, pendingConnection, onArmConnection, paletteComponent: Palette = DiagramPalette }: ToolSidebarProps) {
+export function ToolSidebar({ model, dispatch, pendingConnection, onArmConnection, flowchartEdgeOptions, onFlowchartEdgeOptionsChange, paletteComponent: Palette = DiagramPalette }: ToolSidebarProps) {
   return (
     <div className="mve-tool-sidebar">
-      <Palette model={model} dispatch={dispatch} {...(pendingConnection ? { pendingConnection } : {})} onArmConnection={onArmConnection} />
+      <Palette model={model} dispatch={dispatch} {...(pendingConnection ? { pendingConnection } : {})} onArmConnection={onArmConnection}
+        {...(flowchartEdgeOptions ? { flowchartEdgeOptions } : {})}
+        {...(onFlowchartEdgeOptionsChange ? { onFlowchartEdgeOptionsChange } : {})} />
     </div>
   );
 }

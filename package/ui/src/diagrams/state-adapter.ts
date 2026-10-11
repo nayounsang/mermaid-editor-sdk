@@ -14,7 +14,12 @@ import {
   type StateTransition,
 } from '@mermaid-editor-sdk/headless';
 import type { EditorSelection } from '../runtime/types';
-import { installPointerConnections } from './pointer-connections';
+import {
+  attachEdgeHitTargets,
+  EDGE_HIT_AREA_CLASS,
+  EDGE_HIT_AREA_SELECTOR,
+  installPointerConnections,
+} from './pointer-connections';
 
 function button(document: Document, text: string, label: string, action: () => void): HTMLButtonElement {
   const element = document.createElement('button');
@@ -107,9 +112,17 @@ export const stateAdapter: DiagramAdapter = {
     }
     const transitions = listStateTransitions(context.sourceDocument.source);
     const edgeSelector = 'path.transition:not(.note-edge), .edgePaths path:not(.note-edge), g.edgePath path:not(.note-edge)';
-    const edgeGroups = [...svg.querySelectorAll<SVGElement>(edgeSelector)];
+    const edgeGroups = [...svg.querySelectorAll<SVGPathElement>(edgeSelector)]
+      .filter((path) => !path.classList.contains(EDGE_HIT_AREA_CLASS));
     const edgeByElement = new Map<Element, StateTransition>();
-    edgeGroups.forEach((element, index) => { if (transitions[index]) edgeByElement.set(element, transitions[index]!); });
+    const edgeMappingSafe = edgeGroups.length === transitions.length;
+    if (edgeMappingSafe) edgeGroups.forEach((element, index) => { edgeByElement.set(element, transitions[index]!); });
+    const edgeHitTargets = attachEdgeHitTargets(edgeMappingSafe ? edgeGroups : []);
+    for (const { hitPath, sourcePath } of edgeHitTargets.targets) {
+      const transition = edgeByElement.get(sourcePath);
+      if (transition) edgeByElement.set(hitPath, transition);
+    }
+    const edgeEventSelector = `${edgeSelector}, ${EDGE_HIT_AREA_SELECTOR}`;
     let selected: EditorSelection | null = null;
     let connectionStart: string | undefined;
     let connectionMode: 'normal' | 'start' | 'end' = 'normal';
@@ -266,7 +279,7 @@ export const stateAdapter: DiagramAdapter = {
         setSelected({ kind: 'node', diagramType: 'state', id });
         return;
       }
-      const path = target.closest(edgeSelector);
+      const path = target.closest(edgeEventSelector);
       if (path && svg.contains(path)) {
         const edge = edgeByElement.get(path);
         if (edge) setSelected({ kind: 'edge', diagramType: 'state', source: edge.source, target: edge.target, occurrence: edge.occurrence });
@@ -282,7 +295,7 @@ export const stateAdapter: DiagramAdapter = {
       return id && element ? { id, element } : undefined;
     }, connectStates, (target) => {
       if (!(target instanceof Element)) return undefined;
-      const path = target.closest<SVGPathElement>(edgeSelector);
+      const path = target.closest<SVGPathElement>(edgeEventSelector);
       const edge = path && svg.contains(path) ? edgeByElement.get(path) : undefined;
       return path && edge ? {
         path, source: edge.source, target: edge.target,
@@ -306,6 +319,7 @@ export const stateAdapter: DiagramAdapter = {
       active = false;
       svg.removeEventListener('click', click);
       removePointerConnections();
+      edgeHitTargets.dispose();
       svg.removeEventListener('dragover', dragOver);
       svg.removeEventListener('drop', drop);
       toolbar.replaceChildren();
