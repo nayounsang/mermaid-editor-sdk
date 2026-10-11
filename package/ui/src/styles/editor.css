@@ -79,6 +79,8 @@
 .mve-preview-stage.mve-panning:active { cursor: grabbing; }
 .mve-preview { min-height: 100%; min-width: 100%; overflow: visible; padding: 1rem; }
 .mve-preview svg { display: block; margin: auto; transform-origin: top center; }
+.mve-preview :is(g.node, g.classGroup, g.class, g.statediagram-state, g.stateGroup, g.edgePath, .edgePaths path, .edgeLabel, path.relation, path.relationshipLine, path.transition, path.flowchart-link),
+.mve-preview :is(g.node, g.classGroup, g.class, g.statediagram-state, g.stateGroup, g.edgePath, .edgePaths path, .edgeLabel, path.relation, path.relationshipLine, path.transition, path.flowchart-link) * { cursor: pointer; }
 .mve-preview-error { background: #fff1f1; border: 1px solid #fecaca; border-radius: 0.35rem; color: #b42318; left: 0.8rem; max-width: calc(100% - 1.6rem); padding: 0.5rem 0.7rem; position: sticky; top: 0.8rem; z-index: 1; }
 .mve-source-panel { background: #fff; border: 1px solid #e0e1dc; border-radius: 0.8rem; display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; }
 .mve-source-panel::before { border-bottom: 1px solid #e8e8e4; content: 'Mermaid code'; display: block; font-size: 0.78rem; font-weight: 650; padding: 0.65rem 0.75rem; }
