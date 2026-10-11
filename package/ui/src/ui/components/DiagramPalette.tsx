@@ -15,6 +15,8 @@ export interface DiagramPaletteProps {
   readonly dispatch: (action: DiagramAction) => string | undefined;
   readonly pendingConnection?: { readonly diagramType: EditableDiagramType; readonly source?: string };
   readonly onArmConnection: (options: EdgeConnectionOptions | null) => void;
+  readonly flowchartEdgeOptions?: { readonly operator: string; readonly label: string };
+  readonly onFlowchartEdgeOptionsChange?: (options: { readonly operator: string; readonly label: string }) => void;
 }
 
 export type EdgeConnectionOptions = Omit<Extract<DiagramAction, { type: 'create-edge' }>, 'type' | 'source' | 'target'>;
@@ -44,7 +46,7 @@ function DraggablePaletteButton({ id, label, icon, action, disabled, dragDisable
   </Button>;
 }
 
-export function DiagramPalette({ model, dispatch, pendingConnection, onArmConnection }: DiagramPaletteProps) {
+export function DiagramPalette({ model, dispatch, pendingConnection, onArmConnection, flowchartEdgeOptions, onFlowchartEdgeOptionsChange }: DiagramPaletteProps) {
   const [edgeLabels, setEdgeLabels] = useState<Partial<Record<EditableDiagramType, string>>>({});
   const [identifying, setIdentifying] = useState(true);
   const [edgeOptions, setEdgeOptions] = useState<Partial<Record<EditableDiagramType, string>>>({});
@@ -89,8 +91,10 @@ export function DiagramPalette({ model, dispatch, pendingConnection, onArmConnec
               : entry.action;
             const actionDisabled = !canEdit
               || Boolean(statePaletteAction && ['start-transition', 'end-transition'].includes(statePaletteAction.item) && !defaultStateId);
-            const operator = edgeOptions[diagramType] ?? (edgeAction?.type === 'create-edge' ? edgeAction.operator : undefined) ?? relationOptions[diagramType]?.[0] ?? '';
-            const edgeLabel = edgeLabels[diagramType] ?? edgeAction?.label ?? '';
+            const operator = (diagramType === 'flowchart' ? flowchartEdgeOptions?.operator : undefined)
+              ?? edgeOptions[diagramType] ?? (edgeAction?.type === 'create-edge' ? edgeAction.operator : undefined) ?? relationOptions[diagramType]?.[0] ?? '';
+            const edgeLabel = (diagramType === 'flowchart' ? flowchartEdgeOptions?.label : undefined)
+              ?? edgeLabels[diagramType] ?? edgeAction?.label ?? '';
             const isArmed = pendingConnection?.diagramType === diagramType && Boolean(edgeAction);
             const chooseAction = (): void => {
               if (!edgeAction) { dispatch(action); return; }
@@ -103,9 +107,10 @@ export function DiagramPalette({ model, dispatch, pendingConnection, onArmConnec
                 } : {}),
               });
             };
+            const flowchartEdgeOptionsOnly = diagramType === 'flowchart' && Boolean(edgeAction);
             return <div className="mve-palette-action" key={entry.label}>
-              <DraggablePaletteButton id={`graph:${diagramType}:${group}:${entry.label}`} label={entry.label} icon={entry.icon}
-                action={action} disabled={actionDisabled} dragDisabled={Boolean(edgeAction)} active={isArmed} toggle={Boolean(edgeAction)} onClick={chooseAction} />
+              {!flowchartEdgeOptionsOnly && <DraggablePaletteButton id={`graph:${diagramType}:${group}:${entry.label}`} label={entry.label} icon={entry.icon}
+                action={action} disabled={actionDisabled} dragDisabled={Boolean(edgeAction)} active={isArmed} toggle={Boolean(edgeAction)} onClick={chooseAction} />}
               {statePaletteAction && ['start-transition', 'end-transition'].includes(statePaletteAction.item) && <label className="mve-state-target-select">State
                 <select aria-label={`${entry.label} state`} value={defaultStateId} onChange={(event) => setSelectedStateId(event.currentTarget.value)}>
                   {stateIds.map((id) => <option key={id} value={id}>{id}</option>)}
@@ -117,19 +122,25 @@ export function DiagramPalette({ model, dispatch, pendingConnection, onArmConnec
                     onChange={(event) => {
                       const value = event.currentTarget.value;
                       setEdgeOptions((current) => ({ ...current, [diagramType]: value }));
+                      if (diagramType === 'flowchart') onFlowchartEdgeOptionsChange?.({ operator: value, label: edgeLabel });
                     }}>
                     {relationOptions[diagramType]?.map((option) => <option key={option} value={option}>{option}</option>)}
                   </select>
                 </label>}
-                {(diagramType === 'flowchart' || diagramType === 'state' || diagramType === 'er') && <label>{diagramType === 'state' ? 'Transition label' : 'Relationship label'}<Input aria-label={diagramType === 'state' ? 'Transition label' : 'Relationship label'} value={edgeLabel} disabled={isArmed} onValueChange={(value) => setEdgeLabels((current) => ({ ...current, [diagramType]: value }))} /></label>}
+                {(diagramType === 'flowchart' || diagramType === 'state' || diagramType === 'er') && <label>{diagramType === 'state' ? 'Transition label' : 'Relationship label'}<Input aria-label={diagramType === 'state' ? 'Transition label' : 'Relationship label'} value={edgeLabel} disabled={isArmed} onValueChange={(value) => {
+                  setEdgeLabels((current) => ({ ...current, [diagramType]: value }));
+                  if (diagramType === 'flowchart') onFlowchartEdgeOptionsChange?.({ operator, label: value });
+                }} /></label>}
                 {diagramType === 'er' && <label>Relationship line
                   <select aria-label="New relationship line" value={identifying ? 'identifying' : 'non-identifying'} disabled={isArmed} onChange={(event) => setIdentifying(event.currentTarget.value === 'identifying')}>
                     <option value="identifying">Identifying</option><option value="non-identifying">Non-identifying</option>
                   </select>
                 </label>}
-                <p className="mve-palette-help" role="status">{isArmed
-                  ? pendingConnection?.source ? `From ${pendingConnection.source}: select a target node.` : 'Select a source node, then a target node on the canvas.'
-                  : 'Set relationship options, then select this tool and choose two nodes on the canvas.'}</p>
+                <p className="mve-palette-help" role="status">{diagramType === 'flowchart'
+                  ? 'Drag from one node to another to create an edge.'
+                  : isArmed
+                    ? pendingConnection?.source ? `From ${pendingConnection.source}: select a target node.` : 'Select a source node, then a target node on the canvas.'
+                    : 'Set relationship options, then select this tool and choose two nodes on the canvas.'}</p>
                 {isArmed && <Button type="button" onClick={() => onArmConnection(null)}>Cancel relationship</Button>}
               </div>}
             </div>;

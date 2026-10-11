@@ -27,6 +27,7 @@ export interface MermaidCanvasProps {
   /** Fits after rendering and resizing; the resulting zoom is clamped to 0.1–4. */
   readonly autoFit?: boolean;
   readonly pendingConnection?: { readonly diagramType: EditableDiagramType; readonly source?: string };
+  readonly flowchartEdgeOptions?: { readonly operator: string; readonly label: string };
 }
 
 export interface MermaidCanvasHandle {
@@ -46,7 +47,7 @@ const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 4;
 const ZOOM_STEP = 0.1;
 
-export const MermaidCanvas = forwardRef<MermaidCanvasHandle, MermaidCanvasProps>(function MermaidCanvas({ source, model, onSelection, onRenderState, onSourceMutation, sourceRevision, onParseResult, onSave, isSaving = false, onReset, onEditSelection, autoFit = false, pendingConnection }: MermaidCanvasProps, ref) {
+export const MermaidCanvas = forwardRef<MermaidCanvasHandle, MermaidCanvasProps>(function MermaidCanvas({ source, model, onSelection, onRenderState, onSourceMutation, sourceRevision, onParseResult, onSave, isSaving = false, onReset, onEditSelection, autoFit = false, pendingConnection, flowchartEdgeOptions }: MermaidCanvasProps, ref) {
   const [svg, setSvg] = useState('');
   const [renderedSource, setRenderedSource] = useState('');
   const [binder, setBinder] = useState<((element: Element) => void) | undefined>();
@@ -60,6 +61,8 @@ export const MermaidCanvas = forwardRef<MermaidCanvasHandle, MermaidCanvasProps>
   const lastClickedNodeRef = useRef<Element | null>(null);
   const pendingConnectionRef = useRef(pendingConnection);
   pendingConnectionRef.current = pendingConnection;
+  const flowchartEdgeOptionsRef = useRef(flowchartEdgeOptions ?? { operator: '-->', label: '' });
+  flowchartEdgeOptionsRef.current = flowchartEdgeOptions ?? { operator: '-->', label: '' };
   const canAutoFit = autoFit && renderedSource === source && Boolean(svg);
   const { ref: dropRef, isDropTarget } = useDroppable({
     id: 'mermaid-editor-canvas',
@@ -140,6 +143,7 @@ export const MermaidCanvas = forwardRef<MermaidCanvasHandle, MermaidCanvasProps>
       canvas: preview,
       svg: svgElement,
       sourceDocument,
+      getFlowchartEdgeOptions: () => flowchartEdgeOptionsRef.current,
       applySourceMutation: (mutate) => onSourceMutation(mutate),
       removeSourceMutation: (mutate) => onSourceMutation(mutate, true),
       setSelection: setAdapterSelection,

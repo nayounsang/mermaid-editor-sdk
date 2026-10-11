@@ -162,9 +162,7 @@ export const flowchartAdapter: DiagramAdapter = {
     toolbar.replaceChildren(palette, selectionPanel, help);
 
     let selected: EditorSelection | null = null;
-    let activeConnector = '-->';
-    let activeConnectorLabel = '';
-    let pointerStart: { kind: 'node'; id: string; x: number; y: number }
+    let pointerStart: { kind: 'node'; id: string; x: number; y: number; edgeOptions: { operator: string; label: string } }
       | { kind: 'edge'; edge: FlowchartEdge; endpoint: 'source' | 'target'; x: number; y: number }
       | undefined;
     let dragLine: SVGLineElement | undefined;
@@ -269,6 +267,7 @@ export const flowchartAdapter: DiagramAdapter = {
     };
 
     const addNode = (shape: FlowchartNodeShape = 'rect', from?: string, targetSubgraph?: string): void => {
+      const edgeOptions = context.getFlowchartEdgeOptions?.() ?? { operator: '-->', label: '' };
       const currentSource = context.sourceDocument.source;
       const used = new Set([
         ...listFlowchartNodes(currentSource).map((node) => node.id),
@@ -283,8 +282,8 @@ export const flowchartAdapter: DiagramAdapter = {
           : addFlowchartNode(doc.source, id, label, shape);
         return from
           ? targetSubgraph
-            ? addFlowchartEdgeToSubgraph(withNode, targetSubgraph, from, id, activeConnector, activeConnectorLabel)
-            : addFlowchartEdge(withNode, from, id, activeConnector, activeConnectorLabel)
+            ? addFlowchartEdgeToSubgraph(withNode, targetSubgraph, from, id, edgeOptions.operator, edgeOptions.label)
+            : addFlowchartEdge(withNode, from, id, edgeOptions.operator, edgeOptions.label)
           : withNode;
       });
     };
@@ -385,7 +384,8 @@ export const flowchartAdapter: DiagramAdapter = {
       if (event.button !== 0) return;
       const id = eventNodeId(event, svg, nodeIds);
       if (id) {
-        pointerStart = { kind: 'node', id, x: event.clientX, y: event.clientY };
+        pointerStart = { kind: 'node', id, x: event.clientX, y: event.clientY,
+          edgeOptions: context.getFlowchartEdgeOptions?.() ?? { operator: '-->', label: '' } };
         return;
       }
       if (!safeEdges) return;
@@ -449,9 +449,8 @@ export const flowchartAdapter: DiagramAdapter = {
       if (pointerStart && moved && target && safeEdges) {
         if (pointerStart.kind === 'node' && pointerStart.id !== target) {
           const from = pointerStart.id;
-          context.applySourceMutation((doc) => addFlowchartEdge(doc.source, from, target, activeConnector, activeConnectorLabel));
-          activeConnector = '-->';
-          activeConnectorLabel = '';
+          const { edgeOptions } = pointerStart;
+          context.applySourceMutation((doc) => addFlowchartEdge(doc.source, from, target, edgeOptions.operator, edgeOptions.label));
         } else if (pointerStart.kind === 'edge') {
           const { edge, endpoint } = pointerStart;
           if (target !== edge[endpoint]) context.applySourceMutation((doc) => setFlowchartEdge(doc.source, edge, { [endpoint]: target }));
