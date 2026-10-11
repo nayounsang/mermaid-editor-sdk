@@ -1,5 +1,11 @@
 # @mermaid-editor-sdk/ui
 
+## 0.1.3
+
+### Patch Changes
+
+- 928db21: Improve edge selection targets and let users create flowchart edges by dragging between nodes with the selected edge type and label.
+
 ## 0.1.2
 
 ### Patch Changes
