@@ -9,6 +9,5 @@ export const flowchartPalette: readonly GraphPaletteEntry[] = [
   { group: 'Nodes', label: 'Subroutine', icon: '[[ ]]', action: { type: 'create-node', shape: 'subroutine' } },
   { group: 'Nodes', label: 'Database', icon: '[( )]', action: { type: 'create-node', shape: 'database' } },
   { group: 'Nodes', label: 'Hexagon', icon: '{{ }}', action: { type: 'create-node', shape: 'hexagon' } },
-  { group: 'Edges', label: 'Relationship', icon: '→', action: { type: 'create-edge', source: 'A', target: 'B', operator: '-->' } },
   { group: 'Containers', label: 'Subgraph', icon: '{ }', action: { type: 'create-subgraph' } },
 ];

@@ -158,11 +158,10 @@ export const flowchartAdapter: DiagramAdapter = {
     selectionPanel.hidden = true;
     const help = document.createElement('span');
     help.className = 'mve-flowchart-help';
-    help.textContent = 'Select a node, edge, or subgraph. Hold Shift or drag between nodes to connect them.';
+    help.textContent = 'Select a node, edge, or subgraph. Drag between nodes to create an edge.';
     toolbar.replaceChildren(palette, selectionPanel, help);
 
     let selected: EditorSelection | null = null;
-    let connectionStart: string | undefined;
     let activeConnector = '-->';
     let activeConnectorLabel = '';
     let pointerStart: { kind: 'node'; id: string; x: number; y: number }
@@ -290,15 +289,6 @@ export const flowchartAdapter: DiagramAdapter = {
       });
     };
 
-    const armConnection = (): void => {
-      connectionStart = '';
-      help.textContent = `Choose two nodes to connect with ${activeConnector}.`;
-    };
-    const armConnector = (operator: string, label = ''): void => {
-      activeConnector = operator;
-      activeConnectorLabel = label;
-      armConnection();
-    };
     const beginPaletteDrag = (element: HTMLButtonElement, kind: string, value: string): void => {
       element.draggable = true;
       element.addEventListener('dragstart', (event) => {
@@ -325,13 +315,6 @@ export const flowchartAdapter: DiagramAdapter = {
       context.applySourceMutation((doc) => addFlowchartSubgraph(doc.source, id, `Group ${id.slice(2)}`));
     });
     beginPaletteDrag(subgraphItem, 'subgraph', '');
-    if (safeEdges) {
-      for (const [label, operator, edgeLabel] of [['Arrow', '-->', ''], ['Labeled arrow', '-->', 'label'], ['Dashed', '-.->', ''], ['Thick', '==>', '']] as const) {
-        const connector = button(document, label, `Use ${label.toLowerCase()} connector`, () => armConnector(operator, edgeLabel));
-        beginPaletteDrag(connector, 'connector', operator);
-        palette.append(connector);
-      }
-    }
     palette.append(subgraphItem);
 
     const dragOver = (event: DragEvent): void => {
@@ -365,7 +348,7 @@ export const flowchartAdapter: DiagramAdapter = {
         context.applySourceMutation((doc) => targetGraph
           ? addFlowchartSubgraphToSubgraph(doc.source, targetGraph.id, id, `Group ${id.slice(2)}`)
           : addFlowchartSubgraph(doc.source, id, `Group ${id.slice(2)}`));
-      } else if (item.kind === 'connector' && safeEdges) armConnector(item.value);
+      }
     };
     svg.addEventListener('dragover', dragOver);
     svg.addEventListener('drop', drop);
@@ -373,19 +356,6 @@ export const flowchartAdapter: DiagramAdapter = {
     const click = (event: MouseEvent): void => {
       const nodeGroup = groupIdElement(event.target, 'g.node, g.nodes .node', svg);
       const nodeId = nodeGroup ? nodeIds.get(nodeGroup) : undefined;
-      if (nodeId && safeEdges && (event.shiftKey || connectionStart !== undefined)) {
-        if (!connectionStart) { connectionStart = nodeId; help.textContent = `Choose a target for ${nodeId}.`; }
-        else if (connectionStart !== nodeId) {
-          const from = connectionStart;
-          connectionStart = undefined;
-          context.applySourceMutation((doc) => addFlowchartEdge(doc.source, from, nodeId, activeConnector, activeConnectorLabel));
-          activeConnector = '-->';
-          activeConnectorLabel = '';
-          help.textContent = 'Select a node, edge, or subgraph. Hold Shift or drag between nodes to connect them.';
-        }
-        event.preventDefault();
-        return;
-      }
       if (nodeId) { setSelected({ kind: 'node', diagramType: 'flowchart', id: nodeId }); return; }
       if (safeEdges) {
         const group = groupIdElement(event.target, 'g.edgePath, g.edgePaths path, g.edgeLabel', svg);
