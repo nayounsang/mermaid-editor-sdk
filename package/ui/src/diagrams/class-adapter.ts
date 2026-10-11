@@ -17,7 +17,12 @@ import {
   type ClassRelationOperator,
 } from '@mermaid-editor-sdk/headless';
 import type { EditorSelection } from '../runtime/types';
-import { installPointerConnections } from './pointer-connections';
+import {
+  attachEdgeHitTargets,
+  EDGE_HIT_AREA_SELECTOR,
+  EDGE_HIT_AREA_CLASS,
+  installPointerConnections,
+} from './pointer-connections';
 
 const relationOperators: readonly ClassRelationOperator[] = [
   '<|--', '--|>', '*--', '--*', 'o--', '--o', '<--', '-->', '<|..', '..|>', '<..', '..>', '--', '..',
@@ -126,12 +131,16 @@ export const classAdapter: DiagramAdapter = {
       if (id) nodeIds.set(group, id);
     }
     const relationList = listClassRelations(context.sourceDocument.source);
-    const relationGroups = [...svg.querySelectorAll<SVGElement>('.edgePaths path, g.edgePath path, path.relation, path.relationshipLine, path[id^="L"], path[id^="edge"]')];
+    const relationGroups = [...svg.querySelectorAll<SVGPathElement>('.edgePaths path, g.edgePath path, path.relation, path.relationshipLine, path[id^="L"], path[id^="edge"]')]
+      .filter((path) => !path.classList.contains(EDGE_HIT_AREA_CLASS));
     const relationByElement = new Map<Element, ClassRelation>();
-    relationGroups.forEach((group, index) => {
-      const relation = relationList[index];
-      if (relation) relationByElement.set(group, relation);
-    });
+    const relationMappingSafe = relationGroups.length === relationList.length;
+    if (relationMappingSafe) relationGroups.forEach((group, index) => { relationByElement.set(group, relationList[index]!); });
+    const edgeHitTargets = attachEdgeHitTargets(relationMappingSafe ? relationGroups : []);
+    for (const { hitPath, sourcePath } of edgeHitTargets.targets) {
+      const relation = relationByElement.get(sourcePath);
+      if (relation) relationByElement.set(hitPath, relation);
+    }
 
     const showError = (error: unknown): void => {
       help.textContent = error instanceof Error ? error.message : 'This class edit could not be applied safely.';
@@ -288,7 +297,7 @@ export const classAdapter: DiagramAdapter = {
         const id = nodeIds.get(group);
         if (id) { selectNode(id); return; }
       }
-      const edge = event.target.closest('path.relation, path.relationshipLine, .edgePaths path, g.edgePath path, path[id^="L"], path[id^="edge"]');
+      const edge = event.target.closest(`${EDGE_HIT_AREA_SELECTOR}, path.relation, path.relationshipLine, .edgePaths path, g.edgePath path, path[id^="L"], path[id^="edge"]`);
       const relation = edge ? relationByElement.get(edge) : undefined;
       if (relation) setSelected({ kind: 'edge', diagramType: 'class', source: relation.source, target: relation.target, occurrence: relation.occurrence });
       else setSelected(null);
@@ -307,7 +316,7 @@ export const classAdapter: DiagramAdapter = {
       return id && element ? { id, element } : undefined;
     }, connectRelation, (target) => {
       if (!(target instanceof Element)) return undefined;
-      const path = target.closest<SVGPathElement>('path.relation, path.relationshipLine, .edgePaths path, g.edgePath path, path[id^="L"], path[id^="edge"]');
+      const path = target.closest<SVGPathElement>(`${EDGE_HIT_AREA_SELECTOR}, path.relation, path.relationshipLine, .edgePaths path, g.edgePath path, path[id^="L"], path[id^="edge"]`);
       const relation = path && svg.contains(path) ? relationByElement.get(path) : undefined;
       return path && relation ? {
         path, source: relation.source, target: relation.target,
@@ -332,6 +341,7 @@ export const classAdapter: DiagramAdapter = {
       svg.removeEventListener('click', click);
       svg.removeEventListener('dblclick', doubleClick);
       removePointerConnections();
+      edgeHitTargets.dispose();
       svg.removeEventListener('dragover', dragOver);
       svg.removeEventListener('drop', drop);
       toolbar.replaceChildren();

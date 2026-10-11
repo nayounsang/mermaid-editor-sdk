@@ -1,5 +1,62 @@
 const SVG_NS = 'http://www.w3.org/2000/svg';
+export const EDGE_HIT_AREA_CLASS = 'mve-edge-hit-area';
+export const EDGE_HIT_AREA_SELECTOR = `.${EDGE_HIT_AREA_CLASS}`;
 type EdgeEndpoint = 'source' | 'target';
+
+export interface EdgeHitTarget {
+  readonly hitPath: SVGPathElement;
+  readonly sourcePath: SVGPathElement;
+}
+
+export interface EdgeHitTargets {
+  readonly targets: readonly EdgeHitTarget[];
+  dispose(): void;
+}
+
+function initializeEdgeHitPath(hitPath: SVGPathElement, sourcePath: SVGPathElement, pathData: string): void {
+  hitPath.classList.add(EDGE_HIT_AREA_CLASS);
+  hitPath.setAttribute('d', pathData);
+
+  const transform = sourcePath.getAttribute('transform');
+  if (transform) hitPath.setAttribute('transform', transform);
+
+  hitPath.setAttribute('fill', 'none');
+  hitPath.setAttribute('stroke', 'transparent');
+  hitPath.setAttribute('opacity', '0');
+  hitPath.setAttribute('stroke-width', '24');
+  hitPath.setAttribute('pointer-events', 'stroke');
+  hitPath.setAttribute('vector-effect', 'non-scaling-stroke');
+}
+
+export function attachEdgeHitTargets(sourcePaths: readonly SVGPathElement[]): EdgeHitTargets {
+  const targets: EdgeHitTarget[] = [];
+  const visited = new Set<SVGPathElement>();
+
+  for (const sourcePath of sourcePaths) {
+    if (visited.has(sourcePath) || sourcePath.classList.contains(EDGE_HIT_AREA_CLASS)) continue;
+    visited.add(sourcePath);
+
+    const parent = sourcePath.parentElement;
+    const data = sourcePath.getAttribute('d');
+    if (!parent || !sourcePath.ownerSVGElement || !data) continue;
+
+    const hitPath = sourcePath.ownerDocument.createElementNS(SVG_NS, 'path');
+    initializeEdgeHitPath(hitPath, sourcePath, data);
+    parent.insertBefore(hitPath, sourcePath);
+    targets.push({ hitPath, sourcePath });
+  }
+
+  let disposed = false;
+  return {
+    targets,
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      for (const { hitPath } of targets) hitPath.remove();
+    },
+  };
+}
+
 interface EdgeTarget {
   path: SVGPathElement;
   source: string;

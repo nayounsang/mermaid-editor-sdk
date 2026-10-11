@@ -27,6 +27,11 @@ import {
   type FlowchartSubgraph,
 } from '@mermaid-editor-sdk/headless';
 import type { EditorSelection } from '../runtime/types';
+import {
+  attachEdgeHitTargets,
+  EDGE_HIT_AREA_CLASS,
+  EDGE_HIT_AREA_SELECTOR,
+} from './pointer-connections';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -178,6 +183,16 @@ export const flowchartAdapter: DiagramAdapter = {
     const edgeList = listFlowchartEdges(context.sourceDocument.source);
     const subgraphList = listFlowchartSubgraphs(context.sourceDocument.source);
     const safeEdges = isFlowchartEdgeIndexingSafe(context.sourceDocument.source);
+    const edgePaths = [...svg.querySelectorAll<SVGPathElement>('g.edgePath path, g.edgePaths path')]
+      .filter((path) => !path.classList.contains(EDGE_HIT_AREA_CLASS));
+    const edgePathMappingSafe = safeEdges && edgePaths.length === edgeList.length;
+    const edgeByPath = new Map<SVGPathElement, FlowchartEdge>();
+    if (edgePathMappingSafe) edgePaths.forEach((path, index) => { edgeByPath.set(path, edgeList[index]!); });
+    const edgeHitTargets = attachEdgeHitTargets(edgePathMappingSafe ? edgePaths : []);
+    for (const { hitPath, sourcePath } of edgeHitTargets.targets) {
+      const edge = edgeByPath.get(sourcePath);
+      if (edge) edgeByPath.set(hitPath, edge);
+    }
 
     const setSelected = (next: EditorSelection | null): void => {
       selected = next;
@@ -189,7 +204,7 @@ export const flowchartAdapter: DiagramAdapter = {
         const group = nodeGroups.find((candidate) => nodeIds.get(candidate) === next.id);
         group?.classList.add('mve-selected');
       } else if (next.kind === 'edge') {
-        for (const selector of ['g.edgePath', 'g.edgePaths path', 'g.edgeLabel']) {
+        for (const selector of ['g.edgePath', `g.edgePaths path:not(${EDGE_HIT_AREA_SELECTOR})`, 'g.edgeLabel']) {
           [...svg.querySelectorAll(selector)].forEach((group, index) => {
             const edge = getEdge(group, edgeList, index);
             if (edge?.source === next.source && edge.target === next.target
@@ -357,6 +372,12 @@ export const flowchartAdapter: DiagramAdapter = {
       const nodeId = nodeGroup ? nodeIds.get(nodeGroup) : undefined;
       if (nodeId) { setSelected({ kind: 'node', diagramType: 'flowchart', id: nodeId }); return; }
       if (safeEdges) {
+        const hitTarget = groupIdElement(event.target, EDGE_HIT_AREA_SELECTOR, svg);
+        if (hitTarget instanceof SVGPathElement) {
+          const edge = edgeByPath.get(hitTarget);
+          if (edge) setSelected({ kind: 'edge', diagramType: 'flowchart', source: edge.source, target: edge.target, occurrence: edge.occurrence });
+          return;
+        }
         const group = groupIdElement(event.target, 'g.edgePath, g.edgePaths path, g.edgeLabel', svg);
         if (group) {
           const selector = group.matches('g.edgeLabel') ? 'g.edgeLabel'
@@ -388,12 +409,13 @@ export const flowchartAdapter: DiagramAdapter = {
           edgeOptions: context.getFlowchartEdgeOptions?.() ?? { operator: '-->', label: '' } };
         return;
       }
-      if (!safeEdges) return;
-      const edgeGroup = groupIdElement(event.target, 'g.edgePath, g.edgePaths path', svg);
-      const path = edgeGroup?.matches('path') ? edgeGroup as SVGPathElement : edgeGroup?.querySelector<SVGPathElement>('path');
+      if (!edgePathMappingSafe) return;
+      const hitTarget = groupIdElement(event.target, EDGE_HIT_AREA_SELECTOR, svg);
+      const edgeGroup = hitTarget instanceof SVGPathElement
+        ? hitTarget : groupIdElement(event.target, 'g.edgePath, g.edgePaths path', svg);
+      const path = edgeGroup?.matches('path') ? edgeGroup as SVGPathElement : edgeGroup?.querySelector<SVGPathElement>(`path:not(${EDGE_HIT_AREA_SELECTOR})`);
       if (!edgeGroup || !path || typeof path.getTotalLength !== 'function') return;
-      const selector = edgeGroup.matches('g.edgePath') ? 'g.edgePath' : 'g.edgePaths path';
-      const edge = getEdge(edgeGroup, edgeList, [...svg.querySelectorAll(selector)].indexOf(edgeGroup));
+      const edge = edgeByPath.get(path);
       if (!edge) return;
       try {
         const length = path.getTotalLength();
@@ -482,6 +504,7 @@ export const flowchartAdapter: DiagramAdapter = {
       svg.removeEventListener('pointerup', pointerUp);
       svg.removeEventListener('pointercancel', clearPointer);
       clearPointer();
+      edgeHitTargets.dispose();
       svg.removeEventListener('dragover', dragOver);
       svg.removeEventListener('drop', drop);
       svg.removeEventListener('keydown', keyDown);
