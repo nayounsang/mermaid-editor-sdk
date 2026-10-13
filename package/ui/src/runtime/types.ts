@@ -1,4 +1,4 @@
-import type { EditorSelection } from '@mermaid-editor-sdk/headless';
+import type { EditableDiagramType, EditorSelection } from '@mermaid-editor-sdk/headless';
 export type { EditorSelection } from '@mermaid-editor-sdk/headless';
 
 export interface EditorError {
@@ -10,6 +10,7 @@ export interface EditorError {
 export interface MermaidVisualEditorOptions {
   value: string;
   onChange?: (value: string) => void;
+  onChangeDiagramType?: (diagramType: EditableDiagramType) => void;
   onSelectionChange?: (selection: EditorSelection | null) => void;
   onError?: (error: EditorError) => void;
   onSave?: (currentSource: string) => void | Promise<void>;

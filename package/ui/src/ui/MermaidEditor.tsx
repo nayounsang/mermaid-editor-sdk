@@ -78,7 +78,7 @@ export function MermaidEditor(props: MermaidEditorProps) {
   );
 }
 
-function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onSave, onReset, onRemove, className, title, autoFit = false, portalContainer, children }: MermaidEditorProps) {
+function MermaidEditorSession({ value, onChange, onChangeDiagramType, onSelectionChange, onError, onSave, onReset, onRemove, className, title, autoFit = false, portalContainer, children }: MermaidEditorProps) {
   const controller = useEditorController();
   const session = controller.session;
   const { snapshot, dispatch, undo, redo, setSource } = useDiagramSession();
@@ -87,8 +87,8 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
   const [pendingConnection, setPendingConnection] = useState<PendingConnection | null>(null);
   const [flowchartEdgeOptions, setFlowchartEdgeOptions] = useState<FlowchartEdgeOptions>({ operator: '-->', label: '' });
   const [status, setStatus] = useState<{ state: EditorStatusState; message: string }>({ state: 'loading', message: 'Preparing diagram…' });
-  const callbacks = useRef({ onChange, onSelectionChange, onError, onSave, onReset, onRemove });
-  callbacks.current = { onChange, onSelectionChange, onError, onSave, onReset, onRemove };
+  const callbacks = useRef({ onChange, onChangeDiagramType, onSelectionChange, onError, onSave, onReset, onRemove });
+  callbacks.current = { onChange, onChangeDiagramType, onSelectionChange, onError, onSave, onReset, onRemove };
   const selectionRef = useRef<EditorSelection | null>(null);
   const pendingConnectionRef = useRef<PendingConnection | null>(null);
   const currentTemplate = snapshot.model.diagramType === 'unknown' || snapshot.model.diagramType === 'unsupported'
@@ -235,10 +235,12 @@ function MermaidEditorSession({ value, onChange, onSelectionChange, onError, onS
 
   const changeDiagramType = useCallback((type: EditableDiagramType) => {
     if (type === snapshot.model.diagramType) return;
-    if (wouldDiscardSource && !window.confirm('Changing diagram type replaces the current source. Continue?')) return;
     setSource(templates[type], 'diagram-action');
     clearSelection();
-  }, [clearSelection, setSource, snapshot.model.diagramType, wouldDiscardSource]);
+    try { callbacks.current.onChangeDiagramType?.(type); } catch (cause) {
+      reportError({ code: 'mutation', message: cause instanceof Error ? `Diagram type callback failed: ${cause.message}` : 'Diagram type callback failed.', cause });
+    }
+  }, [clearSelection, reportError, setSource, snapshot.model.diagramType]);
 
   const save = useCallback(() => {
     const callback = callbacks.current.onSave;
