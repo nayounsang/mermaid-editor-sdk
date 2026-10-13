@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "pnpm@9.15.0",
   "scripts": {
-    "dev": "turbo run dev --filter=@mermaid-editor/example",
+    "dev": "turbo run dev --filter=@mermaid-editor/web",
     "storybook": "turbo run storybook --filter=@mermaid-editor/storybook",
     "build-storybook": "turbo run build-storybook --filter=@mermaid-editor/storybook",
     "build": "turbo run build",
