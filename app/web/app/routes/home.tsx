@@ -6,19 +6,21 @@ import { SiGithub } from 'react-icons/si';
 import type { MetaFunction } from 'react-router';
 import { SITE_URL } from '../site-config';
 
+const homePageTitle = 'Free Mermaid Diagram Editor Online with React SDK';
 const description = 'Create Mermaid diagrams in a free online editor with visual tools and code editing. Add the React SDK to your app and customize its components and workflow.';
+const newTabNotice = ' (opens in a new tab)';
 
 export const meta: MetaFunction = () => {
   const pageUrl = SITE_URL ? `${SITE_URL}/` : undefined;
 
   return [
-    { title: 'Free Mermaid Diagram Editor Online with React SDK' },
+    { title: homePageTitle },
     { name: 'description', content: description },
     { property: 'og:type', content: 'website' },
-    { property: 'og:title', content: 'Free Mermaid Diagram Editor Online with React SDK' },
+    { property: 'og:title', content: homePageTitle },
     { property: 'og:description', content: description },
     { name: 'twitter:card', content: 'summary' },
-    { name: 'twitter:title', content: 'Free Mermaid Diagram Editor Online with React SDK' },
+    { name: 'twitter:title', content: homePageTitle },
     { name: 'twitter:description', content: description },
     ...(!SITE_URL ? [{ name: 'robots', content: 'noindex, nofollow' }] : []),
     ...(pageUrl
@@ -48,18 +50,18 @@ export default function Home() {
     <main>
       <header className="home-hero">
         <p className="home-kicker">Free online Mermaid editor</p>
-        <h1 id="home-title">Free Mermaid Diagram Editor Online with React SDK</h1>
+        <h1 id="home-title">{homePageTitle}</h1>
         <p className="home-lead">Create diagrams with visual tools or Mermaid code, preview as you work, and download the source. React developers can customize the SDK to fit their app.</p>
         <nav className="home-links" aria-label="Project resources">
           <a className="home-link home-link-primary" href="https://github.com/nayounsang/mermaid-editor-sdk" target="_blank" rel="noopener noreferrer">
             <SiGithub aria-hidden="true" />
             View on GitHub
-            <span className="home-visually-hidden"> (opens in a new tab)</span>
+            <span className="home-visually-hidden">{newTabNotice}</span>
           </a>
           <a className="home-link" href="https://github.com/nayounsang/mermaid-editor-sdk/blob/main/docs/ui.md" target="_blank" rel="noopener noreferrer">
             <FiBookOpen aria-hidden="true" />
             React SDK docs
-            <span className="home-visually-hidden"> (opens in a new tab)</span>
+            <span className="home-visually-hidden">{newTabNotice}</span>
           </a>
         </nav>
       </header>
@@ -134,7 +136,7 @@ export default function Home() {
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'WebApplication',
-            name: 'Free Mermaid Diagram Editor Online with React SDK',
+            name: homePageTitle,
             description,
             applicationCategory: 'DeveloperApplication',
             operatingSystem: 'Any',
