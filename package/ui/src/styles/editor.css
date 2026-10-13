@@ -34,7 +34,7 @@
 .mve-selection-editor h2 { font-size: 0.9rem; margin: 0 0 0.45rem; }
 .mve-selection-editor .mve-edit-fields { align-items: end; display: flex; flex-wrap: wrap; gap: 0.45rem; }
 .mve-selection-editor label { display: grid; font-size: 0.8rem; gap: 0.2rem; }
-.mve-selection-editor input, .mve-selection-editor select { font: inherit; max-width: 12rem; min-width: 5rem; }
+.mve-selection-editor input:not(.mve-color-input), .mve-selection-editor select { font: inherit; max-width: 12rem; min-width: 5rem; }
 .mve-selection-editor p { color: #64748b; font-size: 0.75rem; margin: 0; }
 .mve-selection-editor button { background: #fff; border: 1px solid #cbd3df; border-radius: 0.35rem; cursor: pointer; font: inherit; padding: 0.25rem 0.55rem; }
 .mve-child-elements { border-top: 1px solid #e5e9f0; display: grid; gap: 0.4rem; flex-basis: 100%; padding-top: 0.5rem; }
@@ -107,9 +107,9 @@
 .mve-dialog-body { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 0.15rem 0.15rem 0.5rem; }
 .mve-edit-dialog .mve-edit-fields { align-items: start; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
 .mve-edit-dialog .mve-edit-fields > label { min-width: 0; }
-.mve-edit-dialog .mve-edit-fields input.mve-color-input { height: 2.5rem; max-width: 5rem; padding: 0.25rem; width: 5rem; }
+.mve-edit-dialog .mve-edit-fields input:not(.mve-color-input), .mve-edit-dialog .mve-edit-fields select, .mve-edit-dialog .mve-edit-fields textarea { max-width: 100%; min-width: 0; width: 100%; }
+.mve-edit-dialog .mve-edit-fields input.mve-color-input { cursor: pointer; height: 2.5rem; max-width: 2.5rem; padding: 0.25rem; width: 2.5rem; }
 .mve-edit-dialog .mve-edit-fields > label:has(textarea), .mve-edit-dialog .mve-edit-fields > [role='alert'], .mve-edit-dialog .mve-edit-fields > .mve-child-elements, .mve-edit-dialog .mve-edit-fields > div { grid-column: 1 / -1; }
-.mve-edit-dialog .mve-edit-fields input, .mve-edit-dialog .mve-edit-fields select, .mve-edit-dialog .mve-edit-fields textarea { max-width: 100%; min-width: 0; width: 100%; }
 .mve-edit-fields { display: grid; gap: 0.65rem; }
 .mve-edit-fields > [hidden] { display: none; }
 .mve-edit-fields .mve-flowchart-selection, .mve-edit-fields .mve-class-selection, .mve-edit-fields .mve-state-selection, .mve-edit-fields .mve-er-selection { align-items: stretch; display: grid; gap: 0.65rem; }
@@ -118,7 +118,6 @@
 .mve-edit-fields textarea { min-height: 5rem; resize: vertical; }
 .mve-edit-dialog > footer.mve-edit-dialog-actions { align-items: center; display: flex; justify-content: space-between; margin-top: 0.85rem; }
 .mve-edit-dialog-actions > div { display: flex; gap: 0.5rem; }
-.mve-edit-dialog .mve-color-input { cursor: pointer; }
 .mve-flowchart-palette,
 .mve-flowchart-selection,
 .mve-class-palette,
