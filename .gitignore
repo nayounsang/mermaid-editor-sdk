@@ -1,5 +1,8 @@
 node_modules/
 dist/
+build/
+.react-router/
+.vercel/
 __pycache__/
 storybook-static/
 coverage/
@@ -9,3 +12,4 @@ complex-prompt/
 app/storybook/storybook-static/
 .agents/skills/ui-ux-pro-max/scripts/__pycache__/
 .local
+.seo-cache/

@@ -1,0 +1,37 @@
+:root {
+  color: #1a1a18;
+  background: #f3f3ef;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+body { margin: 0; min-width: 320px; }
+.editor-mount { min-height: 100vh; }
+.editor-mount .mve-header { background: #fff; }
+.editor-mount .mve-workspace { min-height: calc(100vh - 3.5rem); }
+.seo-content {
+  background: #fff;
+  border-top: 1px solid #dfe5ec;
+  color: #182230;
+  padding: clamp(3.5rem, 8vw, 7rem) 1.5rem;
+}
+.seo-content-inner { margin: 0 auto; max-width: 70rem; }
+.seo-hero { background: #fff; padding: 1.25rem 1.5rem 1.5rem; text-align: center; }
+.seo-hero h1 { font-size: clamp(1.5rem, 3vw, 2.25rem); letter-spacing: -0.035em; line-height: 1.15; margin: 0 auto 0.5rem; }
+.seo-kicker { color: #2563a6; font-size: 0.72rem; font-weight: 750; letter-spacing: 0.1em; margin: 0 0 0.35rem; text-transform: uppercase; }
+.seo-lead { color: #445267; font-size: 1rem; line-height: 1.5; margin: 0 auto; max-width: 44rem; }
+.seo-section { margin: 0 auto clamp(2.75rem, 6vw, 4.5rem); max-width: 60rem; }
+.seo-section h2 { font-size: clamp(1.55rem, 3vw, 2.15rem); letter-spacing: -0.025em; line-height: 1.2; margin: 0 0 1rem; }
+.seo-section > p, .seo-feature p, .seo-faq details p { color: #4b596b; font-size: 1rem; line-height: 1.75; margin: 0; max-width: 58rem; }
+.seo-feature-grid { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 1.75rem; }
+.seo-feature { background: #f6f8fb; border: 1px solid #e1e7ef; border-radius: 0.9rem; padding: 1.4rem; }
+.seo-feature h3 { font-size: 1.05rem; line-height: 1.35; margin: 0 0 0.6rem; }
+.seo-feature p { font-size: 0.95rem; }
+.seo-faq details { border-bottom: 1px solid #e1e7ef; padding: 1rem 0; }
+.seo-faq details:first-of-type { border-top: 1px solid #e1e7ef; margin-top: 1.25rem; }
+.seo-faq summary { cursor: pointer; font-size: 1rem; font-weight: 650; line-height: 1.5; padding-right: 1.5rem; }
+.seo-faq details p { padding: 0.6rem 1.5rem 0 0; }
+@media (max-width: 48rem) {
+  .editor-mount .mve-workspace { min-height: 0; }
+  .seo-content { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .seo-feature-grid { grid-template-columns: minmax(0, 1fr); }
+}

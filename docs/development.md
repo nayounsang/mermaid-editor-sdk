@@ -14,17 +14,19 @@ pnpm install --frozen-lockfile
 |---|---|---|
 | `package/headless` | `@mermaid-editor-sdk/headless` | Diagram sessions, models, source parsing, and source mutations. |
 | `package/ui` | `@mermaid-editor-sdk/ui` | React components, rendering, and editor integration. |
-| `app/example` | `@mermaid-editor/example` | Browser example app used during development. |
+| `app/web` | `@mermaid-editor/web` | Public Mermaid diagram editor, built with React Router Framework Mode for Vercel. |
 
-The example app resolves workspace packages through their `source` export condition, so edits to package source appear without rebuilding first.
+The web app resolves workspace packages through their `source` export condition, so edits to package source appear without rebuilding first.
 
-## Run the example app
+## Run the web app
 
 ```sh
 pnpm dev
 ```
 
 Vite prints the local URL when the server starts. The app is served on `127.0.0.1`.
+
+Open the printed URL in a browser. The Mermaid editor home page should load.
 
 ## Common commands
 
@@ -43,7 +45,7 @@ pnpm --filter @mermaid-editor-sdk/ui test
 pnpm --filter @mermaid-editor-sdk/ui typecheck
 ```
 
-Turbo builds package dependencies before `typecheck` and `test`. The build graph builds headless before UI, then the example app.
+Turbo builds package dependencies before `typecheck` and `test`. The build graph builds headless before UI, then the web app.
 
 ## Changesets
 
@@ -74,7 +76,8 @@ Release maintainers can run `pnpm version-packages` to update package versions a
 | `package/ui/src/ui` | React editor, components, context, and hooks. |
 | `package/ui/src/diagrams` | Diagram adapters and source-to-model integration. |
 | `package/ui/src/renderer` | Mermaid rendering integration. |
-| `app/example/src` | Example application and its styles. |
+| `app/web/app` | React Router routes and the public editor page. |
+| `app/web/app/dev.css` | Public app and SEO content styles. |
 
 ## Making changes
 
