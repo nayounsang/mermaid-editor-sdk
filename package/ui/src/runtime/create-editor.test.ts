@@ -503,27 +503,31 @@ describe('createMermaidVisualEditor', () => {
     editor.destroy();
   });
 
-  it('confirms diagram replacement, applies the selected starter and notifies both callbacks', () => {
+  it('changes diagram type without confirmation and notifies the relevant callbacks', () => {
     const container = document.createElement('div');
     const onChange = vi.fn();
+    const onChangeDiagramType = vi.fn();
     const onReset = vi.fn();
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
-    const editor = createMermaidVisualEditor(container, { value: 'flowchart TD\nA[custom]', onChange, onReset });
+    const editor = createMermaidVisualEditor(container, { value: 'flowchart TD\nA[custom]', onChange, onChangeDiagramType, onReset });
     const typeSelect = container.querySelector<HTMLSelectElement>('.mve-diagram-select')!;
 
     typeSelect.value = 'pie';
     typeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(confirm).toHaveBeenCalledOnce();
+    expect(confirm).not.toHaveBeenCalled();
     expect(editor.getValue()).toBe(templates.pie);
     expect(onChange).toHaveBeenCalledWith(templates.pie);
+    expect(onChangeDiagramType).toHaveBeenCalledOnce();
+    expect(onChangeDiagramType).toHaveBeenCalledWith('pie');
 
     const source = container.querySelector<HTMLTextAreaElement>('.mve-source')!;
     source.value = 'pie\n"Custom" : 100';
     source.dispatchEvent(new Event('input', { bubbles: true }));
     container.querySelector<HTMLButtonElement>('[aria-label="Reset diagram"]')!.click();
-    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(confirm).toHaveBeenCalledOnce();
     expect(editor.getValue()).toBe(templates.pie);
     expect(onChange).toHaveBeenLastCalledWith(templates.pie);
+    expect(onChangeDiagramType).toHaveBeenCalledOnce();
     expect(onReset).toHaveBeenCalledWith(templates.pie);
     confirm.mockRestore();
     editor.destroy();
