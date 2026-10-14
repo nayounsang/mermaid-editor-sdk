@@ -55,11 +55,13 @@ interface TextFieldProps {
 }
 
 function TextField({ control, name, label, inputType = 'text', multiline = false, emptyColor = '#000000' }: TextFieldProps) {
-  return <label>{label}<Controller control={control} name={name} render={({ field }) => (
+  return <Controller control={control} name={name} render={({ field }) => (
     multiline
-      ? <textarea name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)} />
-      : <Input className={inputType === 'color' ? 'mve-color-input' : undefined} type={inputType} name={field.name} ref={field.ref} value={inputType === 'color' ? colorPickerValue(field.value || emptyColor) : field.value} onBlur={field.onBlur} onValueChange={field.onChange} />
-  )} /></label>;
+      ? <label>{label}<textarea name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)} /></label>
+      : inputType === 'color'
+        ? <div className="mve-color-field"><span>{label}</span><Input aria-label={label} className="mve-color-input" type="color" name={field.name} ref={field.ref} value={colorPickerValue(field.value || emptyColor)} onBlur={field.onBlur} onValueChange={field.onChange} /></div>
+        : <label>{label}<Input type={inputType} name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onValueChange={field.onChange} /></label>
+  )} />;
 }
 
 function BorderLineField({ control }: { readonly control: Control<EditorForm> }) {
