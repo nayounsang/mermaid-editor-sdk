@@ -166,6 +166,7 @@ Creates a visual editor in an existing DOM element.
 |---|---|---|---|
 | `value` | Initial Mermaid source. | `string` | — |
 | `onChange?` | Called when the source changes. | `(value: string) => void` | — |
+| `onChangeDiagramType?` | Called after the selected diagram type changes and its default source is applied. | `(diagramType: EditableDiagramType) => void` | — |
 | `onSelectionChange?` | Called when the selection changes or clears. | `(selection: EditorSelection \| null) => void` | — |
 | `onError?` | Receives parse, render, mutation, save, or lifecycle errors. | `(error: EditorError) => void` | — |
 | `onSave?` | Called by Save with the current source. | `(currentSource: string) => void \| Promise<void>` | — |
@@ -211,6 +212,7 @@ Call inside `EditorSessionProvider` or `MermaidEditor`.
 |---|---|---|---|
 | `value` | Mermaid source controlled by the host. | `string` | — |
 | `onChange?` | Called with edits made in the editor. Host value updates do not call it. | `(source: string) => void` | — |
+| `onChangeDiagramType?` | Called after a diagram type is selected and its default source is applied. | `(diagramType: EditableDiagramType) => void` | — |
 | `onSelectionChange?` | Called when the selection changes or clears. | `(selection: EditorSelection \| null) => void` | — |
 | `onError?` | Receives parse, render, mutation, save, or lifecycle errors. | `(error: EditorError) => void` | — |
 | `onSave?` | Called by the Save action with the current source. | `(source: string) => void \| Promise<void>` | — |

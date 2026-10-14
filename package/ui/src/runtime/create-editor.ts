@@ -83,6 +83,7 @@ export function createMermaidVisualEditor(
   if (!isPlainObject(options)) throw new TypeError('options must be a plain object.');
   const initialValue = options.value;
   const onChange = options.onChange;
+  const onChangeDiagramType = options.onChangeDiagramType;
   const onSelectionChange = options.onSelectionChange;
   const onError = options.onError;
   const onSave = options.onSave;
@@ -93,6 +94,7 @@ export function createMermaidVisualEditor(
   if (typeof initialValue !== 'string') throw new TypeError('options.value must be a string.');
   for (const [name, callback] of [
     ['onChange', onChange],
+    ['onChangeDiagramType', onChangeDiagramType],
     ['onSelectionChange', onSelectionChange],
     ['onError', onError],
     ['onSave', onSave],
@@ -768,14 +770,12 @@ export function createMermaidVisualEditor(
   typeSelect.addEventListener('change', () => {
     const nextType = typeSelect.value as EditableDiagramType;
     if (nextType === activeDiagramType) return;
-    if (value !== templates[activeDiagramType]
-      && !container.ownerDocument.defaultView?.confirm('Changing diagram type replaces the current source. Continue?')) {
-      typeSelect.value = activeDiagramType;
-      return;
-    }
     activeDiagramType = nextType;
     zoom = 1;
     commitValue(templates[nextType], true);
+    if (onChangeDiagramType) {
+      try { onChangeDiagramType(nextType); } catch (cause) { reportCallbackFailure(cause); }
+    }
   });
 
   let spaceDown = false;
