@@ -1,5 +1,16 @@
 # @mermaid-editor-sdk/ui
 
+## 0.2.0
+
+### Minor Changes
+
+- db63520: Add an `onChangeDiagramType` callback and remove the built-in confirmation when changing diagram types.
+
+### Patch Changes
+
+- 2c79cf6: Fix zoom controls for Mermaid diagrams whose SVG width is constrained to the canvas.
+- 4a4efe3: Prevent empty space in color field labels from activating the color picker.
+
 ## 0.1.3
 
 ### Patch Changes
