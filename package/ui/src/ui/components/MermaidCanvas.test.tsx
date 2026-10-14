@@ -85,6 +85,15 @@ describe('MermaidCanvas', () => {
 
     expect(host.querySelector('[aria-label="Zoom level"]')?.textContent).toBe('100%');
 
+    const zoomInButton = host.querySelector<HTMLButtonElement>('[aria-label="Zoom in"]');
+    if (!zoomInButton) throw new Error('The zoom in button was not rendered.');
+    await act(async () => zoomInButton.click());
+    const svg = host.querySelector<SVGSVGElement>('svg');
+    expect(host.querySelector('[aria-label="Zoom level"]')?.textContent).toBe('110%');
+    expect(Number.parseFloat(svg?.style.width ?? '')).toBeCloseTo(440);
+    expect(Number.parseFloat(svg?.style.height ?? '')).toBeCloseTo(220);
+    expect(svg?.style.maxWidth).toBe('none');
+
     await act(async () => root.unmount());
     host.remove();
   });

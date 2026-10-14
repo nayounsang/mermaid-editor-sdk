@@ -8,6 +8,7 @@ import type { EditorError, EditorSelection, MermaidVisualEditor, MermaidVisualEd
 import { DestroyedEditorError } from './types';
 import { appendPaletteEntry, diagramTypeFromSource, diagramTypes, paletteCatalog, templates, type EditableDiagramType } from '@mermaid-editor-sdk/headless';
 import { MermaidRendererError, renderMermaid } from '../renderer/mermaid-renderer';
+import { SvgViewBoxSchema } from './svg-view-box';
 
 const previewDebounceMs = 120;
 const minZoom = 0.2;
@@ -390,13 +391,11 @@ export function createMermaidVisualEditor(
     if (zoomOutButton) zoomOutButton.disabled = zoom <= minZoom;
     const svg = preview.querySelector('svg');
     if (!svg) return;
-    const viewBox = svg.getAttribute('viewBox')?.trim().split(/[ ,]+/).map(Number);
-    if (viewBox?.length === 4 && viewBox[2]! > 0 && viewBox[3]! > 0) {
-      svg.style.width = `${viewBox[2]! * zoom}px`;
-      svg.style.height = `${viewBox[3]! * zoom}px`;
-      svg.style.maxWidth = 'none';
-      svg.style.transform = '';
-    } else svg.style.transform = `scale(${zoom})`;
+    const viewBox = SvgViewBoxSchema.parse(svg.getAttribute('viewBox'));
+    svg.style.width = `${viewBox.width * zoom}px`;
+    svg.style.height = `${viewBox.height * zoom}px`;
+    svg.style.maxWidth = 'none';
+    svg.style.transform = '';
   };
   const canvasButton = (text: string, label: string, action: () => void): HTMLButtonElement => {
     const button = container.ownerDocument.createElement('button');
@@ -405,11 +404,11 @@ export function createMermaidVisualEditor(
   };
   const fitCanvas = (): void => {
     const svg = preview.querySelector('svg');
-    const viewBox = svg?.getAttribute('viewBox')?.trim().split(/[ ,]+/).map(Number);
-    if (viewBox?.length === 4 && viewBox[2]! > 0 && viewBox[3]! > 0 && previewStage.clientWidth && previewStage.clientHeight) {
+    const viewBox = svg ? SvgViewBoxSchema.parse(svg.getAttribute('viewBox')) : null;
+    if (viewBox && previewStage.clientWidth > 0 && previewStage.clientHeight > 0) {
       zoom = Math.max(minZoom, Math.min(maxZoom, Math.min(
-        (previewStage.clientWidth - 32) / viewBox[2]!,
-        (previewStage.clientHeight - 32) / viewBox[3]!,
+        (previewStage.clientWidth - 32) / viewBox.width,
+        (previewStage.clientHeight - 32) / viewBox.height,
       )));
     } else zoom = 1;
     updateZoom();

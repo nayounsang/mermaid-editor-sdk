@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 const mermaidMock = vi.hoisted(() => ({
   initialize: vi.fn(),
   parse: vi.fn(async () => ({ config: {} })),
-  render: vi.fn(async () => ({ svg: '<svg></svg>', diagramType: 'flowchart-v2' })),
+  render: vi.fn(async () => ({ svg: '<svg viewBox="0 0 100 100"></svg>', diagramType: 'flowchart-v2' })),
 }));
 
 vi.mock('mermaid', () => ({ default: mermaidMock }));
