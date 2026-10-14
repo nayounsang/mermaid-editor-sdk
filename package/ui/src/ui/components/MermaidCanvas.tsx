@@ -11,6 +11,7 @@ import type { EditorSelection } from '../../runtime/types';
 import type { EditableDiagramType } from '@mermaid-editor-sdk/headless';
 import { MermaidRendererError, renderMermaid } from '../../renderer/mermaid-renderer';
 import type { EditorStatusState } from './EditorStatus';
+import { SvgViewBoxSchema } from '../../runtime/svg-view-box';
 
 export interface MermaidCanvasProps {
   readonly source: string;
@@ -127,6 +128,18 @@ export const MermaidCanvas = forwardRef<MermaidCanvasHandle, MermaidCanvasProps>
   }, [source, sourceRevision, onParseResult, onRenderState]);
 
   useEffect(() => {
+    const svgElement = previewRef.current?.querySelector('svg');
+    if (!svgElement) return;
+    const viewBox = SvgViewBoxSchema.parse(svgElement.getAttribute('viewBox'));
+    // Mermaid sets max-width to the viewport width on many diagram types.
+    // Give the SVG an explicit scaled size so that rule cannot cancel zoom.
+    svgElement.style.width = `${viewBox.width * zoom}px`;
+    svgElement.style.height = `${viewBox.height * zoom}px`;
+    svgElement.style.maxWidth = 'none';
+    svgElement.style.transform = '';
+  }, [svg, zoom]);
+
+  useEffect(() => {
     if (renderedSource !== source || model.diagramType === 'unknown' || model.diagramType === 'unsupported') return;
     const diagramType = model.diagramType as AdapterDiagramType;
     registerBuiltInAdapters();
@@ -171,13 +184,17 @@ export const MermaidCanvas = forwardRef<MermaidCanvasHandle, MermaidCanvasProps>
   const fitCanvas = useCallback((): void => {
     const stage = stageRef.current;
     const svgElement = previewRef.current?.querySelector('svg');
-    const viewBox = svgElement?.getAttribute('viewBox')?.trim().split(/[ ,]+/).map(Number);
-    if (stage && viewBox?.length === 4 && viewBox[2]! > 0 && viewBox[3]! > 0 && stage.clientWidth > 0 && stage.clientHeight > 0) {
-      setZoomState(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min((stage.clientWidth - 32) / viewBox[2]!, (stage.clientHeight - 32) / viewBox[3]!))));
-      stage.scrollTo({ top: 0, left: 0 });
+    if (!stage || !svgElement) {
+      setZoomState(1);
       return;
     }
-    setZoomState(1);
+    const viewBox = SvgViewBoxSchema.parse(svgElement.getAttribute('viewBox'));
+    if (stage.clientWidth <= 0 || stage.clientHeight <= 0) {
+      setZoomState(1);
+      return;
+    }
+    setZoomState(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min((stage.clientWidth - 32) / viewBox.width, (stage.clientHeight - 32) / viewBox.height))));
+    stage.scrollTo({ top: 0, left: 0 });
   }, []);
 
   const fitCanvasOnResize = useCallback((): void => {
@@ -279,7 +296,7 @@ export const MermaidCanvas = forwardRef<MermaidCanvasHandle, MermaidCanvasProps>
         event.currentTarget.classList.remove('mve-panning');
       }} tabIndex={0} aria-label="Diagram canvas. Scroll to move around; hold Space and drag to pan. Use Control or Command plus scroll to zoom.">
         {errorBanner ? <div className="mve-preview-error" role="alert">{errorBanner}</div> : null}
-        <div className="mve-preview" ref={previewRef} dangerouslySetInnerHTML={{ __html: svg }} style={{ zoom }} />
+        <div className="mve-preview" ref={previewRef} dangerouslySetInnerHTML={{ __html: svg }} />
         <div className="mve-react-adapter-toolbar" ref={adapterToolbarRef} hidden aria-hidden="true" />
       </div>
     </section>

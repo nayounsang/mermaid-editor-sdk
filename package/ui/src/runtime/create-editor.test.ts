@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mermaidMock = vi.hoisted(() => ({
   initialize: vi.fn(),
   parse: vi.fn(async () => ({ config: {} })),
-  render: vi.fn(async () => ({ svg: '<svg data-rendered="yes"></svg>', diagramType: 'flowchart-v2' })),
+  render: vi.fn(async () => ({ svg: '<svg viewBox="0 0 100 100" data-rendered="yes"></svg>', diagramType: 'flowchart-v2' })),
 }));
 
 vi.mock('mermaid', () => ({ default: mermaidMock }));
@@ -20,7 +20,7 @@ describe('createMermaidVisualEditor', () => {
     vi.clearAllMocks();
     mermaidMock.parse.mockResolvedValue({ config: {} });
     mermaidMock.render.mockResolvedValue({
-      svg: '<svg data-rendered="yes"></svg>',
+      svg: '<svg viewBox="0 0 100 100" data-rendered="yes"></svg>',
       diagramType: 'flowchart-v2',
     });
   });
@@ -184,7 +184,7 @@ describe('createMermaidVisualEditor', () => {
   });
 
   it('renders a known diagram and mounts sequence editing tools', async () => {
-    mermaidMock.render.mockResolvedValueOnce({ svg: '<svg data-rendered="yes"></svg>', diagramType: 'sequence' });
+    mermaidMock.render.mockResolvedValueOnce({ svg: '<svg viewBox="0 0 100 100" data-rendered="yes"></svg>', diagramType: 'sequence' });
     const container = document.createElement('div');
     const editor = createMermaidVisualEditor(container, { value: 'sequenceDiagram\nA->>B: hello' });
     await vi.waitFor(() => expect(container.querySelector('.mve-sequence-item')).not.toBeNull());
@@ -199,7 +199,7 @@ describe('createMermaidVisualEditor', () => {
 
   it('registers the built-in Flowchart adapter from the package entry and edits selected nodes', async () => {
     mermaidMock.render.mockResolvedValueOnce({
-      svg: '<svg><g class="node" id="flowchart-A-0"><rect></rect><g class="nodeLabel">Alpha</g></g></svg>',
+      svg: '<svg viewBox="0 0 100 100"><g class="node" id="flowchart-A-0"><rect></rect><g class="nodeLabel">Alpha</g></g></svg>',
       diagramType: 'flowchart-v2',
     });
     const container = document.createElement('div');
@@ -227,7 +227,7 @@ describe('createMermaidVisualEditor', () => {
 
   it('labels a renderable diagram outside the supported set as unsupported', async () => {
     mermaidMock.render.mockResolvedValueOnce({
-      svg: '<svg data-rendered="yes"></svg>',
+      svg: '<svg viewBox="0 0 100 100" data-rendered="yes"></svg>',
       diagramType: 'architecture',
     });
     const container = document.createElement('div');
@@ -456,7 +456,7 @@ describe('createMermaidVisualEditor', () => {
 
   it('reports an element removal to the host with its selection and updated source', async () => {
     mermaidMock.render.mockResolvedValueOnce({
-      svg: '<svg><g class="node" id="flowchart-A-0"><rect></rect><g class="nodeLabel">Alpha</g></g></svg>',
+      svg: '<svg viewBox="0 0 100 100"><g class="node" id="flowchart-A-0"><rect></rect><g class="nodeLabel">Alpha</g></g></svg>',
       diagramType: 'flowchart-v2',
     });
     const container = document.createElement('div');
@@ -475,7 +475,7 @@ describe('createMermaidVisualEditor', () => {
 
   it('deletes the element under the pointer with Backspace outside text inputs', async () => {
     mermaidMock.render.mockResolvedValueOnce({
-      svg: '<svg><g class="node" id="flowchart-A-0"><rect></rect><g class="nodeLabel">Alpha</g></g></svg>',
+      svg: '<svg viewBox="0 0 100 100"><g class="node" id="flowchart-A-0"><rect></rect><g class="nodeLabel">Alpha</g></g></svg>',
       diagramType: 'flowchart-v2',
     });
     const container = document.createElement('div');
@@ -680,7 +680,7 @@ describe('createMermaidVisualEditor', () => {
     vi.useFakeTimers();
     let finishRender!: () => void;
     mermaidMock.render.mockImplementationOnce(() => new Promise((resolve) => {
-      finishRender = () => resolve({ svg: '<svg data-rendered="stale"></svg>', diagramType: 'flowchart-v2' });
+      finishRender = () => resolve({ svg: '<svg viewBox="0 0 100 100" data-rendered="stale"></svg>', diagramType: 'flowchart-v2' });
     }));
     const container = document.createElement('div');
     const editor = createMermaidVisualEditor(container, { value: 'A[old]' });
