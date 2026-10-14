@@ -38,29 +38,40 @@ const editorFormSchema = z.object({
 });
 
 type EditorForm = z.infer<typeof editorFormSchema>;
-type TextFieldName = 'id' | 'label' | 'from' | 'to' | 'operator' | 'fill' | 'stroke' | 'title';
+type TextFieldName = 'id' | 'label' | 'from' | 'to' | 'operator' | 'title';
+type ColorFieldName = 'fill' | 'stroke';
+type FieldName = TextFieldName | ColorFieldName;
 
 function colorPickerValue(value: string): string {
   const color = new TinyColor(value);
   return color.isValid ? color.toHexString() : '#000000';
 }
 
-interface TextFieldProps {
+interface FieldProps<Name extends FieldName> {
   readonly control: Control<EditorForm>;
-  readonly name: TextFieldName;
+  readonly name: Name;
   readonly label: string;
-  readonly inputType?: 'text' | 'color';
-  readonly multiline?: boolean;
-  readonly emptyColor?: string;
 }
 
-function TextField({ control, name, label, inputType = 'text', multiline = false, emptyColor = '#000000' }: TextFieldProps) {
+interface TextFieldProps extends FieldProps<TextFieldName> {
+  readonly multiline?: boolean;
+}
+
+function TextField({ control, name, label, multiline = false }: TextFieldProps) {
   return <Controller control={control} name={name} render={({ field }) => (
     multiline
       ? <label>{label}<textarea name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)} /></label>
-      : inputType === 'color'
-        ? <div className="mve-color-field"><span>{label}</span><Input aria-label={label} className="mve-color-input" type="color" name={field.name} ref={field.ref} value={colorPickerValue(field.value || emptyColor)} onBlur={field.onBlur} onValueChange={field.onChange} /></div>
-        : <label>{label}<Input type={inputType} name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onValueChange={field.onChange} /></label>
+      : <label>{label}<Input type="text" name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onValueChange={field.onChange} /></label>
+  )} />;
+}
+
+interface ColorFieldProps extends FieldProps<ColorFieldName> {
+  readonly emptyColor: string;
+}
+
+function ColorField({ control, name, label, emptyColor }: ColorFieldProps) {
+  return <Controller control={control} name={name} render={({ field }) => (
+    <div className="mve-color-field"><span>{label}</span><Input aria-label={label} className="mve-color-input" type="color" name={field.name} ref={field.ref} value={colorPickerValue(field.value || emptyColor)} onBlur={field.onBlur} onValueChange={field.onChange} /></div>
   )} />;
 }
 
@@ -249,8 +260,8 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
             )} /></label>
             <BorderLineField control={control} />
           </>}
-          <TextField control={control} name="fill" label="Fill color" inputType="color" emptyColor="#ECECFF" />
-          <TextField control={control} name="stroke" label="Border color" inputType="color" emptyColor="#9370DB" />
+          <ColorField control={control} name="fill" label="Fill color" emptyColor="#ECECFF" />
+          <ColorField control={control} name="stroke" label="Border color" emptyColor="#9370DB" />
           {selection.diagramType !== 'flowchart' && <BorderLineField control={control} />}
           {errorMessage && <p role="alert">{errorMessage}</p>}
           {selection.diagramType === 'class' && <section className="mve-child-elements"><h3>Class members</h3>
@@ -301,7 +312,7 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
           <TextField control={control} name="from" label="From" />
           <TextField control={control} name="to" label="To" />
           {selection.diagramType !== 'class' && <TextField control={control} name="label" label="Label" />}
-          {selection.diagramType === 'flowchart' && <TextField control={control} name="stroke" label="Line color" inputType="color" emptyColor="#333333" />}
+          {selection.diagramType === 'flowchart' && <ColorField control={control} name="stroke" label="Line color" emptyColor="#333333" />}
           {selection.diagramType === 'er' ? <>
             <label>Cardinality<Controller control={control} name="operator" render={({ field }) => (
               <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
@@ -325,8 +336,8 @@ export function SelectionEditor({ open, onClose, selection, model, dispatch, dis
         <form id={formId} className="mve-edit-fields" onSubmit={handleSubmit(apply)}>
           <TextField control={control} name="id" label="Identifier" />
           <TextField control={control} name="title" label="Title" multiline />
-          <TextField control={control} name="fill" label="Fill color" inputType="color" emptyColor="#ECECFF" />
-          <TextField control={control} name="stroke" label="Border color" inputType="color" emptyColor="#9370DB" />
+          <ColorField control={control} name="fill" label="Fill color" emptyColor="#ECECFF" />
+          <ColorField control={control} name="stroke" label="Border color" emptyColor="#9370DB" />
           <label>Border line<Controller control={control} name="borderType" render={({ field }) => (
             <select name={field.name} ref={field.ref} value={field.value} onBlur={field.onBlur} onChange={(event) => field.onChange(event.currentTarget.value)}>
               <option value="default">Default</option><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option>
