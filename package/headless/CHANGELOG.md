@@ -1,5 +1,11 @@
 # @mermaid-editor-sdk/headless
 
+## 0.0.2
+
+### Patch Changes
+
+- 6c69fb2: Document the public APIs with JSDoc comments and keep the API reference alongside the source declarations.
+
 ## 0.0.1
 
 ### Minor Changes
