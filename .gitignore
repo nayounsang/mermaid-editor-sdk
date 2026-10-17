@@ -13,3 +13,4 @@ app/storybook/storybook-static/
 .agents/skills/ui-ux-pro-max/scripts/__pycache__/
 .local
 .seo-cache/
+.playwright-mcp
