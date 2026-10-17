@@ -1,18 +1,32 @@
 import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
+/** A parsed state transition and offsets for its editable source tokens. */
 export interface StateTransition {
+  /** Source element or entity identifier. */
   source: string;
+  /** Target element or entity identifier. */
   target: string;
+  /** Displayed label. */
   label: string;
+  /** Zero-based occurrence among matching elements. */
   occurrence: number;
+  /** Start offset in the source. */
   start: number;
+  /** End offset in the source. */
   end: number;
+  /** Start offset of the source token. */
   sourceStart: number;
+  /** End offset of the source token. */
   sourceEnd: number;
+  /** Start offset of the target token. */
   targetStart: number;
+  /** End offset of the target token. */
   targetEnd: number;
+  /** Start offset of the label separator, when present. */
   labelSeparatorStart?: number;
+  /** Start offset of the label, when present. */
   labelStart?: number;
+  /** End offset of the label, when present. */
   labelEnd?: number;
 }
 
@@ -201,13 +215,19 @@ function styleProperties(value: string): Map<string, string> {
   return properties;
 }
 
+/** A state style property supported by the source helpers. */
 export type StateStyleProperty = 'fill' | 'stroke' | 'stroke-width' | 'stroke-dasharray';
 
+/** Supported state border patterns. */
 export type StateBorderType = 'solid' | 'dashed' | 'dotted';
 
+/** Combined style values for a state. */
 export interface StateAppearance {
+  /** Fill color. */
   fill: string;
+  /** Outline color. */
   stroke: string;
+  /** Border pattern. */
   borderType: StateBorderType | '';
 }
 
@@ -225,15 +245,33 @@ function borderTypeFromStyles(styles: ReadonlyMap<string, string>): StateBorderT
   return '';
 }
 
+/**
+ * Reads the combined appearance of a state.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function getStateAppearance(source: string, id: string): StateAppearance {
   const styles = stateStyleProperties(source, id);
   return { fill: styles.get('fill') ?? '', stroke: styles.get('stroke') ?? '', borderType: borderTypeFromStyles(styles) };
 }
 
+/**
+ * Reads one style property assigned to a state.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param property - Style property to read or update.
+ */
 export function getStateStyle(source: string, id: string, property: StateStyleProperty): string {
   return stateStyleProperties(source, id).get(property) ?? '';
 }
 
+/**
+ * Sets one style property for a state.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param property - Style property to read or update.
+ * @param value - Value to assign.
+ */
 export function setStateStyle(source: string, id: string, property: StateStyleProperty, value: string): string {
   diagramBody(source);
   if (!listStateIds(source).includes(id)) throw new AmbiguousSourceMutationError('The state is missing or ambiguous.');
@@ -268,10 +306,21 @@ export function setStateStyle(source: string, id: string, property: StateStylePr
   return source.slice(0, existing.line.start) + updated + source.slice(existing.line.end);
 }
 
+/**
+ * Reads a state border pattern.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function getStateBorderType(source: string, id: string): StateBorderType | '' {
   return borderTypeFromStyles(stateStyleProperties(source, id));
 }
 
+/**
+ * Sets a state border pattern.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param border - Border pattern to apply to the state.
+ */
 export function setStateBorderType(source: string, id: string, border: StateBorderType): string {
   const dash = border === 'dashed' ? '6 4' : border === 'dotted' ? '2 3' : '0';
   return setStateStyle(setStateStyle(source, id, 'stroke-width', '2px'), id, 'stroke-dasharray', dash);
@@ -295,16 +344,29 @@ function appendLine(source: string, line: string): string {
   return appendSourceLines(source, [line], 'state');
 }
 
+/**
+ * Lists state IDs declared or referenced in the source.
+ * @param source - Mermaid source to inspect or update.
+ */
 export function listStateIds(source: string): string[] {
   diagramBody(source);
   return [...new Set([...declarationTokens(source), ...endpointTokens(source)].map(({ id }) => id))];
 }
 
+/**
+ * Lists state transitions parsed from the source.
+ * @param source - Mermaid source to inspect or update.
+ */
 export function listStateTransitions(source: string): StateTransition[] {
   diagramBody(source);
   return transitions(source);
 }
 
+/**
+ * Adds a state, generating an available ID when omitted.
+ * @param source - Mermaid source to inspect or update.
+ * @param requestedId - Optional state identifier; one is generated when omitted.
+ */
 export function addState(source: string, requestedId?: string): string {
   diagramBody(source);
   const used = new Set(listStateIds(source));
@@ -320,8 +382,16 @@ export function addState(source: string, requestedId?: string): string {
   return appendLine(source, `state ${id}`);
 }
 
+/** Identifier of a state palette item. */
 export type StatePaletteItemId = 'simple' | 'composite' | 'choice' | 'note' | 'start-transition' | 'end-transition';
 
+/**
+ * Adds a state palette item to the source.
+ * @param source - Mermaid source to inspect or update.
+ * @param item - Identifier of the palette item to add.
+ * @param stateId - Optional state identifier used by the palette item.
+ * @param label - Displayed label.
+ */
 export function addStatePaletteItem(source: string, item: StatePaletteItemId, stateId?: string, label = ''): string {
   diagramBody(source);
   if (item === 'simple') return addState(source);
@@ -349,6 +419,12 @@ export function addStatePaletteItem(source: string, item: StatePaletteItemId, st
   return appendLine(source, `${transition}${label.trim() ? ` : ${label.trim()}` : ''}`);
 }
 
+/**
+ * Renames a state and updates its references.
+ * @param source - Mermaid source to inspect or update.
+ * @param oldId - Current identifier.
+ * @param newId - Replacement identifier.
+ */
 export function renameState(source: string, oldId: string, newId: string): string {
   diagramBody(source);
   if (!new RegExp(`^${ID}$`).test(oldId) || !new RegExp(`^${ID}$`).test(newId) || oldId === newId) {
@@ -387,6 +463,12 @@ function findTransition(source: string, transition: Pick<StateTransition, 'sourc
   return matches[0]!;
 }
 
+/**
+ * Updates one state transition.
+ * @param source - Mermaid source to inspect or update.
+ * @param transition - Transition identified by source, target, and occurrence.
+ * @param patch - Properties to apply to the element.
+ */
 export function setStateTransition(source: string, transition: Pick<StateTransition, 'source' | 'target' | 'occurrence'>,
   patch: Partial<Pick<StateTransition, 'source' | 'target' | 'label'>>): string {
   diagramBody(source);
@@ -426,6 +508,11 @@ export function setStateTransition(source: string, transition: Pick<StateTransit
   return output;
 }
 
+/**
+ * Deletes one state transition.
+ * @param source - Mermaid source to inspect or update.
+ * @param transition - Transition identified by source, target, and occurrence.
+ */
 export function deleteStateTransition(source: string, transition: Pick<StateTransition, 'source' | 'target' | 'occurrence'>): string {
   diagramBody(source);
   const item = findTransition(source, transition);
@@ -433,6 +520,11 @@ export function deleteStateTransition(source: string, transition: Pick<StateTran
   return source.slice(0, line.start) + source.slice(line.fullEnd);
 }
 
+/**
+ * Deletes a state and its related transitions.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function deleteState(source: string, id: string): string {
   diagramBody(source);
   if (!new RegExp(`^${ID}$`).test(id) || !listStateIds(source).includes(id)) {
@@ -466,6 +558,13 @@ export function deleteState(source: string, id: string): string {
   return output;
 }
 
+/**
+ * Adds a transition between two states.
+ * @param source - Mermaid source to inspect or update.
+ * @param from - Source element identifier.
+ * @param to - Target element identifier.
+ * @param label - Displayed label.
+ */
 export function addStateTransition(source: string, from: string, to: string, label = ''): string {
   diagramBody(source);
   const ids = new Set(listStateIds(source));

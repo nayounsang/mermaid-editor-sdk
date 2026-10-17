@@ -1,38 +1,102 @@
 import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
+import type { FlowchartNodeShape } from '../core/diagram-model';
 
-export type FlowchartNodeShape = 'bare' | 'rect' | 'round' | 'diamond' | 'circle' | 'stadium' | 'subroutine' | 'database' | 'hexagon';
+export type { FlowchartNodeShape } from '../core/diagram-model';
 
+/** A parsed flowchart node and its source location. */
 export interface FlowchartNode {
+  /** Element or palette item identifier. */
   id: string;
+  /** Displayed label. */
   label: string;
+  /** Node shape. */
   shape: FlowchartNodeShape;
+  /** Start offset of the source line. */
   lineStart: number;
+  /** Start offset of the source token. */
   tokenStart: number;
+  /** End offset of the source token. */
   tokenEnd: number;
+  /** Whether this token declares the element. */
   declaration: boolean;
 }
 
+/** A parsed flowchart edge and offsets for its editable source syntax. */
 export interface FlowchartEdge {
+  /** Source element or entity identifier. */
   source: string;
+  /** Target element or entity identifier. */
   target: string;
+  /** Mermaid relationship or edge operator. */
   operator: string;
+  /** Displayed label. */
   label: string;
+  /** Start offset of the source line. */
   lineStart: number;
+  /** Start offset of the operator token. */
   operatorStart: number;
+  /** End offset of the operator token. */
   operatorEnd: number;
+  /** End offset of the edge syntax. */
   syntaxEnd: number;
+  /** Start offset of the label, when present. */
   labelStart?: number;
+  /** End offset of the label, when present. */
   labelEnd?: number;
+  /** Whether the label uses inline edge syntax. */
   inlineLabel?: boolean;
+  /** Zero-based occurrence among matching elements. */
   occurrence: number;
 }
 
+/** A parsed flowchart subgraph and its source bounds. */
 export interface FlowchartSubgraph {
+  /** Element or palette item identifier. */
   id: string;
+  /** Palette group heading or subgraph title. */
   title: string;
+  /** Start offset of the source line. */
   lineStart: number;
+  /** End offset of the source block. */
   lineEnd: number;
+  /** Source indentation. */
   indent: string;
+}
+
+/** Properties that can be changed on a flowchart node. */
+export interface FlowchartNodeUpdate {
+  /** Replacement node identifier. */
+  id?: string;
+  /** Replacement node label. */
+  label?: string;
+  /** Replacement node shape. */
+  shape?: FlowchartNodeShape;
+}
+
+/** Properties that can be changed on a flowchart edge. */
+export interface FlowchartEdgeUpdate {
+  /** Replacement source node identifier. */
+  source?: string;
+  /** Replacement target node identifier. */
+  target?: string;
+  /** Replacement Mermaid edge operator. */
+  operator?: string;
+  /** Replacement edge label. */
+  label?: string;
+}
+
+/** Properties that can be changed on a flowchart subgraph. */
+export interface FlowchartSubgraphUpdate {
+  /** Replacement subgraph identifier. */
+  id?: string;
+  /** Replacement subgraph title. */
+  title?: string;
+  /** Replacement fill color. */
+  fill?: string;
+  /** Replacement stroke color. */
+  stroke?: string;
+  /** Replacement subgraph border style. */
+  borderType?: 'default' | 'solid' | 'dashed' | 'dotted';
 }
 
 interface Line {
@@ -274,14 +338,26 @@ function parseDocument(source: string): { lines: Line[]; nodes: FlowchartNode[];
   return { lines, nodes: [...nodeMap.values()], edges, supported };
 }
 
+/**
+ * Lists nodes parsed from a flowchart source.
+ * @param source - Mermaid source to inspect or update.
+ */
 export function listFlowchartNodes(source: string): FlowchartNode[] {
   return parseDocument(source).nodes.sort((a, b) => a.id.localeCompare(b.id));
 }
 
+/**
+ * Lists edges parsed from a flowchart source.
+ * @param source - Mermaid source to inspect or update.
+ */
 export function listFlowchartEdges(source: string): FlowchartEdge[] {
   return parseDocument(source).edges;
 }
 
+/**
+ * Reports whether flowchart edges can be indexed unambiguously.
+ * @param source - Mermaid source to inspect or update.
+ */
 export function isFlowchartEdgeIndexingSafe(source: string): boolean {
   const parsed = parseDocument(source);
   return parsed.supported && parsed.lines.every((line) => {
@@ -291,6 +367,10 @@ export function isFlowchartEdgeIndexingSafe(source: string): boolean {
   });
 }
 
+/**
+ * Lists subgraphs parsed from a flowchart source.
+ * @param source - Mermaid source to inspect or update.
+ */
 export function listFlowchartSubgraphs(source: string): FlowchartSubgraph[] {
   const lines = getLines(source);
   const stack: FlowchartSubgraph[] = [];
@@ -359,6 +439,13 @@ function validateEdgeLabel(label: string): void {
   if (/[|\r\n]/.test(label)) throw new AmbiguousSourceMutationError('Edge labels cannot contain pipes or line breaks.');
 }
 
+/**
+ * Adds a node to a flowchart.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param label - Displayed label.
+ * @param shape - Node shape.
+ */
 export function addFlowchartNode(source: string, id: string, label: string, shape: FlowchartNodeShape = 'rect'): string {
   if (!/^[A-Za-z0-9_][\w.-]*$/.test(id)) throw new AmbiguousSourceMutationError('Node ID is not supported.');
   if (listFlowchartNodes(source).some((node) => node.id === id) || listFlowchartSubgraphs(source).some((graph) => graph.id === id)) {
@@ -367,6 +454,14 @@ export function addFlowchartNode(source: string, id: string, label: string, shap
   return appendLines(source, [`${id}${shapeToken(shape, label)}`]);
 }
 
+/**
+ * Adds a node inside a flowchart subgraph.
+ * @param source - Mermaid source to inspect or update.
+ * @param subgraphId - Identifier of the subgraph that receives the node.
+ * @param id - Identifier of the diagram element.
+ * @param label - Displayed label.
+ * @param shape - Node shape.
+ */
 export function addFlowchartNodeToSubgraph(source: string, subgraphId: string, id: string, label: string, shape: FlowchartNodeShape = 'rect'): string {
   if (!/^[A-Za-z0-9_][\w.-]*$/.test(id)) throw new AmbiguousSourceMutationError('Node ID is not supported.');
   if (listFlowchartNodes(source).some((node) => node.id === id) || listFlowchartSubgraphs(source).some((graph) => graph.id === id)) {
@@ -375,6 +470,15 @@ export function addFlowchartNodeToSubgraph(source: string, subgraphId: string, i
   return insertLinesInSubgraph(source, subgraphId, [`${id}${shapeToken(shape, label)}`]);
 }
 
+/**
+ * Adds an edge inside a flowchart subgraph.
+ * @param source - Mermaid source to inspect or update.
+ * @param subgraphId - Identifier of the subgraph that receives the edge.
+ * @param from - Source element identifier.
+ * @param to - Target element identifier.
+ * @param operator - Mermaid relationship or edge operator.
+ * @param label - Displayed label.
+ */
 export function addFlowchartEdgeToSubgraph(source: string, subgraphId: string, from: string, to: string, operator = '-->', label = ''): string {
   if (!isFlowchartEdgeIndexingSafe(source)) throw new AmbiguousSourceMutationError('Edge syntax cannot be indexed safely.');
   const knownNodes = new Set(listFlowchartNodes(source).map((node) => node.id));
@@ -384,7 +488,13 @@ export function addFlowchartEdgeToSubgraph(source: string, subgraphId: string, f
   return insertLinesInSubgraph(source, subgraphId, [`${from} ${operator}${label ? `|${label}|` : ''} ${to}`]);
 }
 
-export function setFlowchartNode(source: string, id: string, update: { id?: string; label?: string; shape?: FlowchartNodeShape }): string {
+/**
+ * Updates a flowchart node declaration.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param update - Properties to apply to the element.
+ */
+export function setFlowchartNode(source: string, id: string, update: FlowchartNodeUpdate): string {
   const parsed = parseDocument(source);
   const node = parsed.nodes.find((candidate) => candidate.id === id);
   if (!node) throw new AmbiguousSourceMutationError(`Node ${id} could not be located safely.`);
@@ -444,6 +554,14 @@ export function setFlowchartNode(source: string, id: string, update: { id?: stri
   return replaceSpans(source, edits);
 }
 
+/**
+ * Adds an edge between flowchart nodes.
+ * @param source - Mermaid source to inspect or update.
+ * @param from - Source element identifier.
+ * @param to - Target element identifier.
+ * @param operator - Mermaid relationship or edge operator.
+ * @param label - Displayed label.
+ */
 export function addFlowchartEdge(source: string, from: string, to: string, operator = '-->', label = ''): string {
   if (!isFlowchartEdgeIndexingSafe(source)) throw new AmbiguousSourceMutationError('Edge syntax cannot be indexed safely.');
   const knownNodes = new Set(listFlowchartNodes(source).map((node) => node.id));
@@ -455,7 +573,13 @@ export function addFlowchartEdge(source: string, from: string, to: string, opera
   return appendLines(source, [`${from} ${operator}${label ? `|${label}|` : ''} ${to}`]);
 }
 
-export function setFlowchartEdge(source: string, edge: FlowchartEdge, update: { source?: string; target?: string; operator?: string; label?: string }): string {
+/**
+ * Updates one flowchart edge.
+ * @param source - Mermaid source to inspect or update.
+ * @param edge - Edge to update or delete.
+ * @param update - Properties to apply to the element.
+ */
+export function setFlowchartEdge(source: string, edge: FlowchartEdge, update: FlowchartEdgeUpdate): string {
   if (!isFlowchartEdgeIndexingSafe(source)) throw new AmbiguousSourceMutationError('Edge syntax cannot be indexed safely.');
   const current = listFlowchartEdges(source).find((candidate) => candidate.lineStart === edge.lineStart
     && candidate.operatorStart === edge.operatorStart && candidate.source === edge.source && candidate.target === edge.target);
@@ -492,6 +616,11 @@ export function setFlowchartEdge(source: string, edge: FlowchartEdge, update: { 
   return replaceSpans(source, edits);
 }
 
+/**
+ * Deletes one flowchart edge.
+ * @param source - Mermaid source to inspect or update.
+ * @param edge - Edge to update or delete.
+ */
 export function deleteFlowchartEdge(source: string, edge: FlowchartEdge): string {
   if (!isFlowchartEdgeIndexingSafe(source)) throw new AmbiguousSourceMutationError('Edge syntax cannot be indexed safely.');
   const edges = listFlowchartEdges(source);
@@ -540,6 +669,11 @@ function reindexLinkStyles(source: string, removedIndices: number[] = []): strin
   return replaceSpans(source, removals);
 }
 
+/**
+ * Deletes a node and its related flowchart references.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function deleteFlowchartNode(source: string, id: string): string {
   const parsed = parseDocument(source);
   const node = parsed.nodes.find((candidate) => candidate.id === id);
@@ -597,6 +731,13 @@ export function deleteFlowchartNode(source: string, id: string): string {
   return /^\s*linkStyle\b/im.test(next) ? reindexLinkStyles(next, removedEdgeIndices) : next;
 }
 
+/**
+ * Sets a style property for a flowchart node.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param property - Style property to read or update.
+ * @param value - Value to assign.
+ */
 export function setFlowchartNodeStyle(source: string, id: string, property: 'fill' | 'stroke' | 'stroke-dasharray', value: string): string {
   if (!listFlowchartNodes(source).some((node) => node.id === id)) throw new AmbiguousSourceMutationError(`Node ${id} could not be located safely.`);
   return setStyleDeclaration(source, id, property, value);
@@ -625,6 +766,12 @@ function validateStyleColor(value: string): void {
   if (!/^#[\da-f]{3,8}$/i.test(value) && !/^[a-z]+$/i.test(value)) throw new AmbiguousSourceMutationError('Style color is not supported.');
 }
 
+/**
+ * Reads a style property for a flowchart element.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param property - Style property to read or update.
+ */
 export function getFlowchartElementStyle(source: string, id: string, property: 'fill' | 'stroke' | 'stroke-dasharray'): string {
   const matches = getLines(source).filter((line) => new RegExp(`^\\s*style\\s+${escapeRegExp(id)}(?:\\s|$)`).test(line.text));
   if (matches.length !== 1) return '';
@@ -633,11 +780,18 @@ export function getFlowchartElementStyle(source: string, id: string, property: '
     .find(([name]) => name === property)?.[1]?.trim() ?? '';
 }
 
+/** Style declarations indexed by flowchart element ID. */
 export interface FlowchartStyleIndex {
+  /** Style properties indexed by flowchart element ID. */
   readonly elements: ReadonlyMap<string, Readonly<Record<string, string>>>;
+  /** Edge stroke styles indexed by edge occurrence. */
   readonly edges: ReadonlyMap<number, string>;
 }
 
+/**
+ * Indexes style declarations by flowchart element ID.
+ * @param source - Mermaid source to inspect or update.
+ */
 export function getFlowchartStyleIndex(source: string): FlowchartStyleIndex {
   const elements = new Map<string, Readonly<Record<string, string>>>();
   const duplicateElements = new Set<string>();
@@ -673,6 +827,12 @@ export function getFlowchartStyleIndex(source: string): FlowchartStyleIndex {
   return { elements, edges };
 }
 
+/**
+ * Reads the style of a flowchart edge.
+ * @param source - Mermaid source to inspect or update.
+ * @param edge - Edge to update or delete.
+ * @param property - Style property to read or update.
+ */
 export function getFlowchartEdgeStyle(source: string, edge: FlowchartEdge, property: 'stroke'): string {
   const edges = listFlowchartEdges(source);
   const index = edges.findIndex((candidate) => candidate.lineStart === edge.lineStart && candidate.operatorStart === edge.operatorStart);
@@ -683,6 +843,12 @@ export function getFlowchartEdgeStyle(source: string, edge: FlowchartEdge, prope
     .find(([name]) => name === property)?.[1]?.trim() ?? '';
 }
 
+/**
+ * Sets the style of a flowchart edge.
+ * @param source - Mermaid source to inspect or update.
+ * @param edge - Edge to update or delete.
+ * @param value - Value to assign.
+ */
 export function setFlowchartEdgeStyle(source: string, edge: FlowchartEdge, value: string): string {
   if (!isFlowchartEdgeIndexingSafe(source)) throw new AmbiguousSourceMutationError('Edge syntax cannot be indexed safely.');
   if (value) validateStyleColor(value);
@@ -711,7 +877,13 @@ export function setFlowchartEdgeStyle(source: string, edge: FlowchartEdge, value
   return source.slice(0, existing.start) + updated + source.slice(existing.end);
 }
 
-export function setFlowchartSubgraph(source: string, id: string, update: { id?: string; title?: string; fill?: string; stroke?: string; borderType?: 'default' | 'solid' | 'dashed' | 'dotted' }): string {
+/**
+ * Updates a flowchart subgraph.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param update - Properties to apply to the element.
+ */
+export function setFlowchartSubgraph(source: string, id: string, update: FlowchartSubgraphUpdate): string {
   const graph = listFlowchartSubgraphs(source).find((candidate) => candidate.id === id);
   if (!graph) throw new AmbiguousSourceMutationError(`Subgraph ${id} could not be located safely.`);
   const nextId = update.id ?? id;
@@ -752,6 +924,12 @@ export function setFlowchartSubgraph(source: string, id: string, update: { id?: 
   return result;
 }
 
+/**
+ * Adds a flowchart subgraph.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param title - Display title for the new subgraph.
+ */
 export function addFlowchartSubgraph(source: string, id: string, title: string): string {
   if (!/^[A-Za-z0-9_][\w.-]*$/.test(id)) throw new AmbiguousSourceMutationError('Subgraph ID is not supported.');
   if (listFlowchartSubgraphs(source).some((graph) => graph.id === id) || listFlowchartNodes(source).some((node) => node.id === id)) {
@@ -761,6 +939,13 @@ export function addFlowchartSubgraph(source: string, id: string, title: string):
   return appendLines(source, [`subgraph ${id}[${quoteLabel(title)}]`, `    ${nodeId}[${quoteLabel(title)}]`, 'end']);
 }
 
+/**
+ * Adds a nested flowchart subgraph.
+ * @param source - Mermaid source to inspect or update.
+ * @param parentId - Identifier of the parent subgraph.
+ * @param id - Identifier of the diagram element.
+ * @param title - Display title for the new nested subgraph.
+ */
 export function addFlowchartSubgraphToSubgraph(source: string, parentId: string, id: string, title: string): string {
   if (!/^[A-Za-z0-9_][\w.-]*$/.test(id)) throw new AmbiguousSourceMutationError('Subgraph ID is not supported.');
   if (listFlowchartSubgraphs(source).some((graph) => graph.id === id) || listFlowchartNodes(source).some((node) => node.id === id)) {
@@ -774,6 +959,11 @@ export function addFlowchartSubgraphToSubgraph(source: string, parentId: string,
   ]);
 }
 
+/**
+ * Finds the subgraph containing a source offset.
+ * @param source - Mermaid source to inspect or update.
+ * @param offset - Source offset to locate.
+ */
 export function flowchartSubgraphAt(source: string, offset: number): FlowchartSubgraph | undefined {
   return listFlowchartSubgraphs(source)
     .filter((graph) => offset > graph.lineStart && offset < graph.lineEnd)
@@ -791,6 +981,11 @@ function freshNodeId(source: string, prefix: string): string {
   return id;
 }
 
+/**
+ * Deletes a flowchart subgraph.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function deleteFlowchartSubgraph(source: string, id: string): string {
   const graph = listFlowchartSubgraphs(source).find((candidate) => candidate.id === id);
   if (!graph) throw new AmbiguousSourceMutationError(`Subgraph ${id} could not be located safely.`);

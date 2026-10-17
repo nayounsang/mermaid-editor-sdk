@@ -11,14 +11,21 @@ import { graphPalettes } from '../diagrams/registry';
 import { sourcePaletteItemId } from '../diagrams/source-palette-items';
 
 export interface DiagramPaletteProps {
+  /** Current diagram model. */
   readonly model: RendererModel;
+  /** Applies a palette action and returns the new source when changed. */
   readonly dispatch: (action: DiagramAction) => string | undefined;
+  /** Active relationship creation; `source` is set after choosing its source node. */
   readonly pendingConnection?: { readonly diagramType: EditableDiagramType; readonly source?: string };
+  /** Starts or cancels relationship creation. */
   readonly onArmConnection: (options: EdgeConnectionOptions | null) => void;
+  /** Current flowchart edge operator and label. */
   readonly flowchartEdgeOptions?: { readonly operator: string; readonly label: string };
+  /** Updates the flowchart edge operator and label. */
   readonly onFlowchartEdgeOptionsChange?: (options: { readonly operator: string; readonly label: string }) => void;
 }
 
+/** Edge options used for a create-edge action, excluding its source and target. */
 export type EdgeConnectionOptions = Omit<Extract<DiagramAction, { type: 'create-edge' }>, 'type' | 'source' | 'target'>;
 
 function DraggablePaletteButton({ id, label, icon, action, disabled, dragDisabled = false, active = false, toggle = false, title, onClick }: {
@@ -46,6 +53,7 @@ function DraggablePaletteButton({ id, label, icon, action, disabled, dragDisable
   </Button>;
 }
 
+/** Renders diagram-specific actions and source snippets. */
 export function DiagramPalette({ model, dispatch, pendingConnection, onArmConnection, flowchartEdgeOptions, onFlowchartEdgeOptionsChange }: DiagramPaletteProps) {
   const [edgeLabels, setEdgeLabels] = useState<Partial<Record<EditableDiagramType, string>>>({});
   const [identifying, setIdentifying] = useState(true);

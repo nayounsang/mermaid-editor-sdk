@@ -2,8 +2,10 @@ import type { PaletteGroup } from './palette-source';
 import { appendDiagramLine, diagramLines } from './palette-source';
 import { AmbiguousSourceMutationError } from './source-document';
 
+/** Identifier of a mindmap palette item. */
 export type MindmapPaletteItemId = 'root' | 'branch' | 'square' | 'rounded' | 'cloud';
 
+/** Palette items exported for mindmap diagrams. */
 export const mindmapPalette: readonly PaletteGroup<MindmapPaletteItemId>[] = [
   { title: 'Nodes', items: [
     { id: 'root', label: 'Root (circle)', icon: '(( ))', snippet: 'root((Title))' },
@@ -17,6 +19,11 @@ export const mindmapPalette: readonly PaletteGroup<MindmapPaletteItemId>[] = [
 const items = new Map(mindmapPalette.flatMap(({ items }) => items.map((item) => [item.id, item])));
 const indentation = (text: string): string => /^[\t ]*/.exec(text)![0];
 
+/**
+ * Adds a mindmap palette item to the source.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function addMindmapPaletteItem(source: string, id: MindmapPaletteItemId): string {
   const lines = diagramLines(source, /^mindmap\b/i, { accessibilityMetadata: false, lineComment: /^%%/ });
   const item = items.get(id);

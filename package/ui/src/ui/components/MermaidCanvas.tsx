@@ -14,23 +14,58 @@ import type { EditorStatusState } from './EditorStatus';
 import { SvgViewBoxSchema } from '../../runtime/svg-view-box';
 
 export interface MermaidCanvasProps {
+  /** Mermaid source to render. */
   readonly source: string;
+  /** Parsed diagram model used for interactions. */
   readonly model: RendererModel;
+  /** Reports the selected node, edge, or subgraph, or `null` when selection clears. */
   readonly onSelection: (selection: EditorSelection | null) => void;
+  /** Reports render state, message, and optional underlying cause. */
   readonly onRenderState: (state: EditorStatusState, message: string, cause?: unknown) => void;
+  /** Applies a source-preserving mutation; `remove` marks a removal operation. */
   readonly onSourceMutation: (mutate: (source: SourceDocument) => string, remove?: boolean) => boolean;
+  /** Revision associated with `source`. */
   readonly sourceRevision: number;
+  /** Reports whether a source revision parsed successfully. */
   readonly onParseResult: (sourceRevision: number, valid: boolean) => void;
+  /** Handles the canvas Save action. */
   readonly onSave?: () => void;
+  /** Disables Save and displays its pending state.
+   * @default `false`
+   */
   readonly isSaving?: boolean;
+  /** Handles the canvas Reset action. */
   readonly onReset: () => void;
+  /** Opens the selection editor. */
   readonly onEditSelection: () => void;
-  /** Fits after rendering and resizing; the resulting zoom is clamped to 0.1–4. */
+  /** Fits after rendering and resizing; the resulting zoom is clamped to 0.1–4.
+   * @default `false`
+   */
   readonly autoFit?: boolean;
+  /** Active relationship creation, with an optional selected source node. */
   readonly pendingConnection?: { readonly diagramType: EditableDiagramType; readonly source?: string };
+  /** Flowchart relationship operator and label used for the next edge.
+   * @default `{ operator: '-->', label: '' }`
+   */
   readonly flowchartEdgeOptions?: { readonly operator: string; readonly label: string };
 }
 
+/** Imperative viewport controls exposed through the canvas ref.
+ * @example
+ * ```tsx
+ * import { useRef } from 'react';
+ * import { MermaidCanvas, useMermaidEditorParts, type MermaidCanvasHandle } from '@mermaid-editor-sdk/ui';
+ *
+ * function CanvasArea() {
+ *   const parts = useMermaidEditorParts();
+ *   const canvasRef = useRef<MermaidCanvasHandle>(null);
+ *   return <>
+ *     <button onClick={() => canvasRef.current?.fit()}>Fit</button>
+ *     <MermaidCanvas {...parts.canvas} ref={canvasRef} />
+ *   </>;
+ * }
+ * ```
+ */
 export interface MermaidCanvasHandle {
   /** Scales the rendered diagram to fit the viewport, clamps zoom to 0.1–4, and resets scroll. */
   fit(): void;
@@ -48,6 +83,7 @@ const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 4;
 const ZOOM_STEP = 0.1;
 
+/** Renders and interacts with a Mermaid diagram. */
 export const MermaidCanvas = forwardRef<MermaidCanvasHandle, MermaidCanvasProps>(function MermaidCanvas({ source, model, onSelection, onRenderState, onSourceMutation, sourceRevision, onParseResult, onSave, isSaving = false, onReset, onEditSelection, autoFit = false, pendingConnection, flowchartEdgeOptions }: MermaidCanvasProps, ref) {
   const [svg, setSvg] = useState('');
   const [renderedSource, setRenderedSource] = useState('');

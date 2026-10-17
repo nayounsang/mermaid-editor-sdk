@@ -2,6 +2,7 @@ import type { PaletteGroup } from './palette-source';
 import { AmbiguousSourceMutationError } from './source-document';
 import { appendDiagramLine, diagramLines } from './palette-source';
 
+/** Identifier of a git graph palette item. */
 export type GitgraphPaletteItemId = 'commit' | 'commit-id' | 'tagged' | 'branch' | 'checkout' | 'merge';
 
 /** Baseline source snippets: branch names and IDs remain editable in source. */
@@ -220,6 +221,11 @@ function readGraphState(source: string, lines: ReturnType<typeof diagramLines>):
   return state;
 }
 
+/**
+ * Adds a git graph palette item to the source.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function addGitgraphPaletteItem(source: string, id: GitgraphPaletteItemId): string {
   const lines = diagramLines(source, /^gitGraph\b/i, { lineComment: /^%%/ });
   const item = items.get(id);

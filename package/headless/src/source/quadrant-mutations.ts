@@ -2,8 +2,10 @@ import type { PaletteGroup } from './palette-source';
 import { AmbiguousSourceMutationError } from './source-document';
 import { appendDiagramLine, diagramLines } from './palette-source';
 
+/** Identifier of a quadrant palette item. */
 export type QuadrantPaletteItemId = 'title' | 'x-axis' | 'y-axis' | 'quadrant-label' | 'point';
 
+/** Palette items exported for quadrant diagrams. */
 export const quadrantPalette: readonly PaletteGroup<QuadrantPaletteItemId>[] = [
   { title: 'Structure', items: [
     { id: 'title', label: 'Title', icon: 't', snippet: 'title Chart title' },
@@ -26,6 +28,11 @@ function pointLabel(line: string): string | undefined {
   return match?.[1]?.trim();
 }
 
+/**
+ * Adds a quadrant palette item to the source.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function addQuadrantPaletteItem(source: string, id: QuadrantPaletteItemId): string {
   const lines = diagramLines(source, /^quadrantChart\b/i);
   const item = items.get(id);

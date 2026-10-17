@@ -1,5 +1,6 @@
 import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
+/** Identifier of a Gantt palette item. */
 export type GanttPaletteItemId =
   | 'title'
   | 'date-format'
@@ -11,18 +12,27 @@ export type GanttPaletteItemId =
   | 'done'
   | 'active';
 
+/** A Gantt palette item and its source snippet. */
 export interface GanttPaletteItem {
+  /** Element or palette item identifier. */
   id: GanttPaletteItemId;
+  /** Displayed label. */
   label: string;
+  /** Icon identifier for the palette item. */
   icon: string;
+  /** Mermaid source snippet inserted by the palette item. */
   snippet: string;
 }
 
+/** A titled group of Gantt palette items. */
 export interface GanttPaletteGroup {
+  /** Palette group heading or subgraph title. */
   title: string;
+  /** Items in this palette group. */
   items: readonly GanttPaletteItem[];
 }
 
+/** Palette items exported for gantt diagrams. */
 export const ganttPalette: readonly GanttPaletteGroup[] = [
   { title: 'Structure', items: [
     { id: 'title', label: 'Title', icon: 't', snippet: 'title Project plan' },
@@ -115,6 +125,11 @@ function indentation(source: string): string {
   return '    ';
 }
 
+/**
+ * Adds a Gantt palette item to the source.
+ * @param source - Mermaid source to inspect or update.
+ * @param itemId - Identifier of the palette item to add.
+ */
 export function addGanttPaletteItem(source: string, itemId: GanttPaletteItemId): string {
   assertGantt(source);
   const item = itemById.get(itemId);

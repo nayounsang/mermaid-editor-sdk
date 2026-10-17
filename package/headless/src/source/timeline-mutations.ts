@@ -2,8 +2,10 @@ import type { PaletteGroup } from './palette-source';
 import { AmbiguousSourceMutationError } from './source-document';
 import { appendDiagramLine, diagramLines } from './palette-source';
 
+/** Identifier of a timeline palette item. */
 export type TimelinePaletteItemId = 'title' | 'section' | 'event';
 
+/** Palette items exported for timeline diagrams. */
 export const timelinePalette: readonly PaletteGroup<TimelinePaletteItemId>[] = [
   { title: 'Structure', items: [
     { id: 'title', label: 'Title', icon: 't', snippet: 'title Timeline title' },
@@ -16,6 +18,11 @@ export const timelinePalette: readonly PaletteGroup<TimelinePaletteItemId>[] = [
 
 const items = new Map(timelinePalette.flatMap(({ items }) => items.map((item) => [item.id, item])));
 
+/**
+ * Adds a timeline palette item to the source.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function addTimelinePaletteItem(source: string, id: TimelinePaletteItemId): string {
   const lines = diagramLines(source, /^timeline\b/i);
   const item = items.get(id);

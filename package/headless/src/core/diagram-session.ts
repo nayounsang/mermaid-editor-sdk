@@ -423,8 +423,12 @@ export class DiagramSession {
   #origin: ChangeOrigin = 'host';
   #history: string[];
   #historyIndex = 0;
+  /** Vanilla Zustand store containing the current session snapshot. */
   readonly store: StoreApi<SessionSnapshot>;
 
+  /** Creates a session initialized with Mermaid source.
+   * @param initialSource - Initial Mermaid source.
+   */
   constructor(initialSource: string) {
     this.#source = initialSource;
     this.#history = [initialSource];
@@ -442,10 +446,17 @@ export class DiagramSession {
 
   #publish(): void { this.store.setState(this.#createSnapshot()); }
 
+  /** Returns the current session snapshot. */
   getSnapshot = (): SessionSnapshot => this.store.getState();
+  /** Returns the initial snapshot for server rendering. */
   getServerSnapshot = (): SessionSnapshot => this.store.getInitialState();
+  /** Subscribes to snapshot changes and returns an unsubscribe function. */
   subscribe = (listener: () => void): (() => void) => this.store.subscribe(listener);
 
+  /** Replaces source and updates undo history according to the change origin.
+   * @param source - Mermaid source to apply.
+   * @param origin - Change origin.
+   */
   setSource(source: string, origin: ChangeOrigin = 'host'): boolean {
     if (source === this.#source) return false;
     this.#source = source;
@@ -466,6 +477,9 @@ export class DiagramSession {
     return true;
   }
 
+  /** Applies a diagram action and returns the new source when it changes.
+   * @param action - Action to validate and apply to the current diagram.
+   */
   dispatch(action: DiagramAction): string | undefined {
     const validation = diagramActionSchema.safeParse(action);
     if (!validation.success) throw new TypeError(validation.error.issues[0]?.message ?? 'Invalid diagram action.');
@@ -482,6 +496,10 @@ export class DiagramSession {
     return next;
   }
 
+  /** Updates parse state only when the revision still matches the current source.
+   * @param sourceRevision - Revision that was parsed.
+   * @param valid - Whether parsing succeeded.
+   */
   setParseResult(sourceRevision: number, valid: boolean): void {
     if (sourceRevision !== this.#sourceRevision) return;
     if (this.#model.parseState === 'unsupported' || this.#model.parseState === 'unknown') return;
@@ -491,6 +509,7 @@ export class DiagramSession {
     this.#publish();
   }
 
+  /** Restores the previous source, if one is available. */
   undo(): string | undefined {
     if (this.#historyIndex <= 0) return undefined;
     this.#historyIndex--;
@@ -498,6 +517,7 @@ export class DiagramSession {
     return this.#source;
   }
 
+  /** Restores the next source in history, if one is available. */
   redo(): string | undefined {
     if (this.#historyIndex >= this.#history.length - 1) return undefined;
     this.#historyIndex++;

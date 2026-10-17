@@ -9,13 +9,19 @@ import { diagramLines } from '../source/palette-source';
 
 export type EditableDiagramType = Exclude<DiagramType, 'unknown' | 'unsupported'>;
 
+/** Palette snippet shown for an editable diagram. */
 export interface PaletteEntry {
+  /** Group heading in the palette. */
   group: string;
+  /** Display label. */
   label: string;
+  /** Compact icon text. */
   icon: string;
+  /** Mermaid source snippet inserted by the palette item. */
   snippet: string;
 }
 
+/** Diagram types available for creating or switching an editable diagram. */
 export const diagramTypes: readonly { id: EditableDiagramType; label: string }[] = [
   { id: 'flowchart', label: 'Flowchart' }, { id: 'sequence', label: 'Sequence' },
   { id: 'class', label: 'Class' }, { id: 'state', label: 'State' },
@@ -25,6 +31,9 @@ export const diagramTypes: readonly { id: EditableDiagramType; label: string }[]
   { id: 'timeline', label: 'Timeline' }, { id: 'quadrant', label: 'Quadrant' },
 ];
 
+/** Detects an editable diagram type from Mermaid source.
+ * @param source - Mermaid source to inspect.
+ */
 export function diagramTypeFromSource(source: string): EditableDiagramType | undefined {
   let lines: ReturnType<typeof diagramLines>;
   try {
@@ -44,6 +53,7 @@ export function diagramTypeFromSource(source: string): EditableDiagramType | und
   return directive ? types[directive] : undefined;
 }
 
+/** Default Mermaid source template for each editable diagram type. */
 export const templates: Record<EditableDiagramType, string> = {
   flowchart: 'flowchart TD\n    A[Start] --> B{Is it working?}\n    B -->|Yes| C[Ship it]\n    B -->|No| D[Debug]\n    D --> B',
   sequence: 'sequenceDiagram\n    actor User\n    participant API\n    participant DB\n    User->>API: GET /items\n    API->>+DB: query\n    DB-->>-API: rows\n    API-->>User: 200 OK',
@@ -59,6 +69,7 @@ export const templates: Record<EditableDiagramType, string> = {
   quadrant: 'quadrantChart\n    title Reach vs engagement\n    x-axis Low reach --> High reach\n    y-axis Low engagement --> High engagement\n    quadrant-1 Stars\n    quadrant-2 Niche\n    quadrant-3 Avoid\n    quadrant-4 Mainstream\n    Campaign A: [0.3, 0.6]\n    Campaign B: [0.45, 0.23]\n    Campaign C: [0.57, 0.69]\n    Campaign D: [0.78, 0.34]',
 };
 
+/** Source snippets used by palettes for diagram types without graph actions. */
 export const paletteCatalog: Partial<Record<EditableDiagramType, readonly PaletteEntry[]>> = {
   pie: [{ group: 'Structure', label: 'Title', icon: 't', snippet: 'title Pie title' }, { group: 'Slices', label: 'Slice', icon: '◔', snippet: '    "Label" : 25' }],
   journey: [{ group: 'Structure', label: 'Title', icon: 't', snippet: 'title My journey' }, { group: 'Structure', label: 'Section', icon: '§', snippet: '    section Phase' }, { group: 'Tasks', label: 'Task', icon: '★', snippet: '        Task name: 5: Actor' }, { group: 'Tasks', label: 'Multi-actor', icon: '★★', snippet: '        Task name: 3: User, System' }],
@@ -68,6 +79,11 @@ export const paletteCatalog: Partial<Record<EditableDiagramType, readonly Palett
   quadrant: [{ group: 'Structure', label: 'Title', icon: 't', snippet: 'title Chart title' }, { group: 'Structure', label: 'X-axis', icon: 'x', snippet: '    x-axis Low --> High' }, { group: 'Structure', label: 'Y-axis', icon: 'y', snippet: '    y-axis Low --> High' }, { group: 'Quadrants', label: 'Quadrant label', icon: 'Q', snippet: '    quadrant-1 Top right' }, { group: 'Points', label: 'Data point', icon: '•', snippet: '    Label: [0.5, 0.5]' }],
 };
 
+/** Adds a palette entry's source to a Mermaid diagram.
+ * @param source - Mermaid source to update.
+ * @param type - Editable diagram type whose palette entry is being inserted.
+ * @param entry - Palette entry to insert.
+ */
 export function appendPaletteEntry(source: string, type: EditableDiagramType, entry: PaletteEntry): string {
   if (entry.label === 'Title') {
     const titleByType: Partial<Record<EditableDiagramType, string>> = {

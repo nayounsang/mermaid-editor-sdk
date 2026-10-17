@@ -3,7 +3,9 @@ import { EditorView } from '@codemirror/view';
 import { useEffect, useState } from 'react';
 
 export interface SourceEditorProps {
+  /** Mermaid source displayed in the editor. */
   readonly value: string;
+  /** Reports edited source. */
   readonly onChange: (value: string) => void;
 }
 
@@ -12,6 +14,7 @@ const extensions = [
   EditorView.contentAttributes.of({ 'aria-label': 'Mermaid code' }),
 ];
 
+/** Editable Mermaid source input. */
 export function SourceEditor({ value, onChange }: SourceEditorProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);

@@ -28,12 +28,13 @@ export type {
 export { EditorSessionProvider, useEditorController } from './ui/context/editor-session-context';
 export type { EditorSessionProviderProps } from './ui/context/editor-session-context';
 export { useDiagramSession } from './ui/hooks/useDiagramSession';
+export type { DiagramSessionBindings } from './ui/hooks/useDiagramSession';
 export { DiagramPalette } from './ui/components/DiagramPalette';
 export type { DiagramPaletteProps, EdgeConnectionOptions } from './ui/components/DiagramPalette';
 export { DiagramTypeSelect } from './ui/components/DiagramTypeSelect';
 export type { DiagramTypeSelectProps } from './ui/components/DiagramTypeSelect';
 export { EditorShell } from './ui/components/EditorShell';
-export type { EditorShellComponent, EditorShellProps } from './ui/components/EditorShell';
+export type { EditorShellComponent, EditorShellProps, EditorShellRegionProps } from './ui/components/EditorShell';
 export { EditorStatus } from './ui/components/EditorStatus';
 export type { EditorStatusProps, EditorStatusState } from './ui/components/EditorStatus';
 export { MermaidCanvas } from './ui/components/MermaidCanvas';

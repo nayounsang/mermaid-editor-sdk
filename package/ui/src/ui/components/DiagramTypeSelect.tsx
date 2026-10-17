@@ -5,10 +5,13 @@ import { diagramTypes } from '@mermaid-editor-sdk/headless';
 import { usePortalContainer } from '../context/portal-container-context';
 
 export interface DiagramTypeSelectProps {
+  /** Current diagram model and type. */
   readonly model: RendererModel;
+  /** Requests a change to an editable diagram type. */
   readonly onChange: (type: Exclude<DiagramType, 'unknown' | 'unsupported'>) => void;
 }
 
+/** Selects a supported Mermaid diagram type. */
 export function DiagramTypeSelect({ model, onChange }: DiagramTypeSelectProps) {
   const portalContainer = usePortalContainer();
   const value = model.diagramType === 'unknown' || model.diagramType === 'unsupported'

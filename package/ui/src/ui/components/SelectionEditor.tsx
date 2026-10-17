@@ -95,15 +95,25 @@ function borderTypeValue(value?: string): EditorForm['borderType'] {
 }
 
 export interface SelectionEditorProps {
+  /** Whether the selection editing dialog is open. */
   readonly open: boolean;
+  /** Closes the dialog. */
   readonly onClose: () => void;
+  /** Selected node, relationship, or subgraph; `null` when none is selected. */
   readonly selection: EditorSelection | null;
+  /** Current diagram model used to populate editable fields. */
   readonly model: RendererModel;
+  /** Applies a selection edit and returns the new source when changed. */
   readonly dispatch: (action: DiagramAction) => string | undefined;
+  /** Optional dispatch function that preserves selection after an edit.
+   * @default `dispatch`
+   */
   readonly dispatchPreservingSelection?: (action: DiagramAction) => string | undefined;
+  /** Called after a successful removal. */
   readonly onDelete?: (selection: EditorSelection, nextSource: string) => void | Promise<void>;
 }
 
+/** Dialog for editing or removing the selected diagram element. */
 export function SelectionEditor({ open, onClose, selection, model, dispatch, dispatchPreservingSelection = dispatch, onDelete }: SelectionEditorProps) {
   const formId = useId();
   const portalContainer = usePortalContainer();

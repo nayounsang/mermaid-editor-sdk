@@ -1,3 +1,4 @@
+/** Diagram categories detected by the SDK, including unsupported and unknown sources. */
 export type DiagramType =
   | 'flowchart'
   | 'sequence'
@@ -14,10 +15,15 @@ export type DiagramType =
   | 'unsupported'
   | 'unknown';
 
+/** Editing and preview capabilities for a detected diagram. */
 export interface DiagramCapability {
+  /** Detected diagram category. */
   diagramType: DiagramType;
+  /** Parse validation status. */
   parse: 'not-checked' | 'valid' | 'invalid';
+  /** Preview availability status. */
   preview: 'pending' | 'available' | 'unavailable';
+  /** Available editing mode. */
   editor: 'source-only' | 'visual';
 }
 
@@ -40,6 +46,9 @@ const knownDiagramTypes: Record<string, DiagramType> = {
   quadrantChart: 'quadrant',
 };
 
+/** Classifies a detected Mermaid diagram name.
+ * @param detectedType - Mermaid diagram name detected from the source, if any.
+ */
 export function classifyDiagram(detectedType: string | undefined): DiagramCapability {
   const diagramType = detectedType === undefined
     ? 'unknown'
@@ -53,6 +62,10 @@ export function classifyDiagram(detectedType: string | undefined): DiagramCapabi
   };
 }
 
+/** Returns a capability value updated with a parse result.
+ * @param capability - Capability value to update.
+ * @param valid - Whether parsing succeeded.
+ */
 export function withParseResult(capability: DiagramCapability, valid: boolean): DiagramCapability {
   return {
     ...capability,
@@ -61,6 +74,10 @@ export function withParseResult(capability: DiagramCapability, valid: boolean): 
   };
 }
 
+/** Returns a capability value updated with preview availability.
+ * @param capability - Capability value to update.
+ * @param available - Whether a preview can be rendered.
+ */
 export function withPreviewResult(capability: DiagramCapability, available: boolean): DiagramCapability {
   return {
     ...capability,
