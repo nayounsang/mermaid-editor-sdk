@@ -40,35 +40,73 @@ interface FlowchartEdgeOptions {
 }
 
 export interface MermaidEditorProps extends Omit<MermaidVisualEditorOptions, 'value'> {
+  /** Mermaid source controlled by the host. */
   readonly value: string;
+  /** Class added to the default shell root.
+   * @default `""`
+   */
   readonly className?: string;
+  /** Default shell heading.
+   * @default `"Diagram"`
+   */
   readonly title?: string;
-  /** Fit on first render and resize, clamping the resulting zoom to 0.1–4. */
+  /** Fits the rendered diagram after rendering and when the canvas resizes.
+   * @default `false`
+   */
   readonly autoFit?: boolean;
-  /** Parent container for editor dialogs and popovers. Defaults to document.body. */
+  /** Parent container for editor dialogs and popovers. When used inside a host modal, provide an element within that modal. The target must be in the regular DOM and in the document that loads the SDK stylesheet; Shadow DOM targets are unsupported.
+   * @default `document.body`
+   * @example
+   * ```tsx
+   * import { useRef } from 'react';
+   * import { MermaidEditor } from '@mermaid-editor-sdk/ui';
+   * import '@mermaid-editor-sdk/ui/style.css';
+   *
+   * function DiagramDialogContent({ source, setSource }: { source: string; setSource: (value: string) => void }) {
+   *   const dialogRef = useRef<HTMLDivElement>(null);
+   *   return <div ref={dialogRef} className="host-dialog-overlay">
+   *     <MermaidEditor value={source} onChange={setSource} portalContainer={dialogRef} />
+   *   </div>;
+   * }
+   * ```
+   */
   readonly portalContainer?: PortalContainer;
+  /** Custom composition; when provided, replaces the default UI composition.
+   * @default the SDK's standard editor layout
+   */
   readonly children?: ReactNode;
 }
 
+/** Props passed to the default UI parts and available for custom editor composition. */
 export interface MermaidEditorParts {
+  /** Props for the editor shell, excluding its children. */
   readonly shell: Omit<EditorShellProps, 'children'>;
+  /** Props for the sidebar component (`ToolSidebar`). */
   readonly toolbar: ToolSidebarProps;
+  /** Props for the diagram palette component (`DiagramPalette`). */
   readonly diagramPalette: DiagramPaletteProps;
+  /** Props for the Mermaid canvas. */
   readonly canvas: MermaidCanvasProps;
+  /** Props for the source editor. */
   readonly sourceEditor: SourceEditorProps;
+  /** Props for the selection editor. */
   readonly selectionEditor: SelectionEditorProps;
+  /** Props for the status display. */
   readonly status: EditorStatusProps;
+  /** Props for the diagram type selector. */
   readonly diagramTypeSelect: DiagramTypeSelectProps;
 }
 
 const MermaidEditorPartsContext = createContext<MermaidEditorParts | null>(null);
 
+/** Returns SDK component props inside a `MermaidEditor` child. */
 export function useMermaidEditorParts(): MermaidEditorParts {
   const parts = useContext(MermaidEditorPartsContext);
   if (!parts) throw new Error('useMermaidEditorParts must be used inside MermaidEditor.');
   return parts;
 }
 
+/** Renders the controlled Mermaid visual editor and its default or custom UI. */
 export function MermaidEditor(props: MermaidEditorProps) {
   const [controller] = useState(() => new EditorController(props.value));
   return (

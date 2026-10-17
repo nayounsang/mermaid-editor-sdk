@@ -1,34 +1,61 @@
 import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
+/** Supported ER relationship cardinality values. */
 export type ERCardinality = 'one-one' | 'one-many' | 'many-many' | 'zero-one' | 'one-or-many';
+/** An ER attribute key marker such as `PK`, `FK`, or `UK`. */
 export type ERKey = string;
 
+/** A parsed ER relationship and offsets for its editable source tokens. */
 export interface ERRelationship {
+  /** Source element or entity identifier. */
   source: string;
+  /** Target element or entity identifier. */
   target: string;
+  /** Relationship cardinality. */
   cardinality: ERCardinality;
+  /** Whether this is an identifying relationship. */
   identifying: boolean;
+  /** Displayed label. */
   label: string;
+  /** Zero-based occurrence among matching elements. */
   occurrence: number;
+  /** Start offset in the source. */
   start: number;
+  /** End offset in the source. */
   end: number;
+  /** Start offset of the source token. */
   sourceStart: number;
+  /** End offset of the source token. */
   sourceEnd: number;
+  /** Start offset of the operator token. */
   operatorStart: number;
+  /** End offset of the operator token. */
   operatorEnd: number;
+  /** Start offset of the target token. */
   targetStart: number;
+  /** End offset of the target token. */
   targetEnd: number;
+  /** Start offset of the label, when present. */
   labelStart?: number;
+  /** End offset of the label, when present. */
   labelEnd?: number;
+  /** Start offset of the label separator, when present. */
   labelSeparatorStart?: number;
 }
 
+/** A parsed ER entity attribute. */
 export interface ERAttribute {
+  /** Entity identifier containing this attribute. */
   entity: string;
+  /** Attribute type text. */
   type: string;
+  /** Attribute name. */
   name: string;
+  /** Attribute key marker. */
   key: ERKey;
+  /** Attribute comment text. */
   comment: string;
+  /** Zero-based occurrence among matching elements. */
   occurrence: number;
 }
 
@@ -258,22 +285,40 @@ function cardinalityTokens(cardinality: ERCardinality): string {
   return tokens[cardinality];
 }
 
+/**
+ * Lists ER entity IDs declared or referenced in the source.
+ * @param source - Mermaid source to inspect or update.
+ */
 export function listEREntityIds(source: string): string[] {
   assertERDiagram(source);
   return [...new Set([...entityTokenSpans(source), ...fallbackRelationshipTokens(source)].map(({ id }) => id))];
 }
 
+/**
+ * Lists ER relationships parsed from the source.
+ * @param source - Mermaid source to inspect or update.
+ */
 export function listERRelationships(source: string): ERRelationship[] {
   assertERDiagram(source);
   return relationRows(source);
 }
 
+/**
+ * Lists attributes declared for an ER entity.
+ * @param source - Mermaid source to inspect or update.
+ * @param entity - Entity identifier.
+ */
 export function listERAttributes(source: string, entity: string): ERAttribute[] {
   assertERDiagram(source);
   if (!listEREntityIds(source).includes(entity)) throw new AmbiguousSourceMutationError('The entity is missing or ambiguous.');
   return attributeSpans(source, entity).map(({ entity: id, type, name, key, comment, occurrence }) => ({ entity: id, type, name, key, comment, occurrence }));
 }
 
+/**
+ * Adds an ER entity, generating an available ID when omitted.
+ * @param source - Mermaid source to inspect or update.
+ * @param requestedId - Optional entity identifier; one is generated when omitted.
+ */
 export function addEREntity(source: string, requestedId?: string): string {
   assertERDiagram(source);
   const ids = new Set(listEREntityIds(source));
@@ -289,6 +334,12 @@ export function addEREntity(source: string, requestedId?: string): string {
   return appendLine(source, `${token} {${ending}}`);
 }
 
+/**
+ * Renames an ER entity and updates its references.
+ * @param source - Mermaid source to inspect or update.
+ * @param oldId - Current identifier.
+ * @param newId - Replacement identifier.
+ */
 export function renameEREntity(source: string, oldId: string, newId: string): string {
   assertERDiagram(source);
   const replacement = encodeEntity(newId);
@@ -325,6 +376,11 @@ export function renameEREntity(source: string, oldId: string, newId: string): st
   return output;
 }
 
+/**
+ * Deletes an ER entity and related statements.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function deleteEREntity(source: string, id: string): string {
   assertERDiagram(source);
   const ids = listEREntityIds(source);
@@ -386,6 +442,13 @@ function formatAttribute(attribute: Pick<ERAttribute, 'type' | 'name' | 'key' | 
   return `${type} ${name}${key ? ` ${key}` : ''}${comment ? ` "${comment}"` : ''}`;
 }
 
+/**
+ * Updates one ER attribute.
+ * @param source - Mermaid source to inspect or update.
+ * @param entity - Entity identifier.
+ * @param attribute - Attribute to add or identify.
+ * @param patch - Properties to apply to the element.
+ */
 export function setERAttribute(source: string, entity: string, attribute: Pick<ERAttribute, 'name' | 'occurrence'>,
   patch: Partial<Pick<ERAttribute, 'type' | 'name' | 'key' | 'comment'>>): string {
   assertERDiagram(source);
@@ -398,6 +461,12 @@ export function setERAttribute(source: string, entity: string, attribute: Pick<E
   return source.slice(0, current.line.start) + updated + source.slice(current.line.end);
 }
 
+/**
+ * Adds an attribute to an ER entity.
+ * @param source - Mermaid source to inspect or update.
+ * @param entity - Entity identifier.
+ * @param attribute - Attribute to add or identify.
+ */
 export function addERAttribute(source: string, entity: string, attribute: Partial<Pick<ERAttribute, 'type' | 'name' | 'key' | 'comment'>> = {}): string {
   assertERDiagram(source);
   if (!listEREntityIds(source).includes(entity)) throw new AmbiguousSourceMutationError('The entity is missing or ambiguous.');
@@ -424,6 +493,12 @@ export function addERAttribute(source: string, entity: string, attribute: Partia
   return appendLine(source, `${encodeEntity(entity)} {${ending}  ${line}${ending}}`);
 }
 
+/**
+ * Deletes one attribute from an ER entity.
+ * @param source - Mermaid source to inspect or update.
+ * @param entity - Entity identifier.
+ * @param attribute - Attribute to add or identify.
+ */
 export function deleteERAttribute(source: string, entity: string, attribute: Pick<ERAttribute, 'name' | 'occurrence'>): string {
   assertERDiagram(source);
   const matches = attributeSpans(source, entity).filter((item) => item.name === attribute.name && item.occurrence === attribute.occurrence);
@@ -439,6 +514,15 @@ function findRelationship(source: string, relationship: Pick<ERRelationship, 'so
   return matches[0]!;
 }
 
+/**
+ * Adds a relationship between two ER entities.
+ * @param source - Mermaid source to inspect or update.
+ * @param from - Source element identifier.
+ * @param to - Target element identifier.
+ * @param cardinality - Relationship cardinality.
+ * @param label - Displayed label.
+ * @param identifying - Whether the relationship is identifying.
+ */
 export function addERRelationship(source: string, from: string, to: string, cardinality: ERCardinality = 'one-many', label = 'relates', identifying = true): string {
   assertERDiagram(source);
   const ids = new Set(listEREntityIds(source));
@@ -450,6 +534,12 @@ export function addERRelationship(source: string, from: string, to: string, card
   return appendLine(source, `${encodeEntity(from)} ${operator} ${encodeEntity(to)}${formatted ? ` : ${formatted}` : ''}`);
 }
 
+/**
+ * Updates one ER relationship.
+ * @param source - Mermaid source to inspect or update.
+ * @param relationship - Relationship to update or delete.
+ * @param patch - Properties to apply to the element.
+ */
 export function setERRelationship(source: string, relationship: Pick<ERRelationship, 'source' | 'target' | 'occurrence'>,
   patch: Partial<Pick<ERRelationship, 'source' | 'target' | 'cardinality' | 'label' | 'identifying'>>): string {
   assertERDiagram(source);
@@ -488,6 +578,11 @@ export function setERRelationship(source: string, relationship: Pick<ERRelations
   return output;
 }
 
+/**
+ * Deletes one ER relationship.
+ * @param source - Mermaid source to inspect or update.
+ * @param relationship - Relationship to update or delete.
+ */
 export function deleteERRelationship(source: string, relationship: Pick<ERRelationship, 'source' | 'target' | 'occurrence'>): string {
   assertERDiagram(source);
   const current = findRelationship(source, relationship);
@@ -495,6 +590,7 @@ export function deleteERRelationship(source: string, relationship: Pick<ERRelati
   return source.slice(0, line.start) + source.slice(line.fullEnd);
 }
 
+/** An ER style property supported by the source helpers. */
 export type ERStyleProperty = 'fill' | 'stroke' | 'stroke-dasharray';
 
 function erStyleLines(source: string, id: string): Array<{ line: SourceLine; prefix: string; values: string }> {
@@ -543,6 +639,11 @@ function styleProperties(value: string): Map<string, string> {
   return result;
 }
 
+/**
+ * Reads style properties assigned to an ER entity.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function getERStyles(source: string, id: string): Readonly<Record<ERStyleProperty, string>> {
   assertERDiagram(source);
   const line = erStyleLines(source, id)[0];
@@ -550,10 +651,23 @@ export function getERStyles(source: string, id: string): Readonly<Record<ERStyle
   return { fill: properties.get('fill') ?? '', stroke: properties.get('stroke') ?? '', 'stroke-dasharray': properties.get('stroke-dasharray') ?? '' };
 }
 
+/**
+ * Reads one style property assigned to an ER entity.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param property - Style property to read or update.
+ */
 export function getERStyle(source: string, id: string, property: ERStyleProperty): string {
   return getERStyles(source, id)[property];
 }
 
+/**
+ * Sets one style property for an ER entity.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param property - Style property to read or update.
+ * @param color - Color value to assign.
+ */
 export function setERStyle(source: string, id: string, property: ERStyleProperty, color: string): string {
   assertERDiagram(source);
   if (!listEREntityIds(source).includes(id)) throw new AmbiguousSourceMutationError('The entity is missing or ambiguous.');

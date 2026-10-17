@@ -5,7 +5,8 @@ const editorShellRegion = Symbol('editor-shell-region');
 
 type EditorShellRegionName = 'sidebar' | 'canvas' | 'source' | 'selection' | 'status' | 'headerControls' | 'actions';
 
-interface EditorShellRegionProps {
+export interface EditorShellRegionProps {
+  /** Content rendered in the named shell region. */
   readonly children?: ReactNode;
 }
 
@@ -14,20 +15,36 @@ interface EditorShellRegionComponent extends FunctionComponent<EditorShellRegion
 }
 
 export interface EditorShellProps {
+  /** Shell heading.
+   * @default `"Diagram"`
+   */
   readonly title?: string;
+  /** Keyboard handler attached to the shell root. */
   readonly onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
+  /** Additional class name on the root.
+   * @default `""`
+   */
   readonly className?: string;
+  /** Compound region components to render inside the shell. */
   readonly children?: ReactNode;
 }
 
+/** `EditorShell` component with named compound regions for composing the editor layout. */
 export interface EditorShellComponent extends FunctionComponent<EditorShellProps> {
-  readonly Sidebar: EditorShellRegionComponent;
-  readonly Canvas: EditorShellRegionComponent;
-  readonly Source: EditorShellRegionComponent;
-  readonly Selection: EditorShellRegionComponent;
-  readonly Status: EditorShellRegionComponent;
-  readonly HeaderControls: EditorShellRegionComponent;
-  readonly Actions: EditorShellRegionComponent;
+  /** Region for sidebar content. */
+  readonly Sidebar: FunctionComponent<EditorShellRegionProps>;
+  /** Region for the diagram canvas. */
+  readonly Canvas: FunctionComponent<EditorShellRegionProps>;
+  /** Region for the Mermaid source editor. */
+  readonly Source: FunctionComponent<EditorShellRegionProps>;
+  /** Region for the selection editor. */
+  readonly Selection: FunctionComponent<EditorShellRegionProps>;
+  /** Region for the status message. */
+  readonly Status: FunctionComponent<EditorShellRegionProps>;
+  /** Region for diagram type and other header controls. */
+  readonly HeaderControls: FunctionComponent<EditorShellRegionProps>;
+  /** Region for header actions. */
+  readonly Actions: FunctionComponent<EditorShellRegionProps>;
 }
 
 function createRegion(name: EditorShellRegionName): EditorShellRegionComponent {
@@ -76,6 +93,7 @@ const EditorShellRoot: FunctionComponent<EditorShellProps> = ({ title = 'Diagram
   );
 };
 
+/** Composable editor layout with named regions for its UI parts. */
 export const EditorShell = Object.assign(EditorShellRoot, {
   Sidebar: createRegion('sidebar'),
   Canvas: createRegion('canvas'),

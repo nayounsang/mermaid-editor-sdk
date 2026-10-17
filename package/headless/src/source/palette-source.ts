@@ -1,26 +1,49 @@
 import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 import type { DiagramType } from '../diagrams/capability';
 
+/** A palette entry that can be inserted into a diagram. */
 export interface PaletteItem<Id extends string> {
+  /** Element or palette item identifier. */
   id: Id;
+  /** Displayed label. */
   label: string;
+  /** Icon identifier for the palette item. */
   icon: string;
+  /** Mermaid source snippet inserted by the palette item. */
   snippet: string;
 }
 
+/** A titled group of palette entries. */
 export interface PaletteGroup<Id extends string> {
+  /** Palette group heading or subgraph title. */
   title: string;
+  /** Items in this palette group. */
   items: readonly PaletteItem<Id>[];
 }
 
+/** A diagram source line and its source offsets. */
 export interface DiagramLine {
+  /** Line content without its line ending. */
   text: string;
+  /** Start offset in the source. */
   start: number;
+  /** End offset in the source. */
   end: number;
 }
 
-/** Return diagram statements without interpreting metadata as diagram content. */
-export function diagramLines(source: string, header: RegExp, options: { accessibilityMetadata?: boolean; lineComment?: RegExp } = {}): DiagramLine[] {
+interface DiagramLinesOptions {
+  /** Whether accessibility metadata blocks are skipped. */
+  accessibilityMetadata?: boolean;
+  /** Pattern that identifies line comments to skip. */
+  lineComment?: RegExp;
+}
+
+/** Returns diagram statements without interpreting metadata as diagram content.
+ * @param source - Diagram source to inspect.
+ * @param header - Pattern that identifies the expected diagram header.
+ * @param options - Options controlling accessibility metadata and line comments.
+ */
+export function diagramLines(source: string, header: RegExp, options: DiagramLinesOptions = {}): DiagramLine[] {
   const result: DiagramLine[] = [];
   let block: 'frontmatter' | 'directive' | 'description' | undefined;
   let firstContent = true;
@@ -57,6 +80,13 @@ export function diagramLines(source: string, header: RegExp, options: { accessib
   return result;
 }
 
+/**
+ * Appends a snippet to the source using the requested indentation.
+ * @param source - Mermaid source to inspect or update.
+ * @param snippet - Mermaid source snippet to append.
+ * @param indent - Indentation prefix for each inserted line.
+ * @param diagramType - Diagram type used to validate the source.
+ */
 export function appendDiagramLine(source: string, snippet: string, indent: string, diagramType: DiagramType): string {
   return appendSourceLines(source, snippet.split('\n').map((line) => `${indent}${line}`), diagramType);
 }

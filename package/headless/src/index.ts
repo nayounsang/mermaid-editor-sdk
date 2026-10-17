@@ -7,15 +7,19 @@ export type {
   DiagramEdge,
   DiagramElement,
   DiagramNode,
+  DiagramSubgraph,
   DiagramSemanticElement,
   DiagramType,
   EditorSelection,
   FlowchartNodeShape,
+  MermaidCodeBlock,
   RendererModel,
   SessionSnapshot,
+  SourceRevision,
 } from './core/diagram-model';
 export { AmbiguousSourceMutationError, SourceDocument, appendSourceLines } from './source/source-document';
-export type { PaletteGroup } from './source/palette-source';
+export type { SourceRegion, SourceRegionKind } from './source/source-document';
+export type { PaletteGroup, PaletteItem } from './source/palette-source';
 export { classifyDiagram, withParseResult, withPreviewResult } from './diagrams/capability';
 export type { DiagramCapability } from './diagrams/capability';
 export { appendPaletteEntry, diagramTypeFromSource, diagramTypes, paletteCatalog, templates } from './runtime/diagram-catalog';

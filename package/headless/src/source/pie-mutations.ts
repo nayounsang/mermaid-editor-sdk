@@ -1,28 +1,45 @@
 import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
+/** Identifier of a pie chart palette item. */
 export type PiePaletteItemId = 'title' | 'slice';
 
+/** A pie chart palette item and its source snippet. */
 export interface PiePaletteItem {
+  /** Element or palette item identifier. */
   id: PiePaletteItemId;
+  /** Displayed label. */
   label: string;
+  /** Icon identifier for the palette item. */
   icon: string;
+  /** Mermaid source snippet inserted by the palette item. */
   snippet: string;
 }
 
+/** A titled group of pie chart palette items. */
 export interface PiePaletteGroup {
+  /** Palette group heading or subgraph title. */
   title: string;
+  /** Items in this palette group. */
   items: readonly PiePaletteItem[];
 }
 
+/** A parsed pie chart slice and its source offsets. */
 export interface PieSlice {
+  /** Displayed label. */
   label: string;
+  /** Style or slice value. */
   value: number;
+  /** Start offset of the label, when present. */
   labelStart: number;
+  /** End offset of the label, when present. */
   labelEnd: number;
+  /** Start offset of the numeric value token. */
   valueStart: number;
+  /** End offset of the numeric value token. */
   valueEnd: number;
 }
 
+/** Palette items exported for pie diagrams. */
 export const piePalette: readonly PiePaletteGroup[] = [
   { title: 'Structure', items: [
     { id: 'title', label: 'Title', icon: 't', snippet: 'title Pie title' },
@@ -139,6 +156,10 @@ function formatValue(value: number): string {
   return `${digits.slice(0, decimalIndex)}.${digits.slice(decimalIndex)}`;
 }
 
+/**
+ * Lists slices parsed from a pie chart source.
+ * @param source - Mermaid source to inspect or update.
+ */
 export function listPieSlices(source: string): PieSlice[] {
   return scanPie(source).slices;
 }
@@ -147,6 +168,11 @@ function appendLine(source: string, line: string): string {
   return appendSourceLines(source, [`${indentation(source)}${line}`], 'pie');
 }
 
+/**
+ * Adds a pie chart palette item to the source.
+ * @param source - Mermaid source to inspect or update.
+ * @param itemId - Identifier of the palette item to add.
+ */
 export function addPiePaletteItem(source: string, itemId: PiePaletteItemId): string {
   const parsed = scanPie(source);
   const item = itemById.get(itemId);
@@ -162,6 +188,12 @@ export function addPiePaletteItem(source: string, itemId: PiePaletteItemId): str
   return appendLine(source, `${quoteLabel(label)} : 25`);
 }
 
+/**
+ * Updates a pie chart slice value.
+ * @param source - Mermaid source to inspect or update.
+ * @param label - Displayed label.
+ * @param value - Value to assign.
+ */
 export function setPieSliceValue(source: string, label: string, value: number): string {
   const slices = listPieSlices(source).filter((slice) => slice.label === label);
   if (slices.length !== 1) throw new AmbiguousSourceMutationError('The Pie slice is missing or ambiguous.');
@@ -170,6 +202,12 @@ export function setPieSliceValue(source: string, label: string, value: number): 
   return `${source.slice(0, slice.valueStart)}${formatValue(value)}${source.slice(slice.valueEnd)}`;
 }
 
+/**
+ * Renames a pie chart slice.
+ * @param source - Mermaid source to inspect or update.
+ * @param currentLabel - Current slice label.
+ * @param nextLabel - Replacement slice label.
+ */
 export function setPieSliceLabel(source: string, currentLabel: string, nextLabel: string): string {
   const allSlices = listPieSlices(source);
   const slices = allSlices.filter((slice) => slice.label === currentLabel);

@@ -1,5 +1,6 @@
 import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
+/** Identifier of a sequence diagram palette item. */
 export type SequencePaletteItemId =
   | 'participant'
   | 'actor'
@@ -124,7 +125,10 @@ function getSnippet(source: string, item: SequencePaletteItemId): string {
   return sequencePaletteSnippets[item].replace(/\bA\b/g, first).replace(/\bB\b/g, second);
 }
 
-/** Adds one built-in sequence palette item while retaining every existing source code unit. */
+/** Adds one built-in sequence palette item while retaining every existing source code unit.
+ * @param source - Sequence diagram source to update.
+ * @param item - Palette item identifier to add.
+ */
 export function addSequencePaletteItem(source: string, item: SequencePaletteItemId): string {
   if (!Object.hasOwn(sequencePaletteSnippets, item)) {
     throw new AmbiguousSourceMutationError('The sequence palette item is not supported.');

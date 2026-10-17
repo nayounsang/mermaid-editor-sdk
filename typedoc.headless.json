@@ -1,0 +1,24 @@
+{
+  "entryPoints": ["package/headless/src/index.ts"],
+  "tsconfig": "package/headless/tsconfig.json",
+  "entryPointStrategy": "resolve",
+  "plugin": ["typedoc-plugin-markdown"],
+  "out": "docs/api/headless",
+  "name": "@mermaid-editor-sdk/headless",
+  "readme": "none",
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "parametersFormat": "table",
+  "validation": {
+    "notDocumented": true
+  },
+  "requiredToBeDocumented": [
+    "Class",
+    "Function",
+    "Interface",
+    "Method",
+    "TypeAlias"
+  ],
+  "sourceLinkTemplate": "https://github.com/nayounsang/mermaid-editor-sdk/blob/main/{path}#L{line}"
+}

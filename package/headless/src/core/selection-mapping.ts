@@ -1,5 +1,10 @@
 import type { DiagramElement, EditorSelection } from './diagram-model';
 
+/** Finds the model element identifier corresponding to a canvas selection.
+ * @param elements - Diagram elements to search.
+ * @param selection - Selected node, edge, or flowchart subgraph.
+ * @returns The matching model element ID, if found.
+ */
 export function getDiagramElementIdForSelection(elements: readonly DiagramElement[], selection: EditorSelection): string | undefined {
   if (selection.kind === 'node') {
     return elements.find((element) => element.kind === 'node'

@@ -3,16 +3,25 @@ import { diffChars } from 'diff';
 
 export type SourceRegionKind = 'blank' | 'comment' | 'metadata' | 'statement' | 'opaque';
 
+/** A source span classified for safe diagram mutations. */
 export interface SourceRegion {
+  /** Content category for this span. */
   kind: SourceRegionKind;
+  /** Start offset of the editable text, inclusive. */
   start: number;
+  /** End offset of the editable text, exclusive. */
   end: number;
+  /** End offset including the original line ending, when present. */
   fullEnd: number;
+  /** Normalized text content. */
   text: string;
+  /** Original source text for the full region. */
   rawText: string;
+  /** Whether the region can be safely edited. */
   editable: boolean;
 }
 
+/** Error raised when a source mutation cannot be applied unambiguously. */
 export class AmbiguousSourceMutationError extends Error {
   constructor(message: string) {
     super(message);
@@ -20,7 +29,11 @@ export class AmbiguousSourceMutationError extends Error {
   }
 }
 
-/** Append diagram statements before trailing comments and whitespace. */
+/** Appends diagram statements before trailing comments and whitespace.
+ * @param source - Mermaid source to update.
+ * @param additions - Statements to append.
+ * @param diagramType - Diagram type used to find the insertion point.
+ */
 export function appendSourceLines(source: string, additions: readonly string[], diagramType: DiagramType): string {
   if (!additions.length) return source;
   const regions = new SourceDocument(source, diagramType).regions;
@@ -76,10 +89,17 @@ function isOpaqueLine(line: string): boolean {
 }
 
 export class SourceDocument {
+  /** Original Mermaid source. */
   readonly source: string;
+  /** Diagram type used to classify source regions. */
   readonly diagramType: DiagramType;
+  /** Source spans, including statements, comments, metadata, and opaque text. */
   readonly regions: readonly SourceRegion[];
 
+  /** Analyzes source regions for safe mutations of the specified diagram type.
+   * @param source - Mermaid source to inspect.
+   * @param diagramType - Diagram type used to classify source regions.
+   */
   constructor(source: string, diagramType: DiagramType) {
     this.source = source;
     this.diagramType = diagramType;
@@ -88,6 +108,11 @@ export class SourceDocument {
     );
   }
 
+  /** Replaces one safe flowchart node statement at the given source offsets.
+   * @param start - Inclusive start offset of the statement.
+   * @param end - Exclusive end offset of the statement.
+   * @param replacement - Replacement statement text.
+   */
   replaceStatement(start: number, end: number, replacement: string): string {
     if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end < start || end > this.source.length) {
       throw new RangeError('Mutation span is outside the source document.');
@@ -106,6 +131,9 @@ export class SourceDocument {
     return this.serializeMutation(this.source.slice(0, start) + replacement + this.source.slice(end));
   }
 
+  /** Finds an editable statement and requires exactly one match.
+   * @param statement - Exact statement text to find.
+   */
   findUniqueEditableStatement(statement: string): SourceRegion {
     const matches = this.regions.filter((region) => region.editable && region.text === statement);
     if (matches.length !== 1) {
@@ -114,6 +142,9 @@ export class SourceDocument {
     return matches[0]!;
   }
 
+  /** Serializes a candidate mutation while preserving protected source regions.
+   * @param candidate - Candidate Mermaid source after a mutation.
+   */
   serializeMutation(candidate: string): string {
     if (candidate === this.source) return this.source;
     const changes = diffChars(this.source, candidate);

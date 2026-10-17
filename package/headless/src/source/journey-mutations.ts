@@ -2,8 +2,10 @@ import type { PaletteGroup } from './palette-source';
 import { AmbiguousSourceMutationError } from './source-document';
 import { appendDiagramLine, diagramLines } from './palette-source';
 
+/** Identifier of a journey palette item. */
 export type JourneyPaletteItemId = 'title' | 'section' | 'task' | 'multi-actor';
 
+/** Palette items exported for journey diagrams. */
 export const journeyPalette: readonly PaletteGroup<JourneyPaletteItemId>[] = [
   { title: 'Structure', items: [
     { id: 'title', label: 'Title', icon: 't', snippet: 'title My journey' },
@@ -17,6 +19,11 @@ export const journeyPalette: readonly PaletteGroup<JourneyPaletteItemId>[] = [
 
 const items = new Map(journeyPalette.flatMap(({ items }) => items.map((item) => [item.id, item])));
 
+/**
+ * Adds a journey palette item to the source.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function addJourneyPaletteItem(source: string, id: JourneyPaletteItemId): string {
   const lines = diagramLines(source, /^journey\b/i);
   const item = items.get(id);

@@ -6,8 +6,8 @@ Build Mermaid editors with the React UI package or compose your own interface fr
 
 | Package | Use it for | Docs |
 |---|---|---|
-| `@mermaid-editor-sdk/ui` | A ready-to-use React editor with customizable components and full SDK. | [UI guide](docs/ui.md) |
-| `@mermaid-editor-sdk/headless` | Headless APIs for building a Mermaid editor from scratch. | [Headless guide](docs/headless.md) |
+| `@mermaid-editor-sdk/ui` | A ready-to-use React editor with customizable components and full SDK. | [UI guide](docs/ui.md) · [API reference](docs/api/ui/README.md) |
+| `@mermaid-editor-sdk/headless` | Headless APIs for building a Mermaid editor from scratch. | [Headless guide](docs/headless.md) · [API reference](docs/api/headless/README.md) |
 
 ## Quick start
 

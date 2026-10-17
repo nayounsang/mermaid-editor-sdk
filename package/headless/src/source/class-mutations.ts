@@ -1,11 +1,17 @@
 import { AmbiguousSourceMutationError, appendSourceLines } from './source-document';
 
+/** Mermaid operators supported for class relationships. */
 export type ClassRelationOperator = '<|--' | '--|>' | '*--' | '--*' | 'o--' | '--o' | '<--' | '-->' | '<..' | '..>' | '<|..' | '..|>' | '--' | '..';
 
+/** A parsed class relationship and its occurrence among matching endpoints. */
 export interface ClassRelation {
+  /** Source element or entity identifier. */
   source: string;
+  /** Target element or entity identifier. */
   target: string;
+  /** Mermaid relationship or edge operator. */
   operator: ClassRelationOperator;
+  /** Zero-based occurrence among matching elements. */
   occurrence: number;
 }
 
@@ -84,10 +90,18 @@ function scanRelations(source: string): RelationSpan[] {
   return result;
 }
 
+/**
+ * Lists class relationships parsed from the source.
+ * @param source - Mermaid source to inspect or update.
+ */
 export function listClassRelations(source: string): ClassRelation[] {
   return scanRelations(source).map(({ source: from, target, operator, occurrence }) => ({ source: from, target, operator, occurrence }));
 }
 
+/**
+ * Lists class IDs declared or referenced in the source.
+ * @param source - Mermaid source to inspect or update.
+ */
 export function listClassIds(source: string): string[] {
   const ids = new Set<string>();
   const { text } = classDiagramBody(source);
@@ -110,6 +124,11 @@ export function listClassIds(source: string): string[] {
   return [...ids];
 }
 
+/**
+ * Adds a class declaration, generating an available ID when omitted.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Optional class identifier; one is generated when omitted.
+ */
 export function addClassNode(source: string, id?: string): string {
   assertClassDiagram(source);
   const used = new Set<string>();
@@ -125,6 +144,12 @@ export function addClassNode(source: string, id?: string): string {
   return appendLine(source, `class ${actualId} {${lineEnding(source)}  ${lineEnding(source)}}`);
 }
 
+/**
+ * Renames a class ID and updates its references.
+ * @param source - Mermaid source to inspect or update.
+ * @param oldId - Current identifier.
+ * @param newId - Replacement identifier.
+ */
 export function renameClassNode(source: string, oldId: string, newId: string): string {
   assertClassDiagram(source);
   if (!identifier.test(oldId) || !identifier.test(newId) || oldId === newId) {
@@ -164,6 +189,13 @@ export function renameClassNode(source: string, oldId: string, newId: string): s
   return output;
 }
 
+/**
+ * Adds a relationship between two classes.
+ * @param source - Mermaid source to inspect or update.
+ * @param from - Source element identifier.
+ * @param to - Target element identifier.
+ * @param operator - Mermaid relationship or edge operator.
+ */
 export function addClassRelation(source: string, from: string, to: string, operator: ClassRelationOperator = '-->'): string {
   assertClassDiagram(source);
   if (!identifier.test(from) || !identifier.test(to) || from === to) {
@@ -179,6 +211,12 @@ function findRelation(source: string, relation: ClassRelation): RelationSpan {
   return matches[0]!;
 }
 
+/**
+ * Updates one class relationship.
+ * @param source - Mermaid source to inspect or update.
+ * @param relation - Relationship to update or delete.
+ * @param patch - Properties to apply to the element.
+ */
 export function setClassRelation(source: string, relation: ClassRelation, patch: Partial<Pick<ClassRelation, 'source' | 'target' | 'operator'>>): string {
   assertClassDiagram(source);
   const span = findRelation(source, relation);
@@ -206,6 +244,11 @@ function lineRemovalSpan(source: string, start: number, end: number): [number, n
   return [start, previousCr];
 }
 
+/**
+ * Deletes one class relationship.
+ * @param source - Mermaid source to inspect or update.
+ * @param relation - Relationship to update or delete.
+ */
 export function deleteClassRelation(source: string, relation: ClassRelation): string {
   assertClassDiagram(source);
   const span = findRelation(source, relation);
@@ -213,6 +256,11 @@ export function deleteClassRelation(source: string, relation: ClassRelation): st
   return source.slice(0, start) + source.slice(end);
 }
 
+/**
+ * Deletes a class declaration and related statements.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function deleteClassNode(source: string, id: string): string {
   assertClassDiagram(source);
   if (!identifier.test(id)) throw new AmbiguousSourceMutationError('The class ID is invalid.');
@@ -277,6 +325,11 @@ function findClassBlock(source: string, id: string): ClassBlock {
   return blocks[0]!;
 }
 
+/**
+ * Lists members declared by a class.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ */
 export function listClassMembers(source: string, id: string): string[] {
   try {
     const block = findClassBlock(source, id);
@@ -315,6 +368,13 @@ function findColonClassMembers(source: string, id: string): ClassMemberSpan[] {
   return entries;
 }
 
+/**
+ * Replaces one class member declaration.
+ * @param source - Mermaid source to inspect or update.
+ * @param classId - Identifier of the class to update.
+ * @param oldMember - Current member declaration.
+ * @param newMember - Replacement member declaration.
+ */
 export function setClassMember(source: string, classId: string, oldMember: string, newMember: string): string {
   assertClassDiagram(source);
   if (!identifier.test(classId) || !isEditableMember(oldMember.trim()) || !isEditableMember(newMember.trim()) || /[\r\n{}]/.test(newMember)) {
@@ -341,6 +401,12 @@ export function setClassMember(source: string, classId: string, oldMember: strin
   return source.slice(0, entry.start) + newMember.trim() + source.slice(entry.end);
 }
 
+/**
+ * Deletes one member declaration from a class.
+ * @param source - Mermaid source to inspect or update.
+ * @param classId - Identifier of the class to update.
+ * @param member - Member declaration to add or remove.
+ */
 export function deleteClassMember(source: string, classId: string, member: string): string {
   assertClassDiagram(source);
   if (!identifier.test(classId) || !isEditableMember(member.trim())) {
@@ -370,6 +436,12 @@ export function deleteClassMember(source: string, classId: string, member: strin
   return source.slice(0, range.start) + source.slice(range.end);
 }
 
+/**
+ * Adds a member declaration to a class.
+ * @param source - Mermaid source to inspect or update.
+ * @param classId - Identifier of the class to update.
+ * @param member - Member declaration to add or remove.
+ */
 export function addClassMember(source: string, classId: string, member = '+operation(): void'): string {
   assertClassDiagram(source);
   if (!identifier.test(classId) || !member.trim() || /[\r\n{}]/.test(member)) {
@@ -399,6 +471,7 @@ export function addClassMember(source: string, classId: string, member = '+opera
   return source.slice(0, block.closeStart) + addition + source.slice(block.closeStart);
 }
 
+/** A class style property supported by the source helpers. */
 export type ClassStyleProperty = 'fill' | 'stroke' | 'stroke-dasharray';
 
 function classStyleLine(source: string, id: string): { start: number; end: number; text: string } | undefined {
@@ -414,12 +487,25 @@ function classStyleLine(source: string, id: string): { start: number; end: numbe
   return matches[0];
 }
 
+/**
+ * Reads one style property assigned to a class.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param property - Style property to read or update.
+ */
 export function getClassStyle(source: string, id: string, property: ClassStyleProperty): string {
   const line = classStyleLine(source, id);
   const value = line && new RegExp(`(?:^|,\\s*|\\s+)${property}\\s*:\\s*([^,]+)`).exec(line.text)?.[1];
   return value?.trim() ?? '';
 }
 
+/**
+ * Sets one style property for a class.
+ * @param source - Mermaid source to inspect or update.
+ * @param id - Identifier of the diagram element.
+ * @param property - Style property to read or update.
+ * @param color - Color value to assign.
+ */
 export function setClassStyle(source: string, id: string, property: ClassStyleProperty, color: string): string {
   assertClassDiagram(source);
   if (!identifier.test(id)) throw new AmbiguousSourceMutationError('The class ID is invalid.');

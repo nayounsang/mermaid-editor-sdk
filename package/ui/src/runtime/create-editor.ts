@@ -76,6 +76,11 @@ function isAdapterDiagramType(diagramType: DiagramType): diagramType is AdapterD
   return diagramType !== 'unknown' && diagramType !== 'unsupported';
 }
 
+/** Mounts the visual editor in an existing HTML element.
+ * @param container - HTML element that receives the editor.
+ * @param options - Initial source and optional event callbacks.
+ * @returns The mounted editor instance.
+ */
 export function createMermaidVisualEditor(
   container: HTMLElement,
   options: MermaidVisualEditorOptions,
