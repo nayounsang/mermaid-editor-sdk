@@ -1,10 +1,18 @@
+import { createElement, useEffect } from 'react';
+
 type SiteHeaderProps = {
   activePage: 'home' | 'docs' | 'api';
 };
 
 export function SiteHeader({ activePage }: SiteHeaderProps) {
+  useEffect(() => {
+    if (activePage === 'home') return;
+
+    void import('@pagefind/component-ui/css/pagefind-component-ui.css').then(() => import('@pagefind/component-ui'));
+  }, [activePage]);
+
   return (
-    <header className="site-header">
+    <header className="site-header" data-pagefind-ignore>
       <div className="site-header-inner">
         <a className="site-brand" href="/" aria-label="Mermaid Editor SDK home">
           Mermaid Editor SDK
@@ -18,6 +26,12 @@ export function SiteHeader({ activePage }: SiteHeaderProps) {
             API
           </a>
         </nav>
+        {activePage !== 'home' && (
+          <div className="site-search">
+            {createElement('pagefind-modal-trigger')}
+            {createElement('pagefind-modal')}
+          </div>
+        )}
       </div>
     </header>
   );

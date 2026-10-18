@@ -1,4 +1,4 @@
-import { MermaidEditor } from '@mermaid-editor-sdk/ui';
+import { lazy, Suspense } from 'react';
 import { format } from 'date-fns';
 import FileSaver from 'file-saver';
 import { FiBookOpen } from 'react-icons/fi';
@@ -40,6 +40,10 @@ export function links() {
 const initialSource = `flowchart LR
   Start[Start] --> Edit[Edit with UI or code] --> Preview[Preview]`;
 
+const MermaidEditor = lazy(() =>
+  import('@mermaid-editor-sdk/ui').then(({ MermaidEditor: Editor }) => ({ default: Editor })),
+);
+
 function downloadMermaidSource(source: string) {
   const file = new Blob([source], { type: 'text/plain;charset=utf-8' });
   const filename = `diagram-${format(new Date(), 'yyyy-MM-dd-HHmm')}.mmd`;
@@ -67,7 +71,9 @@ export default function Home() {
         </nav>
       </header>
       <div className="editor-mount">
-        <MermaidEditor value={initialSource} onSave={downloadMermaidSource} />
+        <Suspense fallback={<div className="editor-loading" role="status">Loading editor…</div>}>
+          <MermaidEditor value={initialSource} onSave={downloadMermaidSource} />
+        </Suspense>
       </div>
       <article className="home-content">
         <div className="home-content-inner">

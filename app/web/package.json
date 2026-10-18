@@ -7,11 +7,13 @@
     "dev": "react-router dev --host 127.0.0.1",
     "prebuild": "pnpm --dir ../.. docs:api",
     "build": "react-router build",
+    "postbuild": "pagefind --site build/client",
     "typecheck": "react-router typegen && tsc --noEmit",
     "lint": "eslint app vite.config.ts react-router.config.ts"
   },
   "dependencies": {
     "@mermaid-editor-sdk/ui": "workspace:*",
+    "@pagefind/component-ui": "^1.5.2",
     "@react-router/node": "^7.18.4",
     "date-fns": "^4.4.0",
     "file-saver": "^2.0.5",
@@ -34,6 +36,7 @@
     "@types/react-dom": "^19.3.0",
     "@vercel/react-router": "^1.3.7",
     "eslint": "^10.11.0",
+    "pagefind": "^1.5.2",
     "typescript": "^5.8.0",
     "typescript-eslint": "^8.70.1",
     "vite": "^6.2.0"

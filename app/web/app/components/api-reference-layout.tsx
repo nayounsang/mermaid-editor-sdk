@@ -59,7 +59,7 @@ export function ApiReferenceLayout({
 
   return (
     <div className="api-reference-shell">
-      <aside className="api-reference-sidebar" aria-label="API reference navigation">
+      <aside className="api-reference-sidebar" aria-label="API reference navigation" data-pagefind-ignore>
         <nav className="api-reference-navigation" aria-label="Packages and API symbols">
           <ul className="api-package-list">
             {packages.map((item) => {
