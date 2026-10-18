@@ -3,7 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**"]
+      "outputs": ["dist/**", "build/**", "public/docs/api/**", "public/sitemap.xml"]
     },
     "typecheck": {
       "dependsOn": ["^build"],

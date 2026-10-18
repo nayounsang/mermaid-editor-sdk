@@ -6,8 +6,8 @@ Build Mermaid editors with the React UI package or compose your own interface fr
 
 | Package | Use it for | Docs |
 |---|---|---|
-| `@mermaid-editor-sdk/ui` | A ready-to-use React editor with customizable components and full SDK. | [UI guide](docs/ui.md) · [API reference](docs/api/ui/README.md) |
-| `@mermaid-editor-sdk/headless` | Headless APIs for building a Mermaid editor from scratch. | [Headless guide](docs/headless.md) · [API reference](docs/api/headless/README.md) |
+| `@mermaid-editor-sdk/ui` | A ready-to-use React editor with customizable components and full SDK. | [SDK docs](https://mermaid-editor-sdk.vercel.app/docs#ui-package) · [API reference](https://mermaid-editor-sdk.vercel.app/docs/api/ui) |
+| `@mermaid-editor-sdk/headless` | Headless APIs for building a Mermaid editor from scratch. | [SDK docs](https://mermaid-editor-sdk.vercel.app/docs#headless-package) · [API reference](https://mermaid-editor-sdk.vercel.app/docs/api/headless) |
 
 ## Quick start
 
@@ -88,8 +88,10 @@ session.dispatch({ type: 'create-node', label: 'Review' });
 const { codeBlock, model } = session.getSnapshot();
 ```
 
-See the [Headless guide](docs/headless.md) for a custom component example and API reference.
+See the [SDK documentation](https://mermaid-editor-sdk.vercel.app/docs) for package setup and examples.
 
 ## Development
+
+Run `pnpm build` from the repository root to generate both API references and include them in the web build. The generated HTML is written to `app/web/public/docs/api/`.
 
 See [Development Guide](docs/development.md)
