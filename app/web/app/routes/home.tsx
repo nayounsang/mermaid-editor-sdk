@@ -4,6 +4,7 @@ import FileSaver from 'file-saver';
 import { FiBookOpen } from 'react-icons/fi';
 import { SiGithub } from 'react-icons/si';
 import type { MetaFunction } from 'react-router';
+import { SiteHeader } from '../components/site-header';
 import { SITE_URL } from '../site-config';
 
 const homePageTitle = 'Free Mermaid Diagram Editor Online with React SDK';
@@ -48,6 +49,7 @@ function downloadMermaidSource(source: string) {
 export default function Home() {
   return (
     <main>
+      <SiteHeader activePage="home" />
       <header className="home-hero">
         <p className="home-kicker">Free online Mermaid editor</p>
         <h1 id="home-title">{homePageTitle}</h1>
@@ -58,10 +60,9 @@ export default function Home() {
             View on GitHub
             <span className="home-visually-hidden">{newTabNotice}</span>
           </a>
-          <a className="home-link" href="https://github.com/nayounsang/mermaid-editor-sdk/blob/main/docs/ui.md" target="_blank" rel="noopener noreferrer">
+          <a className="home-link" href="/docs">
             <FiBookOpen aria-hidden="true" />
-            React SDK docs
-            <span className="home-visually-hidden">{newTabNotice}</span>
+            SDK documentation
           </a>
         </nav>
       </header>

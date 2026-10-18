@@ -10,7 +10,7 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "docs:api": "typedoc --options typedoc.headless.json && typedoc --options typedoc.ui.json && node scripts/normalize-api-parameter-defaults.mjs docs/api/headless docs/api/ui",
+    "docs:api": "typedoc --options typedoc.headless.json && typedoc --options typedoc.ui.json && node scripts/normalize-api-parameter-defaults.mjs app/web/app/generated/api/headless app/web/app/generated/api/ui && node scripts/generate-api-sitemap.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm build && pnpm changeset publish",

@@ -1,5 +1,6 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import '@mermaid-editor-sdk/ui/style.css';
+import './design-system.css';
 import './dev.css';
 
 export default function App() {
