@@ -5,7 +5,7 @@ export type ApiNavigationItem = {
   children?: ApiNavigationItem[];
 };
 
-const markdownFiles: Record<string, () => Promise<string>> = import.meta.glob('./generated/api/**/*.md', {
+const markdownFiles = import.meta.glob<string>('./generated/api/**/*.md', {
   import: 'default',
   query: '?raw',
 });
