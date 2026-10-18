@@ -20,6 +20,10 @@ export async function getApiMarkdown(filePath: string) {
   return load ? load() : undefined;
 }
 
+export function getApiPackageName(value: string | undefined) {
+  return value === 'ui' || value === 'headless' ? value : undefined;
+}
+
 export function getApiNavigation(packageName: string): ApiNavigationItem[] {
   const navigation = navigationFiles[`./generated/api/${packageName}/navigation.json`];
   return Array.isArray(navigation) ? (navigation as ApiNavigationItem[]) : [];

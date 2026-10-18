@@ -1,11 +1,12 @@
 import { useLoaderData, type LoaderFunctionArgs, type MetaFunction } from 'react-router';
 import { ApiMarkdown } from '../components/api-markdown';
 import { ApiReferenceLayout } from '../components/api-reference-layout';
-import { getApiMarkdown, getApiPageTitle } from '../api-reference-content';
+import { getApiMarkdown, getApiPackageName, getApiPageTitle } from '../api-reference-content';
 import { SITE_URL } from '../site-config';
 
 export const meta: MetaFunction = ({ params }) => {
-  const packageSlug = params.package === 'headless' ? 'headless' : 'ui';
+  const packageSlug = getApiPackageName(params.package);
+  if (!packageSlug) return [{ title: 'API Reference | Mermaid Editor SDK' }];
   const packageTitle = `@mermaid-editor-sdk/${packageSlug} API Reference`;
   return [
     { title: `${packageTitle} | Mermaid Editor SDK` },
@@ -14,7 +15,8 @@ export const meta: MetaFunction = ({ params }) => {
 };
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  const packageName = params.package === 'headless' ? 'headless' : 'ui';
+  const packageName = getApiPackageName(params.package);
+  if (!packageName) throw new Response('Not Found', { status: 404 });
   return {
     markdown: await getApiMarkdown(`${packageName}/README.md`),
     packageName,
