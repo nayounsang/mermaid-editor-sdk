@@ -15,5 +15,6 @@ app/storybook/storybook-static/
 .seo-cache/
 .playwright-mcp
 app/web/public/docs/api/
+app/web/public/pagefind/
 app/web/public/sitemap.xml
 app/web/app/generated/api/

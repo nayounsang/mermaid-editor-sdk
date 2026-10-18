@@ -6,10 +6,8 @@ type SiteHeaderProps = {
 
 export function SiteHeader({ activePage }: SiteHeaderProps) {
   useEffect(() => {
-    if (activePage === 'home') return;
-
     void import('@pagefind/component-ui/css/pagefind-component-ui.css').then(() => import('@pagefind/component-ui'));
-  }, [activePage]);
+  }, []);
 
   return (
     <header className="site-header" data-pagefind-ignore>

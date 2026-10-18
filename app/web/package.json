@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "pnpm --dir ../.. docs:api",
+    "predev": "pnpm --dir ../.. docs:api && react-router build && pagefind --site build/client --output-path public/pagefind",
     "dev": "react-router dev --host 127.0.0.1",
     "prebuild": "pnpm --dir ../.. docs:api",
     "build": "react-router build",
