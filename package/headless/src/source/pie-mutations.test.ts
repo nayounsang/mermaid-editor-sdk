@@ -89,4 +89,25 @@ describe('Pie source mutations', () => {
   it('rejects unknown palette items', () => {
     expect(() => addPiePaletteItem('pie\n', 'unknown' as PiePaletteItemId)).toThrow(AmbiguousSourceMutationError);
   });
+
+  it.each([
+    '---\ntitle: unfinished\npie\n"A": 1',
+    '%%{init: {"theme": "dark"}\npie\n"A": 1',
+    'sequenceDiagram\n"A": 1',
+    'pie\naccDescr { unfinished\n"A": 1',
+    'pie\nA: 1',
+    'pie\n"unfinished: 1',
+    'pie\n"A" 1',
+    'pie\n"A": nope',
+  ])('rejects incomplete or unsupported source %j', (source) => {
+    expect(() => listPieSlices(source)).toThrow(AmbiguousSourceMutationError);
+  });
+
+  it('returns unchanged labels and rejects missing, blank, or duplicate rename targets', () => {
+    const source = 'pie\n"A": 1\n"B": 2\n';
+    expect(setPieSliceLabel(source, 'A', 'A')).toBe(source);
+    expect(() => setPieSliceLabel(source, 'Missing', 'Next')).toThrow(AmbiguousSourceMutationError);
+    expect(() => setPieSliceLabel(source, 'A', '  ')).toThrow(AmbiguousSourceMutationError);
+    expect(() => setPieSliceLabel(source, 'A', 'B')).toThrow(AmbiguousSourceMutationError);
+  });
 });

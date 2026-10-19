@@ -6,7 +6,10 @@ import {
   addClassMember,
   addClassNode,
   addClassRelation,
+  deleteClassRelation,
+  deleteClassMember,
   deleteClassNode,
+  getClassStyle,
   listClassIds,
   listClassMembers,
   listClassRelations,
@@ -62,6 +65,15 @@ describe('Class diagram source mutations', () => {
     expect(added).toContain('Animal : +name: Unicode');
   });
 
+  it('deletes a class member from block and colon forms while preserving line endings', () => {
+    const block = 'classDiagram\r\nclass A {\r\n  +id: string\r\n}\r\n';
+    expect(deleteClassMember(block, 'A', '+id: string')).toBe('classDiagram\r\nclass A {\r\n}\r\n');
+    const colon = 'classDiagram\nclass A\nA : +id: string\nA : +name: string\n';
+    expect(deleteClassMember(colon, 'A', '+id: string')).toBe('classDiagram\nclass A\nA : +name: string\n');
+    expect(() => deleteClassMember(colon, 'A', '+missing: string')).toThrow(AmbiguousSourceMutationError);
+    expect(() => deleteClassMember(colon, 'A', '%% note')).toThrow(AmbiguousSourceMutationError);
+  });
+
   it('supports Unicode and dashed class IDs in declarations and relations', async () => {
     const source = 'classDiagram\nclass User-계정 {\n  +id: string\n}\nUser-계정 --> Account\n';
     expect(listClassIds(source)).toEqual(['User-계정', 'Account']);
@@ -107,6 +119,9 @@ describe('Class diagram source mutations', () => {
     expect(styled).toContain('style A fill:#abcdef');
     expect(setClassStyle(styled, 'A', 'fill', '#fedcba')).toContain('style A fill:#fedcba');
     expect(setClassStyle(styled, 'A', 'stroke-dasharray', '6 4')).toContain('fill:#abcdef,stroke-dasharray:6 4');
+    expect(setClassStyle('classDiagram\nclass A\nstyle A fill:red\n', 'A', 'fill', '')).toBe('classDiagram\nclass A\n');
+    expect(() => setClassStyle(source, 'A', 'fill', 'url(javascript:alert(1))')).toThrow(AmbiguousSourceMutationError);
+    expect(() => setClassStyle(source, 'A', 'stroke-dasharray', '3 2')).toThrow(AmbiguousSourceMutationError);
   });
 
   it('deletes only a safely recognized class and its relations', () => {
@@ -124,5 +139,41 @@ describe('Class diagram source mutations', () => {
     expect(renameClassNode(source, 'User', 'Person'))
       .toBe('classDiagram\nclass Person\nPerson "1" --> Account\n%% User remains in this comment\n');
     expect(() => renameClassNode(`${source}note for User`, 'User', 'Person')).toThrow(AmbiguousSourceMutationError);
+  });
+
+  it('rejects invalid and ambiguous class mutations', () => {
+    const source = 'classDiagram\nclass A\nA --> B\n';
+    expect(() => addClassNode(source, 'bad id')).toThrow(AmbiguousSourceMutationError);
+    expect(() => addClassNode(source, 'A')).toThrow(AmbiguousSourceMutationError);
+    expect(() => renameClassNode(source, 'A', 'A')).toThrow(AmbiguousSourceMutationError);
+    expect(() => renameClassNode(source, 'A', 'B')).toThrow(AmbiguousSourceMutationError);
+    expect(() => renameClassNode(source, 'Missing', 'Next')).toThrow(AmbiguousSourceMutationError);
+    expect(() => setClassRelation(source, listClassRelations(source)[0]!, { target: 'A' }))
+      .toThrow(AmbiguousSourceMutationError);
+    expect(() => setClassRelation(source, { source: 'X', target: 'Y', operator: '-->', occurrence: 0 }, {}))
+      .toThrow(AmbiguousSourceMutationError);
+    expect(() => deleteClassNode(source, 'bad id')).toThrow(AmbiguousSourceMutationError);
+    expect(() => deleteClassNode(source, 'Missing')).toThrow(AmbiguousSourceMutationError);
+    expect(() => setClassMember(source, 'A', '+id: string', 'two\nlines')).toThrow(AmbiguousSourceMutationError);
+  });
+
+  it('handles class notes, empty member blocks, and styles without rewriting unrelated text', () => {
+    const source = 'classDiagram\nclass A\nnote for A\nA : +hidden: string\nend note\nclass B\nB : +id: int\n';
+    expect(listClassIds(source)).toContain('A');
+    expect(listClassMembers(source, 'B')).toEqual(['+id: int']);
+    expect(addClassMember('classDiagram\nclass A {\n}\n', 'A', '+id: string'))
+      .toBe('classDiagram\nclass A {\n  +id: string\n}\n');
+    expect(setClassStyle('classDiagram\nclass A\nstyle A fill:red\n', 'A', 'stroke', '')).toContain('fill:red');
+    expect(setClassStyle('classDiagram\nclass A\n', 'A', 'fill', '')).toBe('classDiagram\nclass A\n');
+    expect(() => setClassStyle('classDiagram\nclass A\nstyle A fill:red\nstyle A stroke:blue\n', 'A', 'fill', 'green'))
+      .toThrow(AmbiguousSourceMutationError);
+    expect(() => getClassStyle('classDiagram\n', 'invalid id', 'fill')).not.toThrow();
+  });
+
+  it('deletes a final CR only relation line and a class block without a following newline', () => {
+    const relationSource = 'classDiagram\rclass A\rclass B\rA --> B\r';
+    expect(deleteClassRelation(relationSource, listClassRelations(relationSource)[0]!))
+      .toBe('classDiagram\rclass A\rclass B\r');
+    expect(deleteClassNode('classDiagram\nclass A {\n  +id: string\n}', 'A')).toBe('classDiagram\n');
   });
 });

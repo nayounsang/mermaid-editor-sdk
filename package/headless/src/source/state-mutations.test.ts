@@ -7,6 +7,7 @@ import {
   addStateTransition,
   deleteState,
   deleteStateTransition,
+  addStatePaletteItem,
   getStateStyle,
   getStateBorderType,
   listStateIds,
@@ -21,6 +22,20 @@ import { AmbiguousSourceMutationError } from './source-document';
 const fixture = (name: string): string => readFileSync(resolve(process.cwd(), 'src/source/fixtures', name), 'utf8');
 
 describe('state source mutations', () => {
+  it('adds each state palette item and validates transition targets and labels', () => {
+    const source = 'stateDiagram-v2\nA --> B\n';
+    expect(addStatePaletteItem(source, 'simple')).toContain('state State1');
+    expect(addStatePaletteItem(source, 'composite')).toContain('state Composite1 {');
+    expect(addStatePaletteItem(source, 'choice')).toContain('state Choice1 <<choice>>');
+    expect(addStatePaletteItem(source, 'note', undefined, '  Inspect  ')).toContain('note right of A : Inspect');
+    expect(addStatePaletteItem('stateDiagram-v2\n', 'note')).toContain('note right of State1 : Note');
+    expect(addStatePaletteItem(source, 'start-transition', 'A', 'begin')).toContain('[*] --> A : begin');
+    expect(addStatePaletteItem(source, 'end-transition', 'B')).toContain('B --> [*]');
+    expect(() => addStatePaletteItem(source, 'start-transition')).toThrow(AmbiguousSourceMutationError);
+    expect(() => addStatePaletteItem(source, 'end-transition', 'missing')).toThrow(AmbiguousSourceMutationError);
+    expect(() => addStatePaletteItem(source, 'start-transition', 'A', 'two\nlines')).toThrow(AmbiguousSourceMutationError);
+  });
+
   it('renames a state and edits one transition while preserving metadata, comments, nested states and opaque notes', async () => {
     const before = fixture('state-preservation.before.mmd');
     const after = renameState(before, 'StateA', 'Renamed');
@@ -153,5 +168,36 @@ describe('state source mutations', () => {
     expect(setStateTransition(source, edge, { label: 'new' })).toBe('stateDiagram-v2\r\nA --> B : new\r\n');
     expect(setStateTransition(source, edge, { label: '' })).toBe('stateDiagram-v2\r\nA --> B\r\n');
     expect(() => setStateTransition(source, edge, { label: 'two\nlines' })).toThrow(AmbiguousSourceMutationError);
+  });
+
+  it('covers state style creation, removal, and validation paths', () => {
+    const source = 'stateDiagram-v2\nA --> B\n';
+    expect(setStateStyle(source, 'A', 'fill', '')).toBe(source);
+    expect(getStateStyle(source, 'A', 'stroke')).toBe('');
+    expect(setStateStyle(source, 'A', 'fill', '#abc')).toContain('style A fill:#abc');
+    expect(setStateStyle('stateDiagram-v2\nA --> B\nstyle A\n', 'A', 'fill', 'red'))
+      .toContain('style A fill:red');
+    expect(setStateStyle('stateDiagram-v2\nA --> B\nstyle A fill:red\n', 'A', 'fill', '')).toBe('stateDiagram-v2\nA --> B');
+    expect(setStateStyle('stateDiagram-v2\nA --> B\nstyle A fill:red,stroke:#333\n', 'A', 'fill', '')).toContain('style A stroke:#333');
+    expect(() => setStateStyle(source, 'missing', 'fill', 'red')).toThrow(AmbiguousSourceMutationError);
+    expect(() => setStateStyle(source, 'A', 'stroke', 'url(x)')).toThrow(AmbiguousSourceMutationError);
+    expect(() => setStateStyle(source, 'A', 'stroke-width', 'wide')).toThrow(AmbiguousSourceMutationError);
+    expect(() => setStateStyle(source, 'A', 'stroke-dasharray', '3 2')).toThrow(AmbiguousSourceMutationError);
+    expect(() => getStateStyle('stateDiagram-v2\nA --> B\nstyle A fill:red\nstyle A stroke:blue\n', 'A', 'fill'))
+      .toThrow(AmbiguousSourceMutationError);
+  });
+
+  it('rejects invalid state rename and transition selections', () => {
+    const source = 'stateDiagram-v2\nA --> B\n';
+    expect(() => renameState(source, 'A', 'A')).toThrow(AmbiguousSourceMutationError);
+    expect(() => renameState(source, 'Missing', 'Next')).toThrow(AmbiguousSourceMutationError);
+    expect(() => renameState(source, 'A', 'B')).toThrow(AmbiguousSourceMutationError);
+    const edge = listStateTransitions(source)[0]!;
+    expect(() => setStateTransition(source, { ...edge, occurrence: 4 }, { label: 'x' }))
+      .toThrow(AmbiguousSourceMutationError);
+    expect(() => setStateTransition(source, edge, { target: 'bad-id' }))
+      .toThrow(AmbiguousSourceMutationError);
+    expect(() => listStateIds('stateDiagram-v2\nnote right of A\nunfinished'))
+      .toThrow(AmbiguousSourceMutationError);
   });
 });

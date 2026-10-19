@@ -122,7 +122,9 @@ function getSnippet(source: string, item: SequencePaletteItemId): string {
   if (item === 'actor') return `actor ${makeUniqueParticipantId(source, 'Actor')}`;
 
   const [first, second] = getMessageParticipants(source);
-  return sequencePaletteSnippets[item].replace(/\bA\b/g, first).replace(/\bB\b/g, second);
+  return sequencePaletteSnippets[item].replace(/\b([AB])\b/g, (_match, participant: 'A' | 'B') => (
+    participant === 'A' ? first : second
+  ));
 }
 
 /** Adds one built-in sequence palette item while retaining every existing source code unit.
