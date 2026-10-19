@@ -1,5 +1,11 @@
 # @mermaid-editor-sdk/headless
 
+## 0.0.3
+
+### Patch Changes
+
+- 6d170f5: Fix sequence participant substitution when only participant B is declared and allow clearing flowchart node styles with an empty value.
+
 ## 0.0.2
 
 ### Patch Changes
