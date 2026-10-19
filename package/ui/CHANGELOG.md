@@ -1,5 +1,12 @@
 # @mermaid-editor-sdk/ui
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [6d170f5]
+  - @mermaid-editor-sdk/headless@0.0.3
+
 ## 0.2.1
 
 ### Patch Changes
