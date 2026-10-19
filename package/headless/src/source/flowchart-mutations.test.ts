@@ -45,6 +45,21 @@ describe('Flowchart source mutations', () => {
       .toEqual([['A', 'B']]);
   });
 
+  it('validates flowchart node, edge, and style edits before changing source', () => {
+    const source = 'flowchart LR\nA --> B\n';
+    const edge = listFlowchartEdges(source)[0]!;
+    expect(() => addFlowchartNode(source, 'bad id', 'Invalid')).toThrow();
+    expect(() => addFlowchartNode(source, 'A', 'Duplicate')).toThrow();
+    expect(() => addFlowchartEdge(source, 'A', 'Missing')).toThrow();
+    expect(() => addFlowchartEdge(source, 'A', 'B', 'invalid')).toThrow();
+    expect(() => addFlowchartEdge(source, 'A', 'B', '-->', 'bad|label')).toThrow();
+    expect(setFlowchartNodeStyle(source, 'A', 'fill', '')).toBe(source);
+    expect(setFlowchartNodeStyle(`${source}style A fill:red\n`, 'A', 'fill', '')).toBe(source);
+    expect(() => setFlowchartNodeStyle(source, 'A', 'stroke-dasharray', '3 2')).toThrow();
+    expect(setFlowchartEdgeStyle(source, edge, '')).toBe(source);
+    expect(() => setFlowchartEdgeStyle(source, { ...edge, lineStart: -1 }, '#fff')).toThrow();
+  });
+
   it('selects endpoints in Mermaid text-label edge syntax', async () => {
     const source = 'flowchart LR\nA -- sends data --> B\n';
     const [edge] = listFlowchartEdges(source);
@@ -232,7 +247,8 @@ describe('Flowchart source mutations', () => {
 
   it('rejects unsafe subgraph locations and invalid subgraph colors without changing the source', () => {
     const source = 'flowchart LR\nsubgraph SG[Group]\nA[one]\nend\n';
-    for (const color of ['', 'red\nA --> B', 'red,blue']) {
+    expect(setFlowchartSubgraph(source, 'SG', { fill: '' })).toBe(source);
+    for (const color of ['red\nA --> B', 'red,blue']) {
       expect(() => setFlowchartSubgraph(source, 'SG', { fill: color })).toThrow(/color is not supported/i);
     }
     expect(() => addFlowchartNodeToSubgraph(source, 'missing', 'B', 'two')).toThrow(/located safely/i);

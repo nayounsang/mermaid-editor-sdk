@@ -44,6 +44,14 @@ describe('Gantt source mutations', () => {
     await mermaid.parse(updated);
   });
 
+  it('skips task status markers when linking to the latest task and accepts an unterminated header', () => {
+    const source = 'gantt\n    section Work\n    First :active, done, first, 2026-01-01, 2d';
+    expect(addGanttPaletteItem(source, 'after-previous')).toBe(
+      `${source}\n    Task name :after first, 7d`,
+    );
+    expect(addGanttPaletteItem('gantt', 'title')).toBe('gantt\n    title Project plan');
+  });
+
   it('rejects non-Gantt sources and unknown palette items without changing them', () => {
     const source = 'flowchart LR\nA-->B\n';
     expect(() => addGanttPaletteItem(source, 'task')).toThrow(AmbiguousSourceMutationError);

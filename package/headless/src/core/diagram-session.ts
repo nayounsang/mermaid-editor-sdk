@@ -189,7 +189,6 @@ function publicSubgraphId(elementId: string): string {
 
 function applyAction(source: string, type: EditableDiagramType, action: DiagramAction): string {
   if (action.type === 'insert-state-palette-entry') {
-    if (type !== 'state') throw new Error('State palette entries are only available in state diagrams.');
     return addStatePaletteItem(source, action.item, action.stateId, action.label);
   }
   if (action.type === 'insert-palette-entry') {
@@ -222,10 +221,9 @@ function applyAction(source: string, type: EditableDiagramType, action: DiagramA
       const newEntityId = listEREntityIds(next).find((entityId) => !listEREntityIds(source).includes(entityId));
       return newEntityId ? addERAttribute(next, newEntityId) : next;
     }
-    throw new Error(`Node creation is not supported for ${type}.`);
+    return source;
   }
   if (action.type === 'create-connected-node') {
-    if (type !== 'flowchart') throw new Error('Connected palette nodes are only available for flowcharts.');
     const id = action.id ?? `node-${makeId()}`;
     const withNode = addFlowchartNode(source, id, action.label ?? id,
       (action.shape as Parameters<typeof addFlowchartNode>[3]) ?? 'rect');
@@ -256,7 +254,6 @@ function applyAction(source: string, type: EditableDiagramType, action: DiagramA
         else if (type === 'class') next = setClassStyle(next, action.patch.id ?? id, property, value);
         else if (type === 'state') next = setStateStyle(next, action.patch.id ?? id, property, value);
         else if (type === 'er') next = setERStyle(next, action.patch.id ?? id, property, value);
-        else throw new Error(`Node appearance is not supported for ${type}.`);
       }
       const borderType = action.patch.borderType;
       if (borderType !== undefined) {
@@ -268,11 +265,9 @@ function applyAction(source: string, type: EditableDiagramType, action: DiagramA
           if (type === 'flowchart') next = setFlowchartNodeStyle(next, action.patch.id ?? id, 'stroke-dasharray', value);
           else if (type === 'class') next = setClassStyle(next, action.patch.id ?? id, 'stroke-dasharray', value);
           else if (type === 'er') next = setERStyle(next, action.patch.id ?? id, 'stroke-dasharray', value);
-          else throw new Error(`Node appearance is not supported for ${type}.`);
         }
       }
     }
-    if (next === source) throw new Error(`Node update is not supported for ${type}.`);
     return next;
   }
   if (action.type === 'delete-node') {
@@ -281,15 +276,13 @@ function applyAction(source: string, type: EditableDiagramType, action: DiagramA
     if (type === 'class') return deleteClassNode(source, id);
     if (type === 'state') return deleteState(source, id);
     if (type === 'er') return deleteEREntity(source, id);
-    throw new Error(`Node deletion is not supported for ${type}.`);
+    return source;
   }
   if (action.type === 'create-subgraph') {
-    if (type !== 'flowchart') throw new Error('Subgraphs are only available in flowcharts.');
     const id = action.id ?? `group-${makeId()}`;
     return addFlowchartSubgraph(source, id, action.title ?? `Group ${id}`);
   }
   if (action.type === 'update-subgraph') {
-    if (type !== 'flowchart') throw new Error('Subgraphs are only available in flowcharts.');
     const id = publicSubgraphId(action.id);
     return setFlowchartSubgraph(source, id, {
       ...(action.patch.id !== undefined ? { id: action.patch.id } : {}),
@@ -300,7 +293,6 @@ function applyAction(source: string, type: EditableDiagramType, action: DiagramA
     });
   }
   if (action.type === 'delete-subgraph') {
-    if (type !== 'flowchart') throw new Error('Subgraphs are only available in flowcharts.');
     return deleteFlowchartSubgraph(source, publicSubgraphId(action.id));
   }
   if (action.type === 'create-edge') {
@@ -308,22 +300,18 @@ function applyAction(source: string, type: EditableDiagramType, action: DiagramA
     if (type === 'class') return addClassRelation(source, action.source, action.target, action.operator as Parameters<typeof addClassRelation>[3]);
     if (type === 'state') return addStateTransition(source, action.source, action.target, action.label);
     if (type === 'er') return addERRelationship(source, action.source, action.target, action.cardinality, action.label, action.identifying);
-    throw new Error(`Edge creation is not supported for ${type}.`);
+    return source;
   }
   if (action.type === 'create-class-member') {
-    if (type !== 'class') throw new Error('Class members are only available in class diagrams.');
     return addClassMember(source, action.classId, action.member);
   }
   if (action.type === 'update-class-member') {
-    if (type !== 'class') throw new Error('Class members are only available in class diagrams.');
     return setClassMember(source, action.classId, action.oldMember, action.newMember);
   }
   if (action.type === 'delete-class-member') {
-    if (type !== 'class') throw new Error('Class members are only available in class diagrams.');
     return deleteClassMember(source, action.classId, action.member);
   }
   if (action.type === 'create-er-attribute') {
-    if (type !== 'er') throw new Error('Entity attributes are only available in ER diagrams.');
     return addERAttribute(source, action.entity, action.attribute ? {
       ...(action.attribute.type !== undefined ? { type: action.attribute.type } : {}),
       ...(action.attribute.name !== undefined ? { name: action.attribute.name } : {}),
@@ -332,7 +320,6 @@ function applyAction(source: string, type: EditableDiagramType, action: DiagramA
     } : undefined);
   }
   if (action.type === 'update-er-attribute') {
-    if (type !== 'er') throw new Error('Entity attributes are only available in ER diagrams.');
     return setERAttribute(source, action.entity, { name: action.name, occurrence: action.occurrence }, {
       ...(action.patch.type !== undefined ? { type: action.patch.type } : {}),
       ...(action.patch.name !== undefined ? { name: action.patch.name } : {}),
@@ -341,7 +328,6 @@ function applyAction(source: string, type: EditableDiagramType, action: DiagramA
     });
   }
   if (action.type === 'delete-er-attribute') {
-    if (type !== 'er') throw new Error('Entity attributes are only available in ER diagrams.');
     return deleteERAttribute(source, action.entity, { name: action.name, occurrence: action.occurrence });
   }
   if (action.type === 'update-edge') {
@@ -391,7 +377,7 @@ function applyAction(source: string, type: EditableDiagramType, action: DiagramA
         ...(action.patch.identifying !== undefined ? { identifying: action.patch.identifying } : {}),
       });
     }
-    throw new Error(`Edge update is not supported for ${type}.`);
+    return source;
   }
   if (action.type === 'delete-edge') {
     if (type === 'flowchart') {
@@ -410,7 +396,7 @@ function applyAction(source: string, type: EditableDiagramType, action: DiagramA
       const raw = listERRelationships(source).find((item) => edgeId(type, item.source, item.target, item.occurrence) === action.id);
       return raw ? deleteERRelationship(source, raw) : source;
     }
-    throw new Error(`Edge deletion is not supported for ${type}.`);
+    return source;
   }
   return source;
 }

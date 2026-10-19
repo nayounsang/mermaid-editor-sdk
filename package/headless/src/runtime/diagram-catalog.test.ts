@@ -8,6 +8,19 @@ describe('source-only palette catalog', () => {
     expect(paletteCatalog.quadrant?.find(({ label }) => label === 'Data point')?.snippet).toBe('    Label: [0.5, 0.5]');
   });
 
+  it('replaces supported chart titles and rejects palette labels without an insertion mapping', () => {
+    const title = (type: keyof typeof templates) => {
+      const entry = paletteCatalog[type]?.find(({ label }) => label === 'Title');
+      if (!entry) throw new Error(`Missing ${type} title palette entry`);
+      return entry;
+    };
+    expect(appendPaletteEntry(templates.pie, 'pie', title('pie'))).toContain('pie title Pie title');
+    expect(appendPaletteEntry(templates.journey, 'journey', title('journey'))).toContain('title My journey');
+    expect(appendPaletteEntry(templates.timeline, 'timeline', title('timeline'))).toContain('title Timeline title');
+    expect(appendPaletteEntry(templates.quadrant, 'quadrant', title('quadrant'))).toContain('title Chart title');
+    expect(() => appendPaletteEntry(templates.sequence, 'sequence', { group: 'Other', label: 'Unknown', icon: '?', snippet: 'unknown' })).toThrow('not supported');
+  });
+
   it('identifies the current diagram and preserves its line endings', async () => {
     const source = 'gitGraph\r\n    commit\r\n    branch feature\r\n';
     expect(diagramTypeFromSource(source)).toBe('gitgraph');

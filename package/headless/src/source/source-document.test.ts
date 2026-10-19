@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { AmbiguousSourceMutationError, SourceDocument } from './source-document';
+import { AmbiguousSourceMutationError, appendSourceLines, SourceDocument } from './source-document';
 
 describe('SourceDocument', () => {
+  it('does not change source when there are no lines to append', () => {
+    expect(appendSourceLines('flowchart LR\nA-->B', [], 'flowchart')).toBe('flowchart LR\nA-->B');
+  });
+
+  it('appends after headers when only comments or whitespace follow', () => {
+    expect(appendSourceLines('flowchart LR\n%% keep\n', ['C-->D'], 'flowchart'))
+      .toBe('flowchart LR\n%% keep\nC-->D\n');
+    expect(appendSourceLines('', ['flowchart LR'], 'flowchart')).toBe('flowchart LR');
+  });
+
   it('replaces one simple statement and preserves BOM, CRLF, comments, and untouched text', () => {
     const source = '\uFEFF---\r\ntitle: Demo\r\n---\r\nflowchart LR\r\n%% A comment\r\nA[old]\r\nB[keep]';
     const document = new SourceDocument(source, 'flowchart');

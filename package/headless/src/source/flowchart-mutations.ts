@@ -749,7 +749,7 @@ function setStyleDeclaration(source: string, id: string, property: 'fill' | 'str
   if (existing.length > 1) throw new AmbiguousSourceMutationError('Node has multiple style declarations.');
   if (property === 'stroke-dasharray') {
     if (!['', '0', '6 4', '2 3'].includes(value)) throw new AmbiguousSourceMutationError('Border line style is not supported.');
-  } else validateStyleColor(value);
+  } else if (value) validateStyleColor(value);
   if (!existing.length) return value ? appendLines(source, [`style ${id} ${property}:${value}`]) : source;
   const line = existing[0]!;
   const match = /^(\s*style\s+\S+\s+)(.*)$/.exec(line.text)!;

@@ -101,4 +101,13 @@ describe('sequence source mutations', () => {
 
     expect(() => addSequencePaletteItem(source, 'message-sync')).toThrow(/sequenceDiagram/);
   });
+
+  it('chooses a partner for one declared participant and ignores malformed messages', () => {
+    expect(addSequencePaletteItem('sequenceDiagram\n    participant B\n', 'message-sync'))
+      .toBe('sequenceDiagram\n    participant B\n    B->>A: message\n');
+    expect(addSequencePaletteItem('sequenceDiagram\n    @-->B: malformed\n    A-->: incomplete\n', 'message-sync'))
+      .toBe('sequenceDiagram\n    @-->B: malformed\n    A-->: incomplete\n    A->>B: message\n');
+    expect(() => addSequencePaletteItem('sequenceDiagram\n', 'unknown' as SequencePaletteItemId))
+      .toThrow(/not supported/);
+  });
 });

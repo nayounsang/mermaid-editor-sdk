@@ -45,5 +45,8 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Headless coverage
+        run: pnpm --filter @mermaid-editor-sdk/headless test:coverage
+
       - name: Build
         run: pnpm build
